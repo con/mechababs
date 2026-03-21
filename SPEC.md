@@ -57,18 +57,18 @@ Concrete usage on a cluster:
 
 ```bash
 # One-time: set up venv with babs + deps
-duct ./mechababs/steps/setup-env.sh \
+./mechababs/steps/setup-env.sh \
     --cluster-config mechababs/clusters/dartmouth.yaml
 
 # Prepare: create study dataset, clone data, template babs config
-duct ./mechababs/steps/prepare.sh \
+./mechababs/steps/prepare.sh \
     --dataset-url $BIDS_RAW_DATASET_URL \
     --pipeline mechababs/pipelines/mriqc-24.0.2.yaml \
     --cluster-config mechababs/clusters/dartmouth.yaml \
     --study-dataset $STUDY_DATASET_PATH
 
 # Init babs inside the study dataset
-duct babs init $STUDY_DATASET_PATH \
+babs init $STUDY_DATASET_PATH \
     --container-ds $STUDY_DATASET_PATH/containers \
     --container-name bids-mriqc \
     --container-config $STUDY_DATASET_PATH/babs-config.yaml \
@@ -77,13 +77,13 @@ duct babs init $STUDY_DATASET_PATH \
 
 # Run
 cd $STUDY_DATASET_PATH
-duct babs check-setup --job-test
-duct babs submit
-duct babs status --wait     # with backoff
-duct babs merge
+babs check-setup --job-test
+babs submit
+babs status --wait     # with backoff
+babs merge
 
 # Finalize: move results off cluster
-duct ./mechababs/steps/finalize.sh $STUDY_DATASET_PATH
+./mechababs/steps/finalize.sh $STUDY_DATASET_PATH
 ```
 
 ### What prepare.sh does
@@ -194,7 +194,6 @@ study dataset itself.
 **Tracked** — Datalad throughout. Every component is
 content-addressed. Babs records computational provenance in the
 analysis dataset. `dataset_description.json` records tool versions.
-All commands wrapped with `duct` for execution-level provenance.
 
 **Actionable** — The templated configs and step scripts in the study
 dataset are the executable specification. The scripts that produced
@@ -249,3 +248,26 @@ as upstream issues and removed from mechababs as babs adopts them:
 | `analysis/` directory name is hardcoded | Make the analysis directory name configurable |
 | Write dataset_description.json manually | babs should generate `dataset_description.json` with `GeneratedBy` |
 | `babs status --wait` does not exist | Add `babs status --wait` with configurable backoff |
+
+## TODO: con-duct integration
+
+[con-duct](https://github.com/con/duct) captures execution metadata
+(runtime, memory, exit codes) and should wrap mechababs commands for
+richer provenance. However, `duct` + `datalad run` + babs's own
+commits creates a nesting problem — datalad doesn't wrap itself
+cleanly when inner tools also commit.
+
+Where `duct` can be used now (steps that don't commit):
+- `setup-env.sh`
+- `babs submit`, `babs status`, `babs merge`
+- `finalize.sh`
+
+Where `duct` matters most but needs design work:
+- `datalad containers-run` inside the SLURM jobs — this is the
+  actual computation and the most valuable place for execution
+  metadata
+- `prepare.sh` — does `datalad save`, so wrapping with
+  `datalad run` conflicts
+
+Upstream question: can datalad support nested provenance (outer
+`datalad run` that tolerates inner commits)?
