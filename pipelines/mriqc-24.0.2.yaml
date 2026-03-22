@@ -1,8 +1,12 @@
 container:
+  # pre-built SIF in a datalad dataset
+  repo: https://github.com/ReproNim/containers
   name: bids-mriqc
-  uri: docker://nipreps/mriqc:24.0.2
+  # alternative: build from docker URI (not implemented yet)
+  # build: docker://nipreps/mriqc:24.0.2
 
 bids_app_args:
+  --no-datalad-get: ""
   $SUBJECT_SELECTION_FLAG: "--participant-label"
   -w: "$BABS_TMPDIR"
   --n_cpus: "4"

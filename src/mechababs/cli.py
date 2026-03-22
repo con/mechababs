@@ -1,6 +1,13 @@
 import click
 
 from mechababs.prepare import prepare_workdir
+from mechababs.commands import (
+    init_babs_project_with_container_ds,
+    pull_container,
+    submit_jobs,
+    merge_results,
+    finalize_dataset,
+)
 
 
 @click.group()
@@ -25,3 +32,40 @@ def prepare(raw_dataset_url, pipeline, cluster_config, container_ds, derivative_
         workdir=derivative_dataset_path,
         force=force,
     )
+
+
+@main.command("init")
+@click.argument("workdir", type=click.Path(exists=True))
+@click.option("--container-ds", required=True, type=click.Path(exists=True), help="Path to existing container datalad dataset")
+def init_cmd(workdir, container_ds):
+    """Run babs init and pull the container image."""
+    init_babs_project_with_container_ds(workdir, container_ds)
+
+
+@main.command("pull-container")
+@click.argument("workdir", type=click.Path(exists=True))
+def pull_container_cmd(workdir):
+    """Fetch the container image in an initialized babs project."""
+    pull_container(workdir)
+
+
+@main.command()
+@click.argument("workdir", type=click.Path(exists=True))
+def submit(workdir):
+    """Run babs check-setup and submit jobs."""
+    submit_jobs(workdir)
+
+
+@main.command()
+@click.argument("workdir", type=click.Path(exists=True))
+def merge(workdir):
+    """Run babs merge after jobs complete."""
+    merge_results(workdir)
+
+
+@main.command()
+@click.argument("workdir", type=click.Path(exists=True))
+@click.option("--output", required=True, type=click.Path(), help="Path for the final derivative dataset")
+def finalize(workdir, output):
+    """Clone results from output RIA and assemble the study dataset."""
+    finalize_dataset(workdir, output)
