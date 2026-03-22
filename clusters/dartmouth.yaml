@@ -8,9 +8,6 @@ cluster_resources:
     #SBATCH --ntasks=1
 
 script_preamble: |
-  source ${MECHABABS_VENV}/bin/activate
+  source /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin/activate
 
 job_compute_space: "/scratch"
-
-# mechababs-specific (not passed to babs config)
-mechababs_venv: "/dartfs/rc/lab/D/DBIC/DBIC/CON/${USER}/mechababs/venv"

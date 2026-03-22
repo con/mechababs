@@ -25,11 +25,8 @@ def merge_babs_config(pipeline_config, cluster_config, raw_dataset_path):
     merged = {k: v for k, v in pipeline_config.items() if k != "container"}
 
     # Add cluster config (cluster_resources, script_preamble, job_compute_space)
-    # Exclude mechababs-specific keys
-    mechababs_keys = {"mechababs_venv", "mechababs_modules"}
     for k, v in cluster_config.items():
-        if k not in mechababs_keys:
-            merged[k] = v
+        merged[k] = v
 
     # Add input dataset
     merged["input_datasets"] = {

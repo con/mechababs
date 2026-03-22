@@ -11,6 +11,9 @@ import yaml
 def init_babs_project(workdir):
     """Run babs init and pull the container image.
 
+    Reads container.repo and container.name from the pipeline config
+    saved by prepare.
+
     Parameters
     ----------
     workdir : Path
@@ -22,42 +25,16 @@ def init_babs_project(workdir):
     with open(workdir / "pipeline.yaml") as f:
         pipeline_config = yaml.safe_load(f)
 
-    container_name = pipeline_config["container"]["name"]
-
-    # Read container-ds path from the config — prepare saved it
-    # For now, require it as arg. TODO: save in workdir metadata
-    raise NotImplementedError(
-        "init needs --container-ds but prepare doesn't save it to the workdir yet. "
-        "Run babs init manually using the command printed by prepare, then run: "
-        f"mechababs pull-container {workdir}"
-    )
-
-
-def init_babs_project_with_container_ds(workdir, container_ds):
-    """Run babs init and pull the container image.
-
-    Parameters
-    ----------
-    workdir : Path
-        The mechababs working directory (created by prepare).
-    container_ds : str
-        Path to the container datalad dataset.
-    """
-    workdir = Path(workdir).resolve()
-    container_ds = Path(container_ds).resolve()
-    babs_project = workdir / "babs-project"
-
-    with open(workdir / "pipeline.yaml") as f:
-        pipeline_config = yaml.safe_load(f)
-
-    container_name = pipeline_config["container"]["name"]
+    container_info = pipeline_config["container"]
+    container_name = container_info["name"]
+    container_ds = container_info["repo"]
 
     if (babs_project / "analysis").exists():
         print(f"skip: babs project already initialized at {babs_project}")
     else:
         _run([
             "babs", "init", str(babs_project),
-            "--container-ds", str(container_ds),
+            "--container-ds", container_ds,
             "--container-name", container_name,
             "--container-config", str(workdir / "babs-config.yaml"),
             "--processing-level", "subject",
