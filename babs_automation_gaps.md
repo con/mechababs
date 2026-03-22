@@ -113,7 +113,8 @@ name, version, and babs version.
 - **Cluster setup** — installing babs, creating venvs, loading
   modules. Site-specific, one-time.
 - **Pipeline configs** — defining how to run a BIDS app. Reusable
-  across datasets and clusters.
+  across datasets and clusters. Could be shared in container datasets
+  like repronim/containers, alongside the SIFs they describe.
 - **Cluster configs** — defining resources and job parameters.
   Per-site.
 - **Publishing** — pushing derivatives to remotes, registering in
