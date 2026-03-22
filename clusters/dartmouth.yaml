@@ -1,0 +1,16 @@
+cluster_resources:
+  interpreting_shell: "/bin/bash"
+  hard_runtime_limit: "4:00:00"
+  customized_text: |
+    #SBATCH --cpus-per-task=4
+    #SBATCH --mem=16G
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1
+
+script_preamble: |
+  source ${MECHABABS_VENV}/bin/activate
+
+job_compute_space: "/scratch"
+
+# mechababs-specific (not passed to babs config)
+mechababs_venv: "/dartfs/rc/lab/D/DBIC/DBIC/CON/${USER}/mechababs/venv"
