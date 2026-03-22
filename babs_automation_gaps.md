@@ -72,9 +72,9 @@ info (name, repo URL) comes from the pipeline config — no separate
 Today: `path_in_babs` and `is_zipped` must be specified in the
 monolithic config. These rarely change across executions.
 
-Proposal: optional args to `babs init` with sensible defaults:
-`--path-in-babs` (default `inputs/data/BIDS`), `--zipped-inputs`
-flag (default false).
+Proposal: sensible defaults configurable via `babs init` args or
+a babs config file: `--path-in-babs` (default `inputs/data/BIDS`),
+`--zipped-inputs` (default false).
 
 ### Project root as the dataset
 
