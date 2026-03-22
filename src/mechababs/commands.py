@@ -41,8 +41,7 @@ def init_babs_project(workdir):
             "--queue", "slurm",
         ])
 
-    # Pull the container image so SLURM jobs can access it
-    pull_container(workdir)
+    print(f"\nNext: mechababs pull-container {workdir}")
 
 
 def pull_container(workdir):

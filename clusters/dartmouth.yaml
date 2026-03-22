@@ -10,4 +10,4 @@ cluster_resources:
 script_preamble: |
   source /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin/activate
 
-job_compute_space: "/scratch"
+job_compute_space: "/scratch/${USER}"
