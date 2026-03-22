@@ -1,130 +1,120 @@
 # babs automation gaps
 
-What mechababs does that babs could do natively. If babs adopted
-these, mechababs would reduce to cluster configs and a publish script.
+Processing many datasets through pipelines on HPC clusters is
+possible with babs today, but requires significant manual glue
+between steps. Most of this glue could be absorbed into babs,
+turning it from a bootstrapping tool into a configurable
+end-to-end automation tool.
 
-## The core problem: configuration composition
+## Part 1: The story of an automated execution
 
 An execution is the composition of three things:
-- **dataset** — what to process
-- **cluster** — where to process it
-- **pipeline** — how to process it
+- **dataset** — what to process (a URL to a BIDS dataset)
+- **pipeline** — how to process it (container, args, resources)
+- **cluster** — where to process it (SLURM config, paths, preamble)
 
-Today babs requires a single monolithic `container-config.yaml` that
-mixes all three. Changing the dataset means editing the config.
-Changing the cluster means editing the config. Running the same
-pipeline on 50 datasets means 50 nearly-identical config files.
+Running the same pipeline on 50 datasets should mean changing one
+argument. Switching clusters should mean pointing to a different
+config file. Today it means editing a monolithic YAML for each
+combination.
 
-### What babs init could do
+### What you have to do today
 
-Compose the config from separable inputs:
+1. Clone the input BIDS dataset locally.
+2. Create or clone a container dataset, ensure the SIF is available.
+3. Write a monolithic YAML config that combines cluster resources,
+   pipeline args, container info, and the local dataset path.
+4. Run `babs init` with the config and several CLI flags
+   (`--container-ds`, `--container-name`, `--container-config`,
+   `--processing-level`, `--queue`).
+5. Fetch the container image (`datalad get`).
+6. Run `babs check-setup --job-test`, then `babs submit`.
+7. Repeatedly run `babs status` to check progress.
+8. Run `babs merge`.
+9. Clone from the output RIA to get a usable derivative dataset.
+10. Manually write `dataset_description.json` for BIDS compliance.
+
+Steps 1-4 are configuration and setup work that changes per
+execution. Steps 5-8 are the babs workflow. Steps 9-10 are
+post-processing to extract a usable result.
+
+### What it could look like
 
 ```bash
-babs init my-project \
+babs init ds000003-mriqc \
     --raw-dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
     --pipeline pipelines/mriqc-24.0.2.yaml \
     --cluster-config clusters/dartmouth.yaml
+babs pull-container ds000003-mriqc
+babs submit ds000003-mriqc
+babs status --wait ds000003-mriqc
+babs merge ds000003-mriqc
 ```
 
-babs reads both YAMLs, merges them with the dataset URL, clones
-what needs cloning, writes the composed config into the project
-for provenance, and scaffolds the jobs. Container info (name, repo)
-comes from the pipeline config. One command, no intermediate files.
+After merge, `ds000003-mriqc/` is the derivative dataset. No
+cloning, no manual config composition, no post-processing.
 
-This is exactly what mechababs prepare + init does today.
+## Part 2: Specific gaps
 
-## Gap: clone input dataset
+### Config composition in init
 
-Today: user must clone the input dataset before `babs init`, then
-point `origin_url` in the config to the local clone.
+Today: babs requires a pre-composed monolithic YAML plus several
+CLI flags. The user must combine cluster, pipeline, and dataset
+information into one file before calling init.
 
-babs could: accept `--raw-dataset-url` and clone it as part of init.
+Proposal: `babs init` accepts `--pipeline`, `--cluster-config`,
+and `--raw-dataset-url` as separate inputs. It reads the pipeline
+and cluster YAMLs, composes them with the dataset URL, and writes
+the composed config into the project for provenance. Container
+info (name, repo URL) comes from the pipeline config — no separate
+`--container-ds` or `--container-name` flags.
 
-## Gap: pull container image
+### Project root as the dataset
 
-Today: after init, the container image (SIF) must be fetched
-separately via `datalad get`.
+Today: babs creates an untracked project directory containing
+`analysis/` (the actual datalad dataset), `input_ria/`, and
+`output_ria/`. The derivative must be extracted by cloning from
+the output RIA.
 
-babs could: `babs pull-container` as a standalone command. `babs
-submit` should fail with a clear message if the container is not
-available, with `--pull-container` flag to auto-pull before submitting.
+Proposal: the project root is the dataset. RIAs live inside,
+gitignored. After merge, the project root IS the derivative.
 
-## Gap: dataset_description.json
+Implementation: `self.analysis_path = self.project_root` in
+`base.py`. babs commands currently run from the project root and
+locate `analysis/` relative to it — collapsing these may surface
+assumptions. Needs investigation.
 
-Today: babs does not write a BIDS `dataset_description.json` with
-`GeneratedBy` metadata.
+### Pull container
 
-babs could: write this automatically, recording the container name,
-version, and babs version.
+Today: after init, the container SIF must be fetched manually via
+`datalad get` on the specific image path.
 
-## Gap: project root IS the analysis dataset (priority)
+Proposal: `babs pull-container <project>` fetches the registered
+container image. `babs submit` fails with a clear message if the
+container is not available.
 
-Today: babs creates `analysis/` as a subdirectory of the project
-root. The project root itself is just an untracked directory
-containing `analysis/`, `input_ria/`, and `output_ria/`. This
-forces a separation between the "working directory" and the "real
-dataset", requiring a clone-from-RIA step to produce the final
-derivative.
+### Status with wait
 
-Ideally: the project root IS the analysis dataset. RIAs live
-inside it, gitignored. `babs init ds000003-mriqc` creates a datalad
-dataset at that path with everything inside it. After merge, that
-dataset IS the derivative — no finalize/clone step needed.
+Today: `babs status` is a snapshot. Users poll manually.
 
-In code, this is roughly `self.analysis_path = self.project_root`
-in `base.py`. However, babs commands (status, submit, merge) are
-run from the project root, and they locate `analysis/` relative to
-it — collapsing these may surface assumptions about the two being
-separate. Needs investigation.
-
-This would eliminate mechababs's entire workdir/finalize dance and
-make the working directory the final artifact.
-
-## Gap: RIA path configuration
-
-Today: RIA stores are always created inside the project root.
-
-babs could: accept `--input-ria-path` and `--output-ria-path` for
-placing RIA stores elsewhere (e.g. on faster storage, or a shared
-location).
-
-## Gap: babs status --wait
-
-Today: `babs status` is a snapshot. User must poll manually.
-
-babs could: `babs status --wait` with configurable backoff, blocking
+Proposal: `babs status --wait` with configurable backoff, blocking
 until all jobs complete or fail.
 
-## Gap: output content availability after merge
+### dataset_description.json
 
-Today: after `babs merge`, results live in the output RIA. To get a
-usable derivative dataset, user must `datalad clone` from the RIA,
-then `datalad get` the outputs before the RIA can be deleted.
+Today: babs does not write BIDS `dataset_description.json` with
+`GeneratedBy` metadata.
 
-babs could: provide `babs export` or similar that produces a
-self-contained derivative dataset with content, not just git history.
+Proposal: babs writes this during init, recording the container
+name, version, and babs version.
 
-## What mechababs would become if these gaps were closed
+## What always stays outside babs
 
-```bash
-# One-time cluster setup (stays in mechababs or user docs)
-setup-venv.sh
-
-# The actual execution
-babs init my-project \
-    --raw-dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
-    --pipeline pipelines/mriqc-24.0.2.yaml \
-    --cluster-config clusters/dartmouth.yaml
-
-babs pull-container my-project
-babs submit my-project
-babs status --wait my-project
-babs merge my-project
-babs export my-project --output derivative-datasets/ds000003-mriqc
-
-# Custom publish step (always mechababs — site-specific)
-publish.sh derivative-datasets/ds000003-mriqc
-```
-
-mechababs shrinks to: cluster configs, pipeline configs, a setup
-script, and a publish script. Everything else is babs.
+- **Cluster setup** — installing babs, creating venvs, loading
+  modules. Site-specific, one-time.
+- **Pipeline configs** — defining how to run a BIDS app. Reusable
+  across datasets and clusters.
+- **Cluster configs** — defining resources and job parameters.
+  Per-site.
+- **Publishing** — pushing derivatives to remotes, registering in
+  superdatasets. Site-specific, policy-driven.
