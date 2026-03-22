@@ -97,8 +97,8 @@ def submit_jobs(workdir):
     workdir = Path(workdir).resolve()
     babs_project = workdir / "babs-project"
 
-    _run(["babs", "check-setup", "--job-test"], cwd=babs_project)
-    _run(["babs", "submit"], cwd=babs_project)
+    _run(["babs", "check-setup", "--job-test", str(babs_project)])
+    _run(["babs", "submit", str(babs_project)])
 
 
 def merge_results(workdir):
@@ -112,7 +112,7 @@ def merge_results(workdir):
     workdir = Path(workdir).resolve()
     babs_project = workdir / "babs-project"
 
-    _run(["babs", "merge"], cwd=babs_project)
+    _run(["babs", "merge", str(babs_project)])
 
 
 def finalize_dataset(workdir, derivative_output_path):
