@@ -10,7 +10,7 @@ from mechababs.merge_config import merge_babs_config, write_babs_config
 
 
 def prepare_workdir(raw_dataset_url, pipeline_config_path, cluster_config_path, workdir, force=False):
-    """Create a working directory with cloned data and merged babs config.
+    """Create a working directory with merged babs config.
 
     This is ephemeral scaffolding — the real study dataset is assembled
     by finalize after babs merge completes.
@@ -42,32 +42,21 @@ def prepare_workdir(raw_dataset_url, pipeline_config_path, cluster_config_path, 
     with open(cluster_config_path) as f:
         cluster_config = yaml.safe_load(f)
 
-    container_info = pipeline_config["container"]
-    container_name = container_info["name"]
-    container_ds = container_info["repo"]
-
     # Step 1: Create workdir
     if workdir.exists():
         print(f"skip: workdir already exists at {workdir}")
     else:
         workdir.mkdir(parents=True)
 
-    # Step 2: Clone raw dataset
-    raw_path = workdir / "raw"
-    if (raw_path / ".datalad").exists():
-        print(f"skip: raw dataset already cloned at {raw_path}")
-    else:
-        _run(["datalad", "clone", raw_dataset_url, str(raw_path)])
-
-    # Step 3: Merge configs and write babs config
-    merged = merge_babs_config(pipeline_config, cluster_config, str(raw_path))
+    # Step 2: Merge configs and write babs config
+    # babs clones the raw dataset itself — we just pass the URL through
+    merged = merge_babs_config(pipeline_config, cluster_config, raw_dataset_url)
     write_babs_config(merged, workdir / "babs-config.yaml")
 
-    # Step 4: Copy configs for provenance (used later by finalize)
+    # Step 3: Copy configs for provenance (used later by finalize)
     shutil.copy2(pipeline_config_path, workdir / "pipeline.yaml")
     shutil.copy2(cluster_config_path, workdir / "cluster.yaml")
 
-    babs_project = workdir / "babs-project"
     print(f"\nDone. Workdir ready at: {workdir}")
     print(f"\nNext: mechababs init {workdir}")
 

@@ -20,22 +20,21 @@ combination.
 
 ### What you have to do today
 
-1. Clone the input BIDS dataset locally.
-2. Create or clone a container dataset, ensure the SIF is available.
-3. Write a monolithic YAML config that combines cluster resources,
-   pipeline args, container info, and the local dataset path.
-4. Run `babs init` with the config and several CLI flags
+1. Create or clone a container dataset, ensure the SIF is available.
+2. Write a monolithic YAML config that combines cluster resources,
+   pipeline args, container info, and the dataset URL.
+3. Run `babs init` with the config and several CLI flags
    (`--container-ds`, `--container-name`, `--container-config`,
    `--processing-level`, `--queue`).
-5. Fetch the container image (`datalad get`).
-6. Run `babs check-setup --job-test`, then `babs submit`.
-7. Repeatedly run `babs status` to check progress.
-8. Run `babs merge`.
-9. Clone from the output RIA to get a usable derivative dataset.
-10. Manually write `dataset_description.json` for BIDS compliance.
+4. Fetch the container image (`datalad get`).
+5. Run `babs check-setup --job-test`, then `babs submit`.
+6. Repeatedly run `babs status` to check progress.
+7. Run `babs merge`.
+8. Clone from the output RIA to get a usable derivative dataset.
+9. Manually write `dataset_description.json` for BIDS compliance.
 
-Steps 1-4 are configuration and setup work that changes per
-execution. Steps 5-8 are the babs workflow. Steps 9-10 are
+Steps 1-3 are configuration and setup work that changes per
+execution. Steps 4-7 are the babs workflow. Steps 8-9 are
 post-processing to extract a usable result.
 
 ### What it could look like
