@@ -57,13 +57,28 @@ Today: babs does not write a BIDS `dataset_description.json` with
 babs could: write this automatically, recording the container name,
 version, and babs version.
 
-## Gap: configurable directory names
+## Gap: project root IS the analysis dataset (priority)
 
-Today: babs hardcodes `analysis/`, `input_ria/`, `output_ria/`
-relative to the project root.
+Today: babs creates `analysis/` as a subdirectory of the project
+root. The project root itself is just an untracked directory
+containing `analysis/`, `input_ria/`, and `output_ria/`. This
+forces a separation between the "working directory" and the "real
+dataset", requiring a clone-from-RIA step to produce the final
+derivative.
 
-babs could: make these configurable, or at minimum allow init into
-an existing datalad dataset rather than always creating `analysis/`.
+Ideally: the project root IS the analysis dataset. RIAs live
+inside it, gitignored. `babs init ds000003-mriqc` creates a datalad
+dataset at that path with everything inside it. After merge, that
+dataset IS the derivative — no finalize/clone step needed.
+
+In code, this is roughly `self.analysis_path = self.project_root`
+in `base.py`. However, babs commands (status, submit, merge) are
+run from the project root, and they locate `analysis/` relative to
+it — collapsing these may surface assumptions about the two being
+separate. Needs investigation.
+
+This would eliminate mechababs's entire workdir/finalize dance and
+make the working directory the final artifact.
 
 ## Gap: RIA path configuration
 
