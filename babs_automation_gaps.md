@@ -67,6 +67,15 @@ the composed config into the project for provenance. Container
 info (name, repo URL) comes from the pipeline config — no separate
 `--container-ds` or `--container-name` flags.
 
+### Input dataset defaults
+
+Today: `path_in_babs` and `is_zipped` must be specified in the
+monolithic config. These rarely change across executions.
+
+Proposal: optional args to `babs init` with sensible defaults:
+`--path-in-babs` (default `inputs/data/BIDS`), `--zipped-inputs`
+flag (default false).
+
 ### Project root as the dataset
 
 Today: babs creates an untracked project directory containing

@@ -7,8 +7,6 @@
 #       --pipeline pipelines/mriqc-24.0.2.yaml \
 #       --cluster clusters/dartmouth.yaml \
 #       --working-dir processing/ds000003-mriqc
-export PS4='> '
-set -x
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -43,7 +41,10 @@ source .venv/bin/activate
 CONTAINER_NAME=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['name'])")
 CONTAINER_DS=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['repo'])")
 
-# Step 1: Merge configs
+export PS4='> '
+set -x
+
+# ===== Step 1: Merge configs =================================================
 mkdir -p "${WORKING_DIR}"
 python3 merge_config.py \
     --pipeline "${PIPELINE}" \
@@ -51,7 +52,7 @@ python3 merge_config.py \
     --dataset-url "${DATASET_URL}" \
     > "${WORKING_DIR}/babs-config.yaml"
 
-# Step 2: Init babs project
+# ===== Step 2: Init babs project =============================================
 babs init "${WORKING_DIR}/babs-project" \
     --container-ds "${CONTAINER_DS}" \
     --container-name "${CONTAINER_NAME}" \
@@ -59,29 +60,31 @@ babs init "${WORKING_DIR}/babs-project" \
     --processing-level subject \
     --queue slurm
 
-# Step 3: Pull container image
+# ===== Step 3: Pull container image ==========================================
 # TODO: this should be a babs command
-datalad containers-list -d "${WORKING_DIR}/babs-project/analysis" \
+CONTAINER_IMAGE=$(datalad containers-list -d "${WORKING_DIR}/babs-project/analysis" \
     | grep "${CONTAINER_NAME}" \
-    | sed 's/.*-> //' \
-    | xargs -I {} datalad get -d "${WORKING_DIR}/babs-project/analysis" "${WORKING_DIR}/babs-project/analysis/{}"
+    | sed 's/.*-> //')
+datalad get -d "${WORKING_DIR}/babs-project/analysis" \
+    "${WORKING_DIR}/babs-project/analysis/${CONTAINER_IMAGE}"
 
-# Step 4: Submit jobs (requires SLURM)
+# ===== Step 4: Submit jobs (requires SLURM) ==================================
 # babs submit "${WORKING_DIR}/babs-project"
 
-# Step 5: Wait for jobs
+# ===== Step 5: Wait for jobs ==================================================
 # babs status "${WORKING_DIR}/babs-project"
 
-# Step 6: Merge results
+# ===== Step 6: Merge results =================================================
 # babs merge "${WORKING_DIR}/babs-project"
 
-# Step 7: Finalize — clone from output RIA
+# ===== Step 7: Finalize — clone from output RIA ==============================
 # if [[ -n "${OUTPUT}" ]]; then
 #     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
 # fi
 
+set +x
 echo ""
-echo "=== Done ==="
+echo "== Done =="
 echo "Babs project: ${WORKING_DIR}/babs-project"
 echo ""
 echo "Next (on cluster):"
