@@ -1,10 +1,6 @@
 #!/bin/bash
 # End-to-end mechababs test
 # Usage: bash run-e2e.sh
-#
-# On cluster: clone mechababs, run setup-dev.sh first, then this script.
-# Locally: runs through prepare + init + pull-container.
-#          submit/merge/finalize require SLURM.
 export PS4='> '
 set -x
 set -eu
@@ -17,42 +13,53 @@ source .venv/bin/activate
 DATASET_URL="https://github.com/ReproNim/ds000003-demo.git"
 PIPELINE="pipelines/mriqc-24.0.2.yaml"
 CLUSTER_CONFIG="clusters/dartmouth.yaml"
-WORKDIR="test-workdir"
-DERIVATIVE="derivative-datasets/ds000003-mriqc"
+PROJECT="processing/ds000003-mriqc"
 
-# Step 1: Prepare workdir
-mechababs prepare \
-    --raw-dataset-url "${DATASET_URL}" \
+# Read container info from pipeline config
+CONTAINER_NAME=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['name'])")
+CONTAINER_DS=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['repo'])")
+
+# Step 1: Merge configs
+mkdir -p "${PROJECT}"
+python3 merge_config.py \
     --pipeline "${PIPELINE}" \
-    --cluster-config "${CLUSTER_CONFIG}" \
-    --derivative-dataset-path "${WORKDIR}"
+    --cluster "${CLUSTER_CONFIG}" \
+    --dataset-url "${DATASET_URL}" \
+    > "${PROJECT}/babs-config.yaml"
 
 # Step 2: Init babs project
-mechababs init "${WORKDIR}"
+babs init "${PROJECT}/babs-project" \
+    --container-ds "${CONTAINER_DS}" \
+    --container-name "${CONTAINER_NAME}" \
+    --container-config "${PROJECT}/babs-config.yaml" \
+    --processing-level subject \
+    --queue slurm
 
 # Step 3: Pull container image
-mechababs pull-container "${WORKDIR}"
+# TODO: this should be a babs command
+datalad containers-list -d "${PROJECT}/babs-project/analysis" \
+    | grep "${CONTAINER_NAME}" \
+    | sed 's/.*-> //' \
+    | xargs -I {} datalad get -d "${PROJECT}/babs-project/analysis" "${PROJECT}/babs-project/analysis/{}"
 
 # Step 4: Submit jobs (requires SLURM)
-# mechababs submit "${WORKDIR}"
+# babs submit "${PROJECT}/babs-project"
 
-# Step 5: Wait for jobs to complete
-# babs status --wait  # TODO: not implemented yet
-# Or manually: cd ${WORKDIR}/babs-project && babs status
+# Step 5: Wait for jobs
+# babs status "${PROJECT}/babs-project"
 
 # Step 6: Merge results
-# mechababs merge "${WORKDIR}"
+# babs merge "${PROJECT}/babs-project"
 
-# Step 7: Finalize — create derivative dataset
-# mechababs finalize "${WORKDIR}" --output "${DERIVATIVE}"
+# Step 7: Finalize — clone from output RIA
+# DERIVATIVE="derivative-datasets/ds000003-mriqc"
+# datalad clone "ria+file://${PROJECT}/babs-project/output_ria#~data" "${DERIVATIVE}"
 
 echo ""
-echo "=== Prepare + Init + Pull-container complete ==="
-echo "Workdir: ${WORKDIR}"
-echo "Babs project: ${WORKDIR}/babs-project"
+echo "=== Done ==="
+echo "Project: ${PROJECT}/babs-project"
 echo ""
-echo "Next steps (on cluster):"
-echo "  mechababs submit ${WORKDIR}"
-echo "  # wait for jobs..."
-echo "  mechababs merge ${WORKDIR}"
-echo "  mechababs finalize ${WORKDIR} --output ${DERIVATIVE}"
+echo "Next (on cluster):"
+echo "  babs submit ${PROJECT}/babs-project"
+echo "  babs status ${PROJECT}/babs-project"
+echo "  babs merge ${PROJECT}/babs-project"

@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Merge pipeline + cluster + dataset configs into a babs container-config YAML.
+
+Usage:
+    python3 merge_config.py \\
+        --pipeline pipelines/mriqc-24.0.2.yaml \\
+        --cluster clusters/dartmouth.yaml \\
+        --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git
+
+Writes merged YAML to stdout.
+
+TODO: pyyaml round-trip mangles multiline block scalars (customized_text,
+script_preamble get extra blank lines). Doesn't break babs (also uses
+pyyaml to read) but looks ugly. See reference/babs_demo/babs_walkthrough.sh:128
+for Dorota's heredoc+sed approach.
+"""
+
+import argparse
+import sys
+
+import yaml
+
+
+def merge_babs_config(pipeline_config, cluster_config, dataset_url):
+    """Merge pipeline and cluster configs with dataset URL into a babs config dict."""
+    # Pipeline config (bids_app_args, singularity_args, zip_foldernames, etc.)
+    # Exclude 'container' — that's metadata for babs init args, not babs config
+    merged = {k: v for k, v in pipeline_config.items() if k != "container"}
+
+    # Cluster config (cluster_resources, script_preamble, job_compute_space)
+    for k, v in cluster_config.items():
+        merged[k] = v
+
+    # Input dataset
+    merged["input_datasets"] = {
+        "BIDS": {
+            "is_zipped": False,
+            "origin_url": dataset_url,
+            "path_in_babs": "inputs/data/BIDS",
+        }
+    }
+
+    return merged
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Merge babs config from pipeline + cluster + dataset")
+    parser.add_argument("--pipeline", required=True, help="Path to pipeline YAML config")
+    parser.add_argument("--cluster", required=True, help="Path to cluster YAML config")
+    parser.add_argument("--dataset-url", required=True, help="URL or path to input BIDS dataset")
+    args = parser.parse_args()
+
+    with open(args.pipeline) as f:
+        pipeline_config = yaml.safe_load(f)
+    with open(args.cluster) as f:
+        cluster_config = yaml.safe_load(f)
+
+    merged = merge_babs_config(pipeline_config, cluster_config, args.dataset_url)
+    yaml.dump(merged, sys.stdout, default_flow_style=False, sort_keys=False)
+
+
+if __name__ == "__main__":
+    main()
