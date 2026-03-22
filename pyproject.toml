@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mechababs"
+version = "0.1.0.dev0"
+description = "Automates end-to-end BIDS dataset processing using BABS"
+requires-python = ">=3.10"
+dependencies = [
+    "click",
+    "pyyaml",
+    "datalad",
+    "datalad-container",
+]
+
+[project.scripts]
+mechababs = "mechababs.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mechababs"]
