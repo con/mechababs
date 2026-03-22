@@ -174,7 +174,15 @@ def finalize_dataset(workdir, derivative_output_path):
     # Save provenance into the dataset
     _run(["datalad", "save", "-d", str(output_path), "-m", "mechababs finalize: add provenance"])
 
+    # TODO: push content to a persistent remote (GitHub sibling, server, etc.)
+    # before the workdir can be deleted. The derivative dataset's origin points
+    # to the output RIA inside the workdir — if the workdir is deleted, output
+    # content becomes unreachable. Either `datalad get` all outputs here, or
+    # add a sibling and `datalad push`.
+
     print(f"\nDerivative dataset ready at: {output_path}")
+    print(f"WARNING: output content still lives in {workdir}/babs-project/output_ria")
+    print(f"Do not delete the workdir until outputs are fetched or pushed elsewhere.")
 
 
 def _run(cmd, **kwargs):
