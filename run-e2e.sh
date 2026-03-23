@@ -91,4 +91,7 @@ babs merge "${WORKING_DIR}/babs-project"
 # ===== Step 7: Finalize — clone from output RIA ==============================
 if [[ -n "${OUTPUT}" ]]; then
     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
+    # TODO: get all outputs so derivative is self-contained and workdir can be deleted
+    # For now outputs are sub*.zip
+    datalad -C "${OUTPUT}" get sub*.zip
 fi
