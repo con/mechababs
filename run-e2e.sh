@@ -71,16 +71,16 @@ CONTAINER_IMAGE=$(datalad containers-list -d "${WORKING_DIR}/babs-project/analys
 datalad get -d "${WORKING_DIR}/babs-project/analysis" \
     "${WORKING_DIR}/babs-project/analysis/${CONTAINER_IMAGE}"
 
-# ===== Step 4: Submit jobs (requires SLURM) ==================================
-# babs submit "${WORKING_DIR}/babs-project"
+# ===== Step 4: Submit jobs =====================================================
+babs submit "${WORKING_DIR}/babs-project"
 
 # ===== Step 5: Wait for jobs ==================================================
-# babs status "${WORKING_DIR}/babs-project"
+babs status "${WORKING_DIR}/babs-project"
 
 # ===== Step 6: Merge results =================================================
-# babs merge "${WORKING_DIR}/babs-project"
+babs merge "${WORKING_DIR}/babs-project"
 
 # ===== Step 7: Finalize — clone from output RIA ==============================
-# if [[ -n "${OUTPUT}" ]]; then
-#     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
-# fi
+if [[ -n "${OUTPUT}" ]]; then
+    datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
+fi
