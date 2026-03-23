@@ -73,6 +73,7 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
 
 # ===== Step 4: Submit jobs =====================================================
 babs submit "${WORKING_DIR}/babs-project"
+# babs submit --count 2 "${WORKING_DIR}/babs-project"  # testing: limit to 2 subjects
 
 # ===== Step 5: Wait for jobs ==================================================
 babs status "${WORKING_DIR}/babs-project"
