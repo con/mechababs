@@ -60,7 +60,7 @@ babs init "${WORKING_DIR}/babs-project" \
     --container-ds "${CONTAINER_DS}" \
     --container-name "${CONTAINER_NAME}" \
     --container-config "${WORKING_DIR}/babs-config.yaml" \
-    --processing-level subject \
+    --processing-level session \
     --queue slurm
 
 # ===== Step 3: Pull container image ==========================================
@@ -72,8 +72,10 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
     "${WORKING_DIR}/babs-project/analysis/${CONTAINER_IMAGE}"
 
 # ===== Step 4: Submit jobs =====================================================
-babs submit "${WORKING_DIR}/babs-project"
-# babs submit --count 2 "${WORKING_DIR}/babs-project"  # testing: limit to 2 subjects
+# TODO: remove --select restriction, submit all subjects
+FIRST_SUB=$(sed -n '2p' "${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv" | cut -d, -f1)
+babs submit --select "${FIRST_SUB}" "${WORKING_DIR}/babs-project"
+# babs submit "${WORKING_DIR}/babs-project"
 
 # ===== Step 5: Wait for jobs ==================================================
 babs status "${WORKING_DIR}/babs-project"
