@@ -77,6 +77,13 @@ babs submit "${WORKING_DIR}/babs-project"
 # ===== Step 5: Wait for jobs ==================================================
 babs status "${WORKING_DIR}/babs-project"
 
+# TODO: replace with babs status --wait when available
+while squeue -u "$USER" -h | grep -q .; do
+    sleep 60
+done
+
+babs status "${WORKING_DIR}/babs-project"
+
 # ===== Step 6: Merge results =================================================
 babs merge "${WORKING_DIR}/babs-project"
 
