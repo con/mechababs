@@ -65,7 +65,9 @@ and `--raw-dataset-url` as separate inputs. It reads the pipeline
 and cluster YAMLs, composes them with the dataset URL, and writes
 the composed config into the project for provenance. Container
 info (name, repo URL) comes from the pipeline config — no separate
-`--container-ds` or `--container-name` flags.
+`--container-ds` or `--container-name` flags. `--queue` belongs in
+the cluster config. `--processing-level` belongs in the pipeline
+config.
 
 ### Input dataset defaults
 
