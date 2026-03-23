@@ -18,7 +18,7 @@ UPSTREAM_TSV = Path("OpenNeuroStudies/studies.tsv")
 
 def check_no_mriqc_repo(dataset_id):
     """Check that no mriqc derivative repo exists on GitHub."""
-    url = f"https://github.com/OpenNeuroDerivatives/{dataset_id}-mriqc.git"
+    url = f"git@github.com:OpenNeuroDerivatives/{dataset_id}-mriqc.git"
     result = subprocess.run(
         ["git", "ls-remote", url, "HEAD"],
         capture_output=True,
