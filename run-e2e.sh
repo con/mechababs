@@ -41,6 +41,12 @@ source .venv/bin/activate
 CONTAINER_NAME=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['name'])")
 CONTAINER_DS=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['repo'])")
 
+# Preflight check (only for OpenNeuroDatasets)
+DATASET_ID=$(basename "${DATASET_URL}" .git)
+if echo "${DATASET_URL}" | grep -q "OpenNeuroDatasets"; then
+    python3 preflight.py "${DATASET_ID}"
+fi
+
 # Resolve to absolute paths for RIA URLs
 WORKING_DIR="$(mkdir -p "${WORKING_DIR}" && cd "${WORKING_DIR}" && pwd)"
 
