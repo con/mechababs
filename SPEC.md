@@ -1,273 +1,105 @@
 # mechababs
 
-mechababs automates the end-to-end processing of BIDS datasets through
-containerized pipelines on HPC clusters. BABS implements the FAIRly Big
-workflow pattern; mechababs fully automates it — from environment setup
-through output validation and derivative registration into an
-OpenNeuroStudies superdataset.
+Automation glue for running BIDS apps across many datasets on HPC
+clusters using BABS. An execution is the composition of three things:
+a dataset, a pipeline, and a cluster config. mechababs merges them
+and drives babs.
 
-## Ecosystem
+Most of what mechababs does should eventually live in babs — see
+`babs_automation_gaps.md` for the roadmap.
 
-- **OpenNeuroStudies** — a datalad superdataset organizing BIDS datasets
-  and their derivatives as bids-study subdatasets. This is where inputs
-  come from and where validated derivatives are registered.
+## What it does
 
-- **BIDS study layout** — each dataset in the superdataset follows the
-  BIDS study structure: `sourcedata/raw/` contains the raw BIDS
-  subdataset, `derivatives/` contains derivative subdatasets organized
-  by pipeline and version.
+1. Merges pipeline YAML + cluster YAML + dataset URL into the
+   monolithic config that babs requires
+2. Calls `babs init` with the merged config
+3. Pulls the container image
+4. Calls `babs submit`, waits, `babs merge`
+5. Clones the derivative from the output RIA
 
-- **FAIRly Big framework** — a pattern for scalable, reproducible
-  neuroimaging analysis. BABS implements this pattern. mechababs is one
-  concrete automation built on BABS; others exist (e.g. Felix's
-  bash-based scaffolding that generates SLURM scripts directly —
-  similar goal, but complex and hard to extend).
-
-- **BABS** — the execution engine. Handles project scaffolding,
-  SLURM job generation, per-subject parallelization, and result merging.
-
-- **OpenNeuroDerivatives** — upstream mirrors where individual derivative
-  datasets can be pushed for public access.
-
-## Inputs and outputs
-
-**Inputs:**
-- A BIDS dataset (URL or path, datalad-compatible)
-- A pipeline definition (e.g. mriqc-24.0.2) — configured once per BIDS app.
-  Covers bids_app_args, singularity_args, container image, zip_foldernames.
-- A cluster configuration — configured once per cluster. Covers
-  cluster_resources, job_compute_space, and a base script_preamble.
-- Execution overrides (optional) — per-run adjustments that don't fit
-  cleanly into pipeline or cluster config. For example, additional
-  script_preamble lines for loading modules or tools needed between
-  steps, or custom resource limits for a particularly large dataset.
-
-**Outputs:**
-- A study dataset following the BIDS study layout, containing:
-  - The input BIDS dataset as a subdataset under `sourcedata/raw/`
-  - The babs analysis dataset under `analysis/`
-  - A `dataset_description.json` with `GeneratedBy` recording mechababs
-    and babs versions
-- This study dataset is registered into the superdataset and/or pushed
-  to configured remotes.
-
-## Walkthrough
-
-Concrete usage on a cluster:
+## Usage
 
 ```bash
-# One-time: set up venv with babs + deps
-./mechababs/steps/setup-env.sh \
-    --cluster-config mechababs/clusters/dartmouth.yaml
-
-# Prepare: create study dataset, clone data, template babs config
-./mechababs/steps/prepare.sh \
-    --dataset-url $BIDS_RAW_DATASET_URL \
-    --pipeline mechababs/pipelines/mriqc-24.0.2.yaml \
-    --cluster-config mechababs/clusters/dartmouth.yaml \
-    --study-dataset $STUDY_DATASET_PATH
-
-# Init babs inside the study dataset
-babs init $STUDY_DATASET_PATH \
-    --container-ds $STUDY_DATASET_PATH/containers \
-    --container-name bids-mriqc \
-    --container-config $STUDY_DATASET_PATH/babs-config.yaml \
-    --processing-level subject \
-    --queue slurm
+# One-time setup
+bash setup-dev.sh
 
 # Run
-cd $STUDY_DATASET_PATH
-babs check-setup --job-test
-babs submit
-babs status --wait     # with backoff
-babs merge
-
-# Finalize: move results off cluster
-./mechababs/steps/finalize.sh $STUDY_DATASET_PATH
+./run-e2e.sh \
+    --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
+    --pipeline pipelines/mriqc-24.0.2.yaml \
+    --cluster clusters/dartmouth.yaml \
+    --working-dir processing/ds000003-mriqc \
+    --output derivative-datasets/ds000003-mriqc
 ```
 
-### What prepare.sh does
+To process another dataset: change `--dataset-url`, `--working-dir`,
+and `--output`.
 
-1. Creates a new datalad dataset at `$STUDY_DATASET_PATH`
-2. Clones the input BIDS dataset as subdataset under `sourcedata/raw/`
-3. Creates or clones the container dataset under `containers/`
-4. Templates the babs container-config YAML from pipeline + cluster config
-5. Writes `dataset_description.json` with `GeneratedBy` (mechababs version,
-   babs version, pipeline, container image)
-6. Copies templated configs into `code/` for provenance
-7. `datalad save`
+## Files
 
-### What babs init does (current behavior)
-
-babs creates `analysis/`, `input_ria/`, and `output_ria/` inside the
-study dataset (its `project_root`). The study dataset's `.gitignore`
-excludes `input_ria/` and `output_ria/` — they are babs internals.
-
-### What finalize.sh does
-
-Configurable — default pushes to a datalad sibling. Could also:
-- rsync to a server
-- Open a PR against the superdataset or OpenNeuroDerivatives
-
-## Study dataset structure
-
-The study dataset is both the BIDS study and the babs project root:
-
-```
-ds000003-mriqc/                    # datalad dataset (study dataset)
-├── .gitignore                     # ignores input_ria/, output_ria/
-├── dataset_description.json       # GeneratedBy: mechababs + babs
-├── sourcedata/
-│   └── raw/                       # input BIDS (subdataset)
-├── containers/                    # container dataset (subdataset)
-├── code/
-│   ├── babs-config.yaml           # templated config (committed by prepare)
-│   └── pipeline.yaml              # copy of pipeline config used
-├── analysis/                      # babs-managed (subdataset)
-│   └── code/
-│       ├── participant_job.sh     # generated by babs
-│       ├── babs_proj_config.yaml  # generated by babs
-│       └── ...
-├── input_ria/                     # babs internal (gitignored)
-└── output_ria/                    # babs internal (gitignored)
-```
-
-## Processing Hub
-
-The user's working area on the cluster:
-
-```
-processing-hub/                    # working area (could be the superdataset)
-├── mechababs/                     # the tool (cloned once)
-│   ├── steps/                     # default step scripts
-│   ├── pipelines/                 # pipeline configs
-│   └── clusters/                  # cluster configs
-├── ds000003-mriqc/                # study dataset (created per run)
-├── ds006192-mriqc/                # another study dataset
-└── venv/                          # shared venv
-```
+- `merge_config.py` — merges pipeline + cluster + dataset URL into
+  babs container-config YAML. The only Python in the project.
+- `run-e2e.sh` — bash script that calls merge_config.py then babs
+  commands in sequence.
+- `setup-dev.sh` — creates venv with babs + pyyaml.
+- `pipelines/` — pipeline configs (one per BIDS app version).
+- `clusters/` — cluster configs (one per cluster).
 
 ## Configuration
 
-**Pipeline config** (`pipelines/mriqc-24.0.2.yaml`) — What to run.
-Written once per BIDS app version. Contains bids_app_args,
-singularity_args, container image URI, container name,
-zip_foldernames. Reusable across all datasets and clusters.
+**Pipeline config** — What to run. Contains container info (name,
+repo URL), bids_app_args, singularity_args, zip_foldernames,
+processing_level. Written once per BIDS app version.
 
-**Cluster config** (`clusters/dartmouth.yaml`) — Where to run.
-Written once per cluster. Contains cluster_resources,
-job_compute_space, script_preamble, workdir paths, module loads.
+**Cluster config** — Where to run. Contains cluster_resources,
+job_compute_space, script_preamble, queue. Written once per cluster.
 
-**Execution overrides** — Per-run adjustments passed as arguments
-or an optional override file. Anything that doesn't fit pipeline
-or cluster config: extra preamble lines, custom resource limits,
-non-default babs git ref for testing.
+**Dataset URL** — passed as `--dataset-url`. babs clones it.
 
-**Step overrides** — Any step script can be replaced with a custom
-implementation. The default scripts cover the common case; for
-anything unusual (custom publish target, special data preparation,
-non-standard container setup), provide your own bash.
+## Working directory layout
 
-## Output validation
+```
+processing/ds000003-mriqc/         # --working-dir
+├── babs-config.yaml               # merged config (merge_config.py output)
+└── babs-project/                  # created by babs init
+    ├── analysis/                  # babs-managed datalad dataset
+    │   └── code/
+    │       ├── participant_job.sh
+    │       └── ...
+    ├── input_ria/
+    └── output_ria/
+```
 
-Not a mechababs step — validation belongs downstream (superdataset
-CI or receiving tool). mechababs's job ends at finalize.
+## Derivative dataset
 
-When we contribute upstream to the superdataset or OpenNeuroDerivatives,
-designing those validation checks is in scope. Known failure modes
-to check for:
+After merge, `--output` clones the derivative from the output RIA:
 
-- Jobs "succeed" but outputs are incomplete (nipreps/mriqc#1389)
-- Expected files and directory structure not present
+```
+derivative-datasets/ds000003-mriqc/ # --output
+├── sub-02_mriqc-24-0-2.zip
+├── sub-13_mriqc-24-0-2.zip
+├── code/
+│   ├── participant_job.sh
+│   └── ...
+├── containers/
+└── inputs/data/BIDS/
+```
 
-## STAMPED properties
+## Ecosystem
 
-How the design satisfies each property:
+- **OpenNeuroStudies** — superdataset of BIDS studies and derivatives.
+  mechababs produces derivatives that feed into it.
+- **FAIRly Big framework** — the processing pattern. BABS implements
+  it; mechababs automates it.
+- **BABS** — execution engine. Project scaffolding, SLURM job
+  generation, per-subject parallelization, result merging.
+- **repronim/containers** — datalad dataset archiving built SIFs.
+  Referenced in pipeline configs.
+- **OpenNeuroDerivatives** — upstream mirrors for derivative datasets.
 
-**Self-contained** — The study dataset contains everything: input
-data reference (`sourcedata/raw/`), container reference, the babs
-analysis dataset, templated configs under `code/`, and
-`dataset_description.json` with GeneratedBy. Everything needed to
-understand how the derivative was produced is reachable from the
-study dataset itself.
+## Upstream
 
-**Tracked** — Datalad throughout. Every component is
-content-addressed. Babs records computational provenance in the
-analysis dataset. `dataset_description.json` records tool versions.
-
-**Actionable** — The templated configs and step scripts in the study
-dataset are the executable specification. The scripts that produced
-the derivative are present in the research object, not just
-documentation of what was done.
-
-**Modular** — Inputs, derivatives, pipeline configs, and cluster
-configs are all independent. Swap any component without touching
-the others. Each study dataset is its own datalad dataset.
-
-**Portable** — Cluster-specific config is isolated from pipeline
-config. Same pipeline configs work across clusters. Step scripts
-can be overridden per environment.
-
-**Ephemeral** — SLURM jobs run in scratch space and are disposed.
-The venv and working environment can be regenerated from the
-setup-env step — no dependence on persistent head-node state.
-
-**Distributable** — Study datasets can be pushed to
-OpenNeuroDerivatives or any datalad sibling. Container images are
-referenced by URI at minimum; for our use case, repronim/containers
-is cloned as a subdataset and archives the built SIFs, ensuring
-containers are persistently retrievable. The superdataset and all
-subdatasets can be hosted independently.
-
-## Boundaries
-
-**mechababs is:**
-- The automation that drives babs to process datasets
-- Pipeline and cluster configs
-- Step scripts (default implementations, overridable)
-
-**mechababs is not:**
-- The superdataset (that's OpenNeuroStudies)
-- BABS internals (project scaffolding, job generation, merging)
-- Output validation (downstream CI)
-- Metadata dashboards or query APIs
-- A replacement for babs — it automates babs, and shrinks as babs
-  grows
-
-## Upstream babs issues to file
-
-mechababs works around limitations in babs. These should be filed
-as upstream issues and removed from mechababs as babs adopts them:
-
-| mechababs workaround | Upstream babs issue |
-|---|---|
-| Template container-config from fragments | `babs init` accepts separate `--cluster-config` + `--pipeline-config` |
-| Clone input dataset in prepare step | `babs init --input-url <url>` clones it |
-| Create study dataset before babs init | `babs init` into an existing datalad dataset instead of creating `analysis/` |
-| .gitignore RIA dirs in study dataset | RIA store paths should be configurable (`--input-ria-path`, `--output-ria-path`) |
-| `analysis/` directory name is hardcoded | Make the analysis directory name configurable |
-| Write dataset_description.json manually | babs should generate `dataset_description.json` with `GeneratedBy` |
-| `babs status --wait` does not exist | Add `babs status --wait` with configurable backoff |
-
-## TODO: con-duct integration
-
-[con-duct](https://github.com/con/duct) captures execution metadata
-(runtime, memory, exit codes) and should wrap mechababs commands for
-richer provenance. However, `duct` + `datalad run` + babs's own
-commits creates a nesting problem — datalad doesn't wrap itself
-cleanly when inner tools also commit.
-
-Where `duct` can be used now (steps that don't commit):
-- `setup-env.sh`
-- `babs submit`, `babs status`, `babs merge`
-- `finalize.sh`
-
-Where `duct` matters most but needs design work:
-- `datalad containers-run` inside the SLURM jobs — this is the
-  actual computation and the most valuable place for execution
-  metadata
-- `prepare.sh` — does `datalad save`, so wrapping with
-  `datalad run` conflicts
-
-Upstream question: can datalad support nested provenance (outer
-`datalad run` that tolerates inner commits)?
+See `babs_automation_gaps.md` for what babs could do to make
+mechababs unnecessary. The key change: `babs init` should accept
+`--pipeline`, `--cluster-config`, and `--raw-dataset-url` as
+separate inputs and compose them internally.
