@@ -1,12 +1,55 @@
 # mechababs
 
-Automates end-to-end processing of BIDS datasets through containerized
-pipelines on HPC clusters using [BABS](https://github.com/PennLINC/babs).
+Automation glue for running BIDS apps across many datasets on HPC
+clusters using [BABS](https://github.com/PennLINC/babs).
+
+Starting with mriqc. The pipe will surely die — the goal is to run
+across many datasets, discover failure modes, and build robustness
+incrementally.
+
+## Usage
+
+```bash
+# One-time setup
+bash setup-dev.sh
+
+# Run mriqc on a dataset
+./run-e2e.sh \
+    --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
+    --pipeline pipelines/mriqc-24.0.2.yaml \
+    --cluster clusters/dartmouth.yaml \
+    --working-dir processing/ds000003-mriqc \
+    --output derivative-datasets/ds000003-mriqc
+```
+
+To process another dataset, change `--dataset-url`, `--working-dir`,
+and `--output`.
+
+### What it does
+
+1. `merge_config.py` merges pipeline + cluster + dataset URL into
+   the monolithic YAML that babs requires
+2. `babs init` scaffolds the project (clones data + containers)
+3. Pulls the container image (datalad get)
+4. `babs submit` → wait → `babs merge`
+5. Clones the derivative from the output RIA
+
+### Candidates
+
+`candidates.tsv` lists datasets from
+[OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies)
+that need mriqc. Run `python3 update_candidates.py` to refresh.
+
+`python3 preflight.py ds005256` checks a dataset before processing.
+
+## Docs
 
 - [SPEC.md](SPEC.md) — design spec
 - [CLAUDE.md](CLAUDE.md) — project conventions and reference repos
+- [babs_automation_gaps.md](babs_automation_gaps.md) — what babs
+  could do to make this tool unnecessary
 
-### Upstream
+## Upstream
 
 - [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies) — superdataset
 - [OpenNeuroDerivatives](https://github.com/OpenNeuroDerivatives/OpenNeuroDerivatives) — derivative mirrors
