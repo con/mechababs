@@ -3,3 +3,5 @@ design/*.png
 .venv/
 *.egg-info/
 __pycache__/
+processing/
+local-notes/
