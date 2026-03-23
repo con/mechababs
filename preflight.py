@@ -23,7 +23,6 @@ def check_no_mriqc_repo(dataset_id):
         ["git", "ls-remote", url, "HEAD"],
         capture_output=True,
         text=True,
-        env={"GIT_CONFIG_GLOBAL": "/dev/null", "PATH": "/usr/bin:/bin"},
     )
     if result.returncode == 0 and result.stdout.strip():
         return False, f"mriqc derivative already exists: {url}"
