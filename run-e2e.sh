@@ -41,6 +41,9 @@ source .venv/bin/activate
 CONTAINER_NAME=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['name'])")
 CONTAINER_DS=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}'))['container']['repo'])")
 
+# Resolve to absolute paths for RIA URLs
+WORKING_DIR="$(mkdir -p "${WORKING_DIR}" && cd "${WORKING_DIR}" && pwd)"
+
 export PS4='> '
 set -x
 
@@ -81,16 +84,3 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
 # if [[ -n "${OUTPUT}" ]]; then
 #     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
 # fi
-
-set +x
-echo ""
-echo "== Done =="
-echo "Babs project: ${WORKING_DIR}/babs-project"
-echo ""
-echo "Next (on cluster):"
-echo "  babs submit ${WORKING_DIR}/babs-project"
-echo "  babs status ${WORKING_DIR}/babs-project"
-echo "  babs merge ${WORKING_DIR}/babs-project"
-if [[ -n "${OUTPUT}" ]]; then
-    echo "  datalad clone ria+file://${WORKING_DIR}/babs-project/output_ria#~data ${OUTPUT}"
-fi
