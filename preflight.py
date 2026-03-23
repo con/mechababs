@@ -25,7 +25,18 @@ def check_no_mriqc_repo(dataset_id):
     return True, "no mriqc derivative repo found"
 
 
+def check_terminal_multiplexer(dataset_id):
+    """Check that we're running inside screen or tmux."""
+    import os
+    if os.environ.get("TMUX") or os.environ.get("STY"):
+        return True, "running in tmux/screen"
+    if os.environ.get("TERM", "").startswith("screen"):
+        return True, "running in screen"
+    return False, "not running in screen or tmux — long-running jobs may be killed on disconnect"
+
+
 CHECKS = [
+    ("terminal multiplexer", check_terminal_multiplexer),
     ("mriqc derivative absent", check_no_mriqc_repo),
 ]
 
