@@ -77,6 +77,15 @@ Proposal: sensible defaults configurable via `babs init` args or
 a babs config file: `--path-in-babs` (default `inputs/data/BIDS`),
 `--zipped-inputs` (default false).
 
+### `--select` subject at session-level processing
+
+Today: `babs submit --select sub-XX` at session-level processing
+fails with `KeyError: "['ses_id'] not in index"`. Must enumerate
+all sessions explicitly: `--select sub-XX ses-01 --select sub-XX ses-02 ...`
+
+Proposal: `--select sub-XX` should submit all sessions for that
+subject automatically.
+
 ### Project root as the dataset
 
 Today: babs creates an untracked project directory containing

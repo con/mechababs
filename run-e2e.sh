@@ -79,8 +79,10 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
 
 # ===== Step 4: Submit jobs =====================================================
 # TODO: remove --select restriction, submit all subjects
-FIRST_SUB=$(sed -n '2p' "${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv" | cut -d, -f1)
-babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}"
+INCLUSION_CSV="${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv"
+FIRST_SUB=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f1)
+FIRST_SES=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f2)
+babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}" "${FIRST_SES}"
 # babs submit "${WORKING_DIR}/babs-project"
 
 # ===== Step 5: Wait for jobs ==================================================
