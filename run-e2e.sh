@@ -104,11 +104,12 @@ if [[ -n "${OUTPUT}" ]]; then
     # TODO: get all outputs so derivative is self-contained and workdir can be deleted
     # For now outputs are sub*.zip
     datalad -C "${OUTPUT}" get sub*.zip
-    # Unzip results
+    # Unzip results into derivatives/
+    mkdir -p "${OUTPUT}/derivatives"
     for zipfile in "${OUTPUT}"/sub*.zip; do
         datalad -C "${OUTPUT}" run -m "Unzip $(basename "${zipfile}")" \
             --input "$(basename "${zipfile}")" \
-            --output "$(basename "${zipfile}" .zip)" \
-            -- unzip -o "$(basename "${zipfile}")" -d .
+            --output "derivatives" \
+            -- unzip -o "$(basename "${zipfile}")" -d derivatives
     done
 fi
