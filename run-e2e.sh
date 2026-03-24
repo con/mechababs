@@ -103,13 +103,13 @@ if [[ -n "${OUTPUT}" ]]; then
     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
     # TODO: get all outputs so derivative is self-contained and workdir can be deleted
     # For now outputs are sub*.zip
-    datalad -C "${OUTPUT}" get sub*.zip
+    ( cd "${OUTPUT}" && datalad get sub*.zip )
     # Unzip results into derivatives/
     mkdir -p "${OUTPUT}/derivatives"
     for zipfile in "${OUTPUT}"/sub*.zip; do
-        datalad -C "${OUTPUT}" run -m "Unzip $(basename "${zipfile}")" \
+        ( cd "${OUTPUT}" && datalad run -m "Unzip $(basename "${zipfile}")" \
             --input "$(basename "${zipfile}")" \
             --output "derivatives" \
-            -- unzip -o "$(basename "${zipfile}")" -d derivatives
+            -- unzip -o "$(basename "${zipfile}")" -d derivatives )
     done
 fi
