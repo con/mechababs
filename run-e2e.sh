@@ -18,6 +18,7 @@ PIPELINE=""
 CLUSTER_CONFIG=""
 WORKING_DIR=""
 OUTPUT=""
+PROCESSING_LEVEL="subject"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -26,12 +27,13 @@ while [[ $# -gt 0 ]]; do
         --cluster) CLUSTER_CONFIG="$2"; shift 2 ;;
         --working-dir) WORKING_DIR="$2"; shift 2 ;;
         --output) OUTPUT="$2"; shift 2 ;;
+        --processing-level) PROCESSING_LEVEL="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
 if [[ -z "${DATASET_URL}" || -z "${PIPELINE}" || -z "${CLUSTER_CONFIG}" || -z "${WORKING_DIR}" ]]; then
-    echo "Usage: $0 --dataset-url URL --pipeline PATH --cluster PATH --working-dir PATH [--output PATH]"
+    echo "Usage: $0 --dataset-url URL --pipeline PATH --cluster PATH --working-dir PATH [--output PATH] [--processing-level subject|session]"
     exit 1
 fi
 
@@ -66,7 +68,7 @@ babs init "${WORKING_DIR}/babs-project" \
     --container-ds "${CONTAINER_DS}" \
     --container-name "${CONTAINER_NAME}" \
     --container-config "${WORKING_DIR}/babs-config.yaml" \
-    --processing-level session \
+    --processing-level "${PROCESSING_LEVEL}" \
     --queue slurm
 
 # ===== Step 3: Pull container image ==========================================
@@ -81,8 +83,12 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
 # TODO: remove --select restriction, submit all subjects
 INCLUSION_CSV="${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv"
 FIRST_SUB=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f1)
-FIRST_SES=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f2)
-babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}" "${FIRST_SES}"
+if [ "${PROCESSING_LEVEL}" = "session" ]; then
+    FIRST_SES=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f2)
+    babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}" "${FIRST_SES}"
+else  # subject-level
+    babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}"
+fi
 # babs submit "${WORKING_DIR}/babs-project"
 
 # ===== Step 5: Wait for jobs ==================================================
