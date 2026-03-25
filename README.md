@@ -15,11 +15,13 @@ bash setup-dev.sh
 
 # Run mriqc on a dataset
 ./run-e2e.sh \
-    --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
+    --dataset-url https://github.com/OpenNeuroDatasets/ds000113.git \
     --pipeline pipelines/mriqc-24.0.2.yaml \
     --cluster clusters/dartmouth.yaml \
-    --working-dir processing/ds000003-mriqc \
-    --output derivative-datasets/ds000003-mriqc
+    --working-dir processing/ds000113-mriqc \
+    --output derivative-datasets/ds000113-mriqc
+
+# For datasets with sessions, add --processing-level session
 ```
 
 To process another dataset, change `--dataset-url`, `--working-dir`,
@@ -27,12 +29,13 @@ and `--output`.
 
 ### What it does
 
-1. `merge_config.py` merges pipeline + cluster + dataset URL into
+1. Preflight check (verifies no derivative exists upstream)
+2. `merge_config.py` merges pipeline + cluster + dataset URL into
    the monolithic YAML that babs requires
-2. `babs init` scaffolds the project (clones data + containers)
-3. Pulls the container image (datalad get)
-4. `babs submit` → wait → `babs merge`
-5. Clones the derivative from the output RIA
+3. `babs init` scaffolds the project (clones data + containers)
+4. Pulls the container image from local repronim/containers
+5. `babs submit` → wait → `babs merge`
+6. Clones derivative from output RIA, unzips into `derivatives/`
 
 ### Candidates
 

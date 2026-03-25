@@ -6,81 +6,94 @@ a dataset, a pipeline, and a cluster config. mechababs merges them
 and drives babs.
 
 Most of what mechababs does should eventually live in babs — see
-`babs_automation_gaps.md` for the roadmap.
+`babs_automation_gaps.md` for proposed upstream changes.
 
 ## What it does
 
-1. Merges pipeline YAML + cluster YAML + dataset URL into the
+1. Preflight check (verifies no derivative already exists upstream)
+2. Merges pipeline YAML + cluster YAML + dataset URL into the
    monolithic config that babs requires
-2. Calls `babs init` with the merged config
-3. Pulls the container image
-4. Calls `babs submit`, waits, `babs merge`
-5. Clones the derivative from the output RIA
+3. Calls `babs init` with the merged config
+4. Pulls the container image from local repronim/containers clone
+5. Calls `babs submit`, waits for SLURM jobs, `babs merge`
+6. Clones the derivative from the output RIA and unzips results
 
 ## Usage
 
 ```bash
-# One-time setup
+# One-time setup (venv + babs + repronim/containers with mriqc SIF)
 bash setup-dev.sh
 
-# Run
+# Run mriqc on a dataset (subject-level, the default)
 ./run-e2e.sh \
-    --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
+    --dataset-url https://github.com/OpenNeuroDatasets/ds000113.git \
     --pipeline pipelines/mriqc-24.0.2.yaml \
     --cluster clusters/dartmouth.yaml \
-    --working-dir processing/ds000003-mriqc \
-    --output derivative-datasets/ds000003-mriqc
-```
+    --working-dir processing/ds000113-mriqc \
+    --output derivative-datasets/ds000113-mriqc
 
-To process another dataset: change `--dataset-url`, `--working-dir`,
-and `--output`.
+# For datasets with sessions
+./run-e2e.sh \
+    --dataset-url https://github.com/OpenNeuroDatasets/ds005256.git \
+    --pipeline pipelines/mriqc-24.0.2.yaml \
+    --cluster clusters/dartmouth.yaml \
+    --working-dir processing/ds005256-mriqc \
+    --output derivative-datasets/ds005256-mriqc \
+    --processing-level session
+```
 
 ## Files
 
+- `run-e2e.sh` — the workflow: preflight, merge config, babs init,
+  pull container, submit, wait, merge, finalize.
 - `merge_config.py` — merges pipeline + cluster + dataset URL into
-  babs container-config YAML. The only Python in the project.
-- `run-e2e.sh` — bash script that calls merge_config.py then babs
-  commands in sequence.
-- `setup-dev.sh` — creates venv with babs + pyyaml.
+  babs container-config YAML. The only Python needed.
+- `setup-dev.sh` — creates venv, installs babs + deps, clones
+  repronim/containers, gets mriqc SIF.
+- `preflight.py` — checks tmux/screen, verifies no mriqc derivative
+  exists upstream.
+- `candidates.tsv` — datasets needing mriqc (from OpenNeuroStudies).
+- `update_candidates.py` — refreshes candidates from studies.tsv.
 - `pipelines/` — pipeline configs (one per BIDS app version).
 - `clusters/` — cluster configs (one per cluster).
 
 ## Configuration
 
 **Pipeline config** — What to run. Contains container info (name,
-repo URL), bids_app_args, singularity_args, zip_foldernames,
-processing_level. Written once per BIDS app version.
+local repo path), bids_app_args, singularity_args, zip_foldernames.
+Written once per BIDS app version.
 
 **Cluster config** — Where to run. Contains cluster_resources,
-job_compute_space, script_preamble, queue. Written once per cluster.
+job_compute_space, script_preamble. Written once per cluster.
 
-**Dataset URL** — passed as `--dataset-url`. babs clones it.
+**Execution args** — `--dataset-url`, `--processing-level`
+(subject or session), `--working-dir`, `--output`.
 
 ## Working directory layout
 
 ```
-processing/ds000003-mriqc/         # --working-dir
-├── babs-config.yaml               # merged config (merge_config.py output)
+processing/ds000113-mriqc/         # --working-dir (ephemeral)
+├── babs-config.yaml               # merged config
+├── pipeline.yaml                  # copy for provenance
+├── cluster.yaml                   # copy for provenance
 └── babs-project/                  # created by babs init
     ├── analysis/                  # babs-managed datalad dataset
-    │   └── code/
-    │       ├── participant_job.sh
-    │       └── ...
     ├── input_ria/
     └── output_ria/
 ```
 
 ## Derivative dataset
 
-After merge, `--output` clones the derivative from the output RIA:
+After merge + finalize:
 
 ```
-derivative-datasets/ds000003-mriqc/ # --output
-├── sub-02_mriqc-24-0-2.zip
-├── sub-13_mriqc-24-0-2.zip
+derivative-datasets/ds000113-mriqc/ # --output
+├── sub-*_mriqc-24-0-2.zip         # raw zips from babs
+├── derivatives/mriqc/              # unzipped results
+│   ├── dataset_description.json
+│   ├── sub-*/
+│   └── *.html
 ├── code/
-│   ├── participant_job.sh
-│   └── ...
 ├── containers/
 └── inputs/data/BIDS/
 ```
@@ -88,18 +101,13 @@ derivative-datasets/ds000003-mriqc/ # --output
 ## Ecosystem
 
 - **OpenNeuroStudies** — superdataset of BIDS studies and derivatives.
-  mechababs produces derivatives that feed into it.
 - **FAIRly Big framework** — the processing pattern. BABS implements
   it; mechababs automates it.
-- **BABS** — execution engine. Project scaffolding, SLURM job
-  generation, per-subject parallelization, result merging.
-- **repronim/containers** — datalad dataset archiving built SIFs.
-  Referenced in pipeline configs.
+- **BABS** — execution engine (using `add-containers-run-v2` branch).
+- **repronim/containers** — datalad dataset with built SIFs.
 - **OpenNeuroDerivatives** — upstream mirrors for derivative datasets.
 
 ## Upstream
 
 See `babs_automation_gaps.md` for what babs could do to make
-mechababs unnecessary. The key change: `babs init` should accept
-`--pipeline`, `--cluster-config`, and `--raw-dataset-url` as
-separate inputs and compose them internally.
+mechababs unnecessary.

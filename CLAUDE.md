@@ -1,7 +1,8 @@
 # mechababs
 
-Automation for processing BIDS datasets through containerized pipelines
-on HPC clusters using BABS. See [SPEC.md](SPEC.md) for full design.
+Automation glue for running BIDS apps across many datasets on HPC
+clusters using BABS. See [SPEC.md](SPEC.md) for design,
+[babs_automation_gaps.md](babs_automation_gaps.md) for proposed upstream changes.
 
 ## Principles
 
@@ -31,23 +32,26 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 | `fairly-big-processing-workflow/` | https://github.com/psychoinformatics-de/fairly-big-processing-workflow | The FAIRly Big pattern that BABS implements |
 | `containers/` | https://github.com/ReproNim/containers | ReproNim container dataset — archives built SIFs |
 
-## Design artifacts
-
-- `design/` — diagrams and spec (source of truth)
-- `design/ideas/` — earlier explorations, not canon but useful for context
-- `issues/` — temporary, to be transferred to GitHub Issues
-
 ## Repo layout
 
 ```
 mechababs/
-├── CLAUDE.md          # this file
-├── SPEC.md            # design spec (source of truth)
-├── design/            # diagrams, design artifacts
-│   └── ideas/         # earlier explorations
-├── issues/            # temporary issue tracking
-├── pipelines/         # pipeline configs (one per BIDS app version)
-├── clusters/          # cluster configs (one per cluster)
-├── steps/             # default step scripts
-└── reference/         # cloned upstream repos (gitignored)
+├── run-e2e.sh             # the workflow script
+├── merge_config.py        # YAML merge (only Python needed)
+├── setup-dev.sh           # venv + babs + repronim/containers
+├── preflight.py           # pre-run checks
+├── update_candidates.py   # refresh candidate list from studies.tsv
+├── candidates.tsv         # datasets to process
+├── pipelines/             # pipeline configs
+├── clusters/              # cluster configs
+├── design/                # diagrams, findings, ideas
+├── babs_automation_gaps.md
+├── SPEC.md
+├── README.md
+├── CLAUDE.md              # this file
+├── repronim-containers/   # local container clone (gitignored)
+├── processing/            # working dirs (gitignored)
+├── derivative-datasets/   # output derivatives
+├── local-notes/           # local scratch (gitignored)
+└── reference/             # cloned upstream repos (gitignored)
 ```
