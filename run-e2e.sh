@@ -7,7 +7,8 @@
 #       --pipeline pipelines/mriqc-24.0.2.yaml \
 #       --cluster clusters/dartmouth.yaml \
 #       --working-dir processing/ds000003-mriqc
-set -eu
+export PS4='> '
+set -eux
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "${SCRIPT_DIR}"
@@ -51,9 +52,6 @@ fi
 
 # Resolve to absolute paths for RIA URLs
 WORKING_DIR="$(mkdir -p "${WORKING_DIR}" && cd "${WORKING_DIR}" && pwd)"
-
-export PS4='> '
-set -x
 
 # ===== Step 1: Merge configs =================================================
 mkdir -p "${WORKING_DIR}"
