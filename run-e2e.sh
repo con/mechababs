@@ -105,15 +105,12 @@ babs merge "${WORKING_DIR}/babs-project"
 # ===== Step 7: Finalize — clone from output RIA ==============================
 if [[ -n "${OUTPUT}" ]]; then
     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
-    # TODO: get all outputs so derivative is self-contained and workdir can be deleted
-    # For now outputs are sub*.zip
+    # Remove broken remote that poisons add-archive-content
+    # (see datalad BUG-add-archive-content-one-file-per-run.md)
+    ( cd "${OUTPUT}" && git remote remove origin-2 2>/dev/null || true )
+    # Extract archives with datalad add-archive-content
     ( cd "${OUTPUT}" && datalad get sub*.zip )
-    # Unzip results into derivatives/
-    mkdir -p "${OUTPUT}/derivatives"
-    for zipfile in "${OUTPUT}"/sub*.zip; do
-        ( cd "${OUTPUT}" && datalad run -m "Unzip $(basename "${zipfile}")" \
-            --input "$(basename "${zipfile}")" \
-            --output "derivatives" \
-            -- unzip -o "$(basename "${zipfile}")" -d derivatives )
-    done
+    ( cd "${OUTPUT}" && datalad run -m "Extracting all .zip files" \
+        --input '*.zip' \
+        -- 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
 fi
