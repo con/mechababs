@@ -105,9 +105,6 @@ babs merge "${WORKING_DIR}/babs-project"
 # ===== Step 7: Finalize — clone from output RIA ==============================
 if [[ -n "${OUTPUT}" ]]; then
     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
-    # Remove broken remote that poisons add-archive-content
-    # (see datalad BUG-add-archive-content-one-file-per-run.md)
-    ( cd "${OUTPUT}" && git remote remove origin-2 2>/dev/null || true )
     # Extract archives with datalad add-archive-content
     ( cd "${OUTPUT}" && datalad get sub*.zip )
     ( cd "${OUTPUT}" && datalad run -m "Extracting all .zip files" \
