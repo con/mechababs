@@ -109,5 +109,5 @@ if [[ -n "${OUTPUT}" ]]; then
     ( cd "${OUTPUT}" && datalad get sub*.zip )
     ( cd "${OUTPUT}" && datalad run -m "Extracting all .zip files" \
         --input '*.zip' \
-        -- 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
+        -- bash -c 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
 fi
