@@ -1,0 +1,1581 @@
+> mkdir -p /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc
+> python3 merge_config.py --pipeline pipelines/mriqc-24.0.2.yaml --cluster clusters/dartmouth.yaml --dataset-url https://github.com/OpenNeuroDatasets/ds001499.git
+> babs init /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project --container-ds repronim-containers --container-name bids-mriqc --container-config /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-config.yaml --processing-level subject --queue slurm
+[INFO] Running procedure cfg_yoda 
+[INFO] == Command start (output follows) ===== 
+[INFO] == Command exit (modification check follows) ===== 
+[INFO] Creating a new RIA store at /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/output_ria 
+[INFO] create siblings 'output' and 'output-storage' ... 
+[INFO] Fetching updates for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis) 
+[INFO] Configure additional publication dependency on "output-storage" 
+[INFO] Creating a new RIA store at /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/input_ria 
+[INFO] create sibling 'input' ... 
+[INFO] Fetching updates for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis) 
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/inputs/data/BIDS 
+[INFO] Attempting to clone from https://github.com/OpenNeuroDatasets/ds001499.git to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/inputs/data/BIDS 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start receiving objects 
+[INFO] Start resolving deltas 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/inputs/data/BIDS) 
+[INFO] Remote origin not usable by git-annex; setting annex-ignore 
+[INFO] https://github.com/OpenNeuroDatasets/ds001499.git/config download failed: Not Found 
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/containers 
+[INFO] Attempting to clone from repronim-containers to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/containers 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/containers) 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Transfer data 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis) 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Transfer data 
+[INFO] Transfer data 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis) 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis) 
+>> datalad containers-list -d /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis
+>> sed 's/.*-> //'
+>> grep bids-mriqc
+> CONTAINER_IMAGE=containers/images/bids/bids-mriqc--24.0.2.sif
+> datalad get -d /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/containers/images/bids/bids-mriqc--24.0.2.sif
+> INCLUSION_CSV=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/code/processing_inclusion.csv
+>> sed -n 2p /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/analysis/code/processing_inclusion.csv
+>> cut -d, -f1
+> FIRST_SUB=sub-CSI1
+> '[' subject = session ']'
+> babs submit /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project --select sub-CSI1
+> babs status /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> grep -q .
+> squeue -u f006rq8 -h
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> grep -q .
+> squeue -u f006rq8 -h
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> sleep 60
+> squeue -u f006rq8 -h
+> grep -q .
+> babs status /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project
+> babs merge /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/merge_ds 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/output_ria/aeb/f5f5d-c984-4c06-a842-e82552c881ba to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/merge_ds 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/merge_ds) 
+[INFO] Configure additional publication dependency on "output-storage" 
+To /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/output_ria/aeb/f5f5d-c984-4c06-a842-e82552c881ba
+   3d13b0d..af2e2fe  master -> master
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/merge_ds) 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/merge_ds) 
+> [[ -n derivative-datasets/ds001499-mriqc ]]
+> datalad clone ria+file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/output_ria#~data derivative-datasets/ds001499-mriqc
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds001499-mriqc 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds001499-mriqc/babs-project/output_ria/alias/data to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds001499-mriqc 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds001499-mriqc) 
+[INFO] Configure additional publication dependency on "output-storage" 
+> cd derivative-datasets/ds001499-mriqc
+> datalad get sub-CSI1_mriqc-24-0-2.zip
+> mkdir -p derivative-datasets/ds001499-mriqc/derivatives
+> for zipfile in "${OUTPUT}"/sub*.zip
+> cd derivative-datasets/ds001499-mriqc
+>> basename derivative-datasets/ds001499-mriqc/sub-CSI1_mriqc-24-0-2.zip
+>> basename derivative-datasets/ds001499-mriqc/sub-CSI1_mriqc-24-0-2.zip
+>> basename derivative-datasets/ds001499-mriqc/sub-CSI1_mriqc-24-0-2.zip
+> datalad run -m 'Unzip sub-CSI1_mriqc-24-0-2.zip' --input sub-CSI1_mriqc-24-0-2.zip --output derivatives -- unzip -o sub-CSI1_mriqc-24-0-2.zip -d derivatives
+[INFO] Making sure inputs are available (this may take some time) 
+[INFO] == Command start (output follows) ===== 
+[INFO] == Command exit (modification check follows) ===== 
