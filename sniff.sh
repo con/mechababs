@@ -35,6 +35,7 @@ fi
 min_ses="" max_ses=""
 min_scans="" max_scans=""
 min_bytes="" max_bytes=""
+first_sub=""
 
 for sub in "${subjects[@]}"; do
     shopt -s nullglob
@@ -56,6 +57,13 @@ for sub in "${subjects[@]}"; do
             total_bytes=$(( total_bytes + $(stat -c%s "$f") ))
         fi
     done
+
+    if [[ -z "$first_sub" ]]; then
+        first_sub="$(basename "$sub")"
+        first_n_ses=$n_ses
+        first_n_scans=$n_scans
+        first_bytes=$total_bytes
+    fi
 
     [[ -z "$min_ses" ]] || (( n_ses < min_ses )) && min_ses=$n_ses
     [[ -z "$max_ses" ]] || (( n_ses > max_ses )) && max_ses=$n_ses
@@ -92,3 +100,8 @@ if [[ "$min_bytes" == "$max_bytes" ]]; then
 else
     echo "Scan size per subject: $(fmt_size "$min_bytes") - $(fmt_size "$max_bytes")"
 fi
+echo ""
+echo "First subject: $first_sub"
+echo "  Sessions: $first_n_ses"
+echo "  Scans: $first_n_scans"
+echo "  Total size: $(fmt_size "$first_bytes")"
