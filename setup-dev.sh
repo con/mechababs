@@ -14,8 +14,8 @@ source "${VENV}/bin/activate"
 # Install dependencies
 uv pip install pyyaml datalad datalad-container
 
-# Install babs from our fork (containers-run branch)
-uv pip install "git+https://github.com/asmacdo/babs.git@add-containers-run-v2"
+# Install babs from our fork (mechababs-working-branch)
+uv pip install "git+https://github.com/asmacdo/babs.git@mechababs-working-branch"
 
 # Clone repronim/containers and get mriqc SIF (idempotent)
 CONTAINERS_DS="${SCRIPT_DIR}/repronim-containers"
