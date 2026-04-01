@@ -90,7 +90,7 @@ fi
 # babs submit "${WORKING_DIR}/babs-project"
 
 # ===== Step 5: Wait for jobs ==================================================
-babs status --wait
+babs status --wait "${WORKING_DIR}/babs-project"
 
 # ===== Step 6: Merge results =================================================
 babs merge "${WORKING_DIR}/babs-project"
