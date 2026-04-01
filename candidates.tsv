@@ -1,15 +1,15 @@
 dataset_id	status	issue	notes
-ds000113	todo		
-ds000221	todo		
-ds001499	todo		
-ds002766	todo		
-ds003643	todo		
-ds003798	todo		
-ds004636	todo		
+ds000113	1sub-done		
+ds000221	1sub-done		321 subjects! good scale test 
+ds001499	1sub-done		
+ds002766	1sub-1ses-done		
+ds003643	1sub-done		
+ds003798	1sub-1ses-done		
+ds004636	1sub-done		
 ds004884	todo		
 ds005165	todo		
 ds005237	todo		
-ds005256	todo		
+ds005256	1sub-1sess-done		
 ds005747	todo		
 ds005752	todo		
 ds005896	todo		
