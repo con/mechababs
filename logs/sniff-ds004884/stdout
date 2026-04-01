@@ -1,0 +1,13 @@
+datalad 1.3.4
+install(ok): /scratch/f006rq8/sniff-yxh0wV1/ds (dataset)
+
+Dataset: ds004884
+Subjects: 230
+Sessions per subject: 1-30
+Scans per subject: 2-125
+Scan size per subject: 6.8 MB - 5.9 GB
+
+First subject: sub-M2001
+  Sessions: 7
+  Scans: 12
+  Total size: 236.9 MB

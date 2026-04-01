@@ -1,0 +1,13 @@
+datalad 1.3.4
+install(ok): /scratch/f006rq8/sniff-twejE2g/ds (dataset)
+
+Dataset: ds006623
+Subjects: 26
+Sessions per subject: 0
+Scans per subject: 5-7
+Scan size per subject: 824.7 MB - 1.4 GB
+
+First subject: sub-02
+  Sessions: 0
+  Scans: 7
+  Total size: 1.1 GB

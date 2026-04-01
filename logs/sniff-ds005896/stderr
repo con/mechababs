@@ -1,0 +1,32 @@
+> set -eu
+> datalad --version
+> input=https://github.com/OpenNeuroDatasets/ds005896
+> tmpdir=
+> trap '[[ -n "$tmpdir" ]] && /usr/bin/rm -rf "$tmpdir"' EXIT
+> [[ https://github.com/OpenNeuroDatasets/ds005896 =~ ^https?:// ]]
+>> mktemp -d /scratch/f006rq8/sniff-XXXXXXX
+> tmpdir=/scratch/f006rq8/sniff-CqjrovF
+> datalad clone https://github.com/OpenNeuroDatasets/ds005896 /scratch/f006rq8/sniff-CqjrovF/ds
+[INFO] Attempting a clone into /scratch/f006rq8/sniff-CqjrovF/ds 
+[INFO] Attempting to clone from https://github.com/OpenNeuroDatasets/ds005896 to /scratch/f006rq8/sniff-CqjrovF/ds 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start receiving objects 
+[INFO] Start resolving deltas 
+[INFO] Completed clone attempts for Dataset(/scratch/f006rq8/sniff-CqjrovF/ds) 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: /scratch/f006rq8/sniff-CqjrovF/ds/.git/annex/misctmp/gaprobe
+| Failed to instantiate ACL.
+| An error occurred during recursive file tree walk. 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Failed while inserting ACE(s).
+| An error occurred during recursive file tree walk. 
+[INFO] Remote origin not usable by git-annex; setting annex-ignore 
+[INFO] https://github.com/OpenNeuroDatasets/ds005896/config download failed: Not Found 
+[INFO] Cannot run git-annex-remote-openneuro -- It is not installed in PATH (/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex.10.20240831+git21-gd717e9aca0/usr/lib/git-annex.linux/git-core:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex.10.20240831+git21-gd717e9aca0/usr/lib/git-annex.linux/bin:/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin:/dartfs-hpc/rc/home/8/f006rq8/.local/bin:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex/usr/lib/git-annex.linux/:/optnfs/common/miniconda3/condabin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex.10.20240831+git21-gd717e9aca0/usr/lib/git-annex.linux/extra) 
+[INFO] Cannot run git-annex-remote-openneuro -- It is not installed in PATH (/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex.10.20240831+git21-gd717e9aca0/usr/lib/git-annex.linux/git-core:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex.10.20240831+git21-gd717e9aca0/usr/lib/git-annex.linux/bin:/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin:/dartfs-hpc/rc/home/8/f006rq8/.local/bin:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex/usr/lib/git-annex.linux/:/optnfs/common/miniconda3/condabin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex.10.20240831+git21-gd717e9aca0/usr/lib/git-annex.linux/extra) 
+[INFO] unable to use external special remote git-annex-remote-openneuro 
+> ds=/scratch/f006rq8/sniff-CqjrovF/ds
+> set +x
