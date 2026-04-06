@@ -101,7 +101,7 @@ babs merge "${WORKING_DIR}/babs-project"
 if [[ -n "${OUTPUT}" ]]; then
     datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
     # Extract archives with datalad add-archive-content
-    ( cd "${OUTPUT}" && datalad get sub*.zip )
+    ( cd "${OUTPUT}" && datalad get sub*.zip logs/duct* )
     ( cd "${OUTPUT}" && datalad run -m "Extracting all .zip files" \
         --input '*.zip' \
         -- bash -c 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
