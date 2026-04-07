@@ -94,15 +94,5 @@ babs submit "${WORKING_DIR}/babs-project"
 # ===== Step 5: Wait for jobs ==================================================
 babs status --wait "${WORKING_DIR}/babs-project"
 
-# ===== Step 6: Merge results =================================================
-babs merge "${WORKING_DIR}/babs-project"
-
-# ===== Step 7: Finalize — clone from output RIA ==============================
-if [[ -n "${OUTPUT}" ]]; then
-    datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPUT}"
-    # Extract archives with datalad add-archive-content
-    ( cd "${OUTPUT}" && datalad get sub*.zip logs/duct* )
-    ( cd "${OUTPUT}" && datalad run -m "Extracting all .zip files" \
-        --input '*.zip' \
-        -- bash -c 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
-fi
+# ===== Step 6: Finalize =====================================================
+bash finalize.sh --working-dir "${WORKING_DIR}" --output "${OUTPUT}"
