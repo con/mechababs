@@ -3,41 +3,61 @@
 Automation glue for running BIDS apps across many datasets on HPC
 clusters using [BABS](https://github.com/PennLINC/babs).
 
-Starting with mriqc. The pipe will surely die — the goal is to run
-across many datasets, discover failure modes, and build robustness
-incrementally.
+## Quick start
 
-## Usage
+> **Kerberos/NFS clusters (e.g., Dartmouth):** Run `krenew -b` in your
+> tmux session before starting. Long runs (>10h) can outlive your
+> Kerberos ticket, causing stale NFS file handles and crashes.
 
 ```bash
-# One-time setup
+# One-time setup: creates venv, installs babs + datalad, clones containers
 bash setup-dev.sh
-
-# Run mriqc on a dataset
-./run-e2e.sh \
-    --dataset-url https://github.com/OpenNeuroDatasets/ds000113.git \
-    --pipeline pipelines/mriqc-24.0.2.yaml \
-    --cluster clusters/dartmouth.yaml \
-    --working-dir processing/ds000113-mriqc \
-    --output derivative-datasets/ds000113-mriqc
-
-# For datasets with sessions, add --processing-level session
+source .venv/bin/activate
 ```
 
-To process another dataset, change `--dataset-url`, `--working-dir`,
-and `--output`.
+## Per-dataset workflow
 
-### What it does
+### 1. Sniff the dataset
 
-1. Preflight check (verifies no derivative exists upstream)
-2. `merge_config.py` merges pipeline + cluster + dataset URL into
-   the monolithic YAML that babs requires
-3. `babs init` scaffolds the project (clones data + containers)
-4. Pulls the container image from local repronim/containers
-5. `babs submit` → wait → `babs merge`
-6. Clones derivative from output RIA, unzips into `derivatives/`
+```bash
+./sniff.sh https://github.com/OpenNeuroDatasets/<DATASET_ID>
+```
 
-### Candidates
+Reports subjects, sessions, scan counts, and sizes per subject.
+Use the output to decide processing level:
+- No sessions, or few sessions with small scans → subject (default)
+- Many sessions or heavy scans per subject → add `--processing-level session`
+
+### 2. Run
+
+```bash
+DATASET_ID=ds000113
+duct -p logs/${DATASET_ID}-mriqc/ \
+  bash run-e2e.sh \
+    --dataset-url https://github.com/OpenNeuroDatasets/${DATASET_ID}.git \
+    --pipeline pipelines/mriqc-24.0.2.yaml \
+    --cluster clusters/dartmouth.yaml \
+    --working-dir processing/${DATASET_ID}-mriqc \
+    --output derivative-datasets/${DATASET_ID}-mriqc
+```
+
+Add `--processing-level session` if needed.
+
+`run-e2e.sh` handles: config merge → babs init → container pull → submit
+all jobs → wait → finalize (merge + clone + extract archives).
+
+### 3. If the run is interrupted after jobs complete
+
+The finalize step (merge, clone from output RIA, extract) can be re-run
+independently:
+
+```bash
+bash finalize.sh \
+  --working-dir processing/${DATASET_ID}-mriqc \
+  --output derivative-datasets/${DATASET_ID}-mriqc
+```
+
+## Candidates
 
 `candidates.tsv` lists datasets from
 [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies)
