@@ -8,7 +8,7 @@ container:
 bids_app_args:
   --no-datalad-get: ""
   $SUBJECT_SELECTION_FLAG: "--participant-label"
-  -w: "$BABS_TMPDIR"
+  -w: ".git/tmp/wkdir"
   --n_cpus: "4"
   --mem_gb: "16"
   -vv: ""
