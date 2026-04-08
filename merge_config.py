@@ -32,11 +32,12 @@ def merge_babs_config(pipeline_config, cluster_config, dataset_url):
         merged[k] = v
 
     # Input dataset
+    # TODO path_in_babs configurable
     merged["input_datasets"] = {
         "BIDS": {
             "is_zipped": False,
             "origin_url": dataset_url,
-            "path_in_babs": "inputs/data/BIDS",
+            "path_in_babs": "sourcedata/raw",
         }
     }
 
