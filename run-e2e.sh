@@ -89,7 +89,7 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
 #     babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}"
 # fi
 # all jobs
-babs submit "${WORKING_DIR}/babs-project"
+babs submit "${WORKING_DIR}/babs-project" --count 1
 
 # ===== Step 5: Wait for jobs ==================================================
 babs status --wait "${WORKING_DIR}/babs-project"
