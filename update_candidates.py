@@ -7,11 +7,15 @@ or issue/notes set). Prints what changed.
 """
 
 import csv
+import shutil
+import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
-UPSTREAM_TSV = Path("OpenNeuroStudies/studies.tsv")
+UPSTREAM_TSV = Path("reference/OpenNeuroStudies/studies.tsv")
 CANDIDATES_TSV = Path("candidates.tsv")
+LOCAL_NOTES = Path("local-notes")
 
 COLS = ["dataset_id", "status", "issue", "notes"]
 
@@ -62,6 +66,17 @@ def main():
     if not UPSTREAM_TSV.exists():
         print(f"Error: {UPSTREAM_TSV} not found.", file=sys.stderr)
         sys.exit(1)
+
+    # Pull latest from upstream
+    subprocess.run(
+        ["git", "-C", UPSTREAM_TSV.parent, "pull"],
+        check=True,
+    )
+
+    # Snapshot upstream studies.tsv with date
+    snapshot = LOCAL_NOTES / f"upstream_studies_{date.today()}.tsv"
+    shutil.copy2(UPSTREAM_TSV, snapshot)
+    print(f"Saved snapshot: {snapshot}")
 
     upstream = read_upstream(UPSTREAM_TSV)
     existing = read_candidates(CANDIDATES_TSV)
