@@ -5,8 +5,6 @@ container:
 bids_app_args:
   $SUBJECT_SELECTION_FLAG: "--participant-label"
   -w: ".git/tmp/wkdir"
-  --anat-only: ""
-  --fs-no-reconall: ""
   --skip-bids-validation: ""
   --nprocs: "8"
   --mem-mb: "32000"
