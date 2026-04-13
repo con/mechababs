@@ -1,0 +1,2286 @@
+Preflight checks for ds005752
+
+  [PASS] terminal multiplexer: running in tmux/screen
+  [PASS] mriqc derivative absent: no mriqc derivative repo found
+
+All checks passed.
+DataLad version: 1.3.4
+
+Creating `analysis` folder (also a datalad dataset)...
+run(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis (dataset) [/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/m...]
+create(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis (dataset)
+action summary:
+  create (ok: 1)
+  run (ok: 1)
+add(ok): .gitignore (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+Save BABS project configurations in a YAML file ...
+Path to this yaml file will be: 'analysis/code/babs_proj_config.yaml'
+add(ok): code/babs_proj_config.yaml (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Creating output and input RIA...
+update(ok): . (dataset)
+update(ok): . (dataset)
+configure-sibling(ok): . (sibling)
+create-sibling-ria(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  create-sibling-ria (ok: 1)
+  update (ok: 1)
+update(ok): . (dataset)
+update(ok): . (dataset)
+configure-sibling(ok): . (sibling)
+create-sibling-ria(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  create-sibling-ria (ok: 1)
+  update (ok: 1)
+
+Registering the input dataset(s)...
+Cloning input dataset #1: BIDS
+install(ok): inputs/data/BIDS (dataset)
+add(ok): inputs/data/BIDS (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  install (ok: 1)
+  save (ok: 2)
+
+Adding the container as a sub-dataset of `analysis` dataset...
+install(ok): containers (dataset)
+add(ok): containers (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  install (ok: 1)
+  save (ok: 2)
+
+Registering container at analysis level: containers/images/bids/bids-mriqc--24.0.2.sif
+add(ok): .datalad/config (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+add(ok): .datalad/config (file)
+save(ok): . (dataset)
+containers_add(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/containers/images/bids/bids-mriqc--24.0.2.sif (file)
+action summary:
+  add (ok: 1)
+  containers_add (ok: 1)
+  save (ok: 1)
+
+Generating zip script: bids-mriqc_zip.sh
+add(ok): code/bids-mriqc_zip.sh (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Generating a bash script for running jobs at participant (or session) level...
+This bash script will be named as `participant_job.sh`
+
+Determining the list of subjects (and sessions) to analyze...
+Did not provide an initial inclusion list. Examining input dataset BIDS to get an initial inclusion list.
+add(ok): code/processing_inclusion.csv (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Generating templates for job submission calls...
+The template text file will be named as `submit_job_template.yaml`.
+add(ok): code/submit_job_template.yaml (file)
+add(ok): code/check_setup/submit_test_job_template.yaml (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 2)
+  save (ok: 1)
+add(ok): code/check_setup/test_job.py (file)
+add(ok): code/check_setup/call_test_job.sh (file)
+add(ok): code/participant_job.sh (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  save (ok: 1)
+
+Final steps...
+DataLad dropping input dataset's contents...
+action summary:
+  drop (notneeded: 2)
+Updating input and output RIA...
+publish(ok): . (dataset) [refs/heads/master->input:refs/heads/master [new branch]]
+publish(ok): . (dataset) [refs/heads/git-annex->input:refs/heads/git-annex [new branch]]
+action summary:
+  publish (ok: 2)
+publish(ok): . (dataset) [refs/heads/master->output:refs/heads/master [new branch]]
+publish(ok): . (dataset) [refs/heads/git-annex->output:refs/heads/git-annex [new branch]]
+action summary:
+  publish (ok: 2)
+Adding an alias 'data' to output RIA store...
+
+
+BABS project has been initialized! Path to this BABS project: '/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project'
+`babs init` was successful!
+get(ok): containers/images/bids/bids-mriqc--24.0.2.sif (file) [from origin...]
+action summary:
+  get (notneeded: 1, ok: 1)
+Submitting the following jobs:
+          sub_id  submitted  is_failed  ...   job_id task_id has_results
+0    sub-ON00400      False      False  ...  8023140       1       False
+1    sub-ON01016      False      False  ...  8023140       2       False
+2    sub-ON01802      False      False  ...  8023140       3       False
+3    sub-ON02693      False      False  ...  8023140       4       False
+4    sub-ON02747      False      False  ...  8023140       5       False
+..           ...        ...        ...  ...      ...     ...         ...
+246  sub-ON99703      False      False  ...  8023140     247       False
+247  sub-ON99731      False      False  ...  8023140     248       False
+248  sub-ON99871      False      False  ...  8023140     249       False
+249  sub-ON99881      False      False  ...  8023140     250       False
+250  sub-ON99943      False      False  ...  8023140     251       False
+
+[251 rows x 13 columns]
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+251 job(s) are pending;
+0 job(s) are running;
+0 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+243 job(s) are pending;
+8 job(s) are running;
+0 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+243 job(s) are pending;
+8 job(s) are running;
+0 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+1 job(s) successfully finished;
+242 job(s) are pending;
+8 job(s) are running;
+0 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+1 job(s) successfully finished;
+240 job(s) are pending;
+8 job(s) are running;
+2 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+3 job(s) successfully finished;
+238 job(s) are pending;
+8 job(s) are running;
+3 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+5 job(s) successfully finished;
+235 job(s) are pending;
+8 job(s) are running;
+3 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+6 job(s) successfully finished;
+234 job(s) are pending;
+8 job(s) are running;
+3 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+7 job(s) successfully finished;
+232 job(s) are pending;
+8 job(s) are running;
+4 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+9 job(s) successfully finished;
+230 job(s) are pending;
+8 job(s) are running;
+4 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+11 job(s) successfully finished;
+228 job(s) are pending;
+8 job(s) are running;
+4 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+14 job(s) successfully finished;
+225 job(s) are pending;
+8 job(s) are running;
+4 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+14 job(s) successfully finished;
+224 job(s) are pending;
+8 job(s) are running;
+5 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+14 job(s) successfully finished;
+222 job(s) are pending;
+8 job(s) are running;
+7 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+14 job(s) successfully finished;
+222 job(s) are pending;
+8 job(s) are running;
+7 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+15 job(s) successfully finished;
+220 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+18 job(s) successfully finished;
+217 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+19 job(s) successfully finished;
+216 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+22 job(s) successfully finished;
+214 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+23 job(s) successfully finished;
+212 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+23 job(s) successfully finished;
+212 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+24 job(s) successfully finished;
+211 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+24 job(s) successfully finished;
+211 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+28 job(s) successfully finished;
+207 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+29 job(s) successfully finished;
+206 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+31 job(s) successfully finished;
+204 job(s) are pending;
+8 job(s) are running;
+8 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+32 job(s) successfully finished;
+202 job(s) are pending;
+8 job(s) are running;
+9 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+32 job(s) successfully finished;
+202 job(s) are pending;
+8 job(s) are running;
+9 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+36 job(s) successfully finished;
+199 job(s) are pending;
+8 job(s) are running;
+9 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+37 job(s) successfully finished;
+197 job(s) are pending;
+8 job(s) are running;
+9 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+39 job(s) successfully finished;
+195 job(s) are pending;
+8 job(s) are running;
+9 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+39 job(s) successfully finished;
+195 job(s) are pending;
+7 job(s) are running;
+10 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+41 job(s) successfully finished;
+192 job(s) are pending;
+8 job(s) are running;
+10 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+43 job(s) successfully finished;
+190 job(s) are pending;
+8 job(s) are running;
+10 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+45 job(s) successfully finished;
+189 job(s) are pending;
+7 job(s) are running;
+10 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+46 job(s) successfully finished;
+185 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+47 job(s) successfully finished;
+184 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+48 job(s) successfully finished;
+184 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+49 job(s) successfully finished;
+182 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+52 job(s) successfully finished;
+179 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+53 job(s) successfully finished;
+178 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+54 job(s) successfully finished;
+177 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+55 job(s) successfully finished;
+176 job(s) are pending;
+8 job(s) are running;
+12 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+57 job(s) successfully finished;
+173 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+58 job(s) successfully finished;
+172 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+59 job(s) successfully finished;
+171 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+60 job(s) successfully finished;
+170 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+60 job(s) successfully finished;
+170 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+62 job(s) successfully finished;
+168 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+64 job(s) successfully finished;
+166 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+67 job(s) successfully finished;
+163 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+69 job(s) successfully finished;
+161 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+69 job(s) successfully finished;
+161 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+70 job(s) successfully finished;
+160 job(s) are pending;
+8 job(s) are running;
+13 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+72 job(s) successfully finished;
+157 job(s) are pending;
+8 job(s) are running;
+14 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+73 job(s) successfully finished;
+155 job(s) are pending;
+8 job(s) are running;
+15 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+75 job(s) successfully finished;
+153 job(s) are pending;
+8 job(s) are running;
+15 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+75 job(s) successfully finished;
+152 job(s) are pending;
+8 job(s) are running;
+16 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+75 job(s) successfully finished;
+151 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+78 job(s) successfully finished;
+148 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+78 job(s) successfully finished;
+148 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+80 job(s) successfully finished;
+146 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+81 job(s) successfully finished;
+145 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+82 job(s) successfully finished;
+144 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+85 job(s) successfully finished;
+141 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+86 job(s) successfully finished;
+140 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+86 job(s) successfully finished;
+140 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+87 job(s) successfully finished;
+139 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+90 job(s) successfully finished;
+136 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+92 job(s) successfully finished;
+134 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+94 job(s) successfully finished;
+132 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+94 job(s) successfully finished;
+132 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+96 job(s) successfully finished;
+130 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+98 job(s) successfully finished;
+128 job(s) are pending;
+8 job(s) are running;
+17 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+99 job(s) successfully finished;
+126 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+99 job(s) successfully finished;
+126 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+102 job(s) successfully finished;
+123 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+103 job(s) successfully finished;
+122 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+105 job(s) successfully finished;
+120 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+107 job(s) successfully finished;
+118 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+108 job(s) successfully finished;
+117 job(s) are pending;
+8 job(s) are running;
+18 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+110 job(s) successfully finished;
+113 job(s) are pending;
+8 job(s) are running;
+20 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+110 job(s) successfully finished;
+113 job(s) are pending;
+8 job(s) are running;
+20 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+111 job(s) successfully finished;
+111 job(s) are pending;
+8 job(s) are running;
+21 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+112 job(s) successfully finished;
+110 job(s) are pending;
+8 job(s) are running;
+21 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+113 job(s) successfully finished;
+109 job(s) are pending;
+8 job(s) are running;
+21 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+114 job(s) successfully finished;
+108 job(s) are pending;
+8 job(s) are running;
+21 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+116 job(s) successfully finished;
+106 job(s) are pending;
+8 job(s) are running;
+21 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+116 job(s) successfully finished;
+105 job(s) are pending;
+8 job(s) are running;
+22 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+118 job(s) successfully finished;
+103 job(s) are pending;
+8 job(s) are running;
+22 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+121 job(s) successfully finished;
+99 job(s) are pending;
+8 job(s) are running;
+23 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+121 job(s) successfully finished;
+98 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+121 job(s) successfully finished;
+98 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+121 job(s) successfully finished;
+98 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+122 job(s) successfully finished;
+97 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+125 job(s) successfully finished;
+94 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+127 job(s) successfully finished;
+92 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+129 job(s) successfully finished;
+90 job(s) are pending;
+8 job(s) are running;
+24 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+130 job(s) successfully finished;
+88 job(s) are pending;
+8 job(s) are running;
+25 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+131 job(s) successfully finished;
+87 job(s) are pending;
+8 job(s) are running;
+25 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+133 job(s) successfully finished;
+85 job(s) are pending;
+8 job(s) are running;
+25 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+133 job(s) successfully finished;
+85 job(s) are pending;
+8 job(s) are running;
+25 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+133 job(s) successfully finished;
+85 job(s) are pending;
+8 job(s) are running;
+25 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+134 job(s) successfully finished;
+83 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+135 job(s) successfully finished;
+82 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+136 job(s) successfully finished;
+82 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+140 job(s) successfully finished;
+77 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+140 job(s) successfully finished;
+77 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+141 job(s) successfully finished;
+76 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+142 job(s) successfully finished;
+75 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+143 job(s) successfully finished;
+74 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+144 job(s) successfully finished;
+73 job(s) are pending;
+8 job(s) are running;
+26 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+145 job(s) successfully finished;
+71 job(s) are pending;
+8 job(s) are running;
+27 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+146 job(s) successfully finished;
+70 job(s) are pending;
+8 job(s) are running;
+27 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+148 job(s) successfully finished;
+68 job(s) are pending;
+8 job(s) are running;
+27 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+149 job(s) successfully finished;
+67 job(s) are pending;
+8 job(s) are running;
+27 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+149 job(s) successfully finished;
+66 job(s) are pending;
+8 job(s) are running;
+28 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+149 job(s) successfully finished;
+66 job(s) are pending;
+8 job(s) are running;
+28 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+149 job(s) successfully finished;
+66 job(s) are pending;
+8 job(s) are running;
+28 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+151 job(s) successfully finished;
+63 job(s) are pending;
+8 job(s) are running;
+29 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+153 job(s) successfully finished;
+61 job(s) are pending;
+8 job(s) are running;
+29 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+154 job(s) successfully finished;
+59 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+155 job(s) successfully finished;
+59 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+156 job(s) successfully finished;
+57 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+157 job(s) successfully finished;
+56 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+157 job(s) successfully finished;
+56 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+159 job(s) successfully finished;
+54 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+159 job(s) successfully finished;
+54 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+161 job(s) successfully finished;
+54 job(s) are pending;
+8 job(s) are running;
+30 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+164 job(s) successfully finished;
+49 job(s) are pending;
+7 job(s) are running;
+31 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+165 job(s) successfully finished;
+47 job(s) are pending;
+8 job(s) are running;
+31 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+166 job(s) successfully finished;
+46 job(s) are pending;
+8 job(s) are running;
+31 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+166 job(s) successfully finished;
+45 job(s) are pending;
+8 job(s) are running;
+32 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+166 job(s) successfully finished;
+42 job(s) are pending;
+8 job(s) are running;
+35 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+167 job(s) successfully finished;
+41 job(s) are pending;
+8 job(s) are running;
+35 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+168 job(s) successfully finished;
+40 job(s) are pending;
+8 job(s) are running;
+35 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+168 job(s) successfully finished;
+39 job(s) are pending;
+8 job(s) are running;
+36 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+168 job(s) successfully finished;
+39 job(s) are pending;
+8 job(s) are running;
+36 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+171 job(s) successfully finished;
+37 job(s) are pending;
+8 job(s) are running;
+36 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+172 job(s) successfully finished;
+35 job(s) are pending;
+8 job(s) are running;
+36 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+173 job(s) successfully finished;
+33 job(s) are pending;
+8 job(s) are running;
+37 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+174 job(s) successfully finished;
+32 job(s) are pending;
+8 job(s) are running;
+37 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+176 job(s) successfully finished;
+30 job(s) are pending;
+8 job(s) are running;
+37 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+176 job(s) successfully finished;
+30 job(s) are pending;
+8 job(s) are running;
+37 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+178 job(s) successfully finished;
+28 job(s) are pending;
+8 job(s) are running;
+37 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+178 job(s) successfully finished;
+26 job(s) are pending;
+8 job(s) are running;
+39 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+179 job(s) successfully finished;
+25 job(s) are pending;
+8 job(s) are running;
+39 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+181 job(s) successfully finished;
+23 job(s) are pending;
+8 job(s) are running;
+39 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+182 job(s) successfully finished;
+21 job(s) are pending;
+8 job(s) are running;
+40 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+182 job(s) successfully finished;
+21 job(s) are pending;
+8 job(s) are running;
+40 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+182 job(s) successfully finished;
+21 job(s) are pending;
+8 job(s) are running;
+40 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+184 job(s) successfully finished;
+19 job(s) are pending;
+8 job(s) are running;
+40 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+184 job(s) successfully finished;
+19 job(s) are pending;
+8 job(s) are running;
+40 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+186 job(s) successfully finished;
+16 job(s) are pending;
+8 job(s) are running;
+41 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+187 job(s) successfully finished;
+15 job(s) are pending;
+8 job(s) are running;
+41 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+190 job(s) successfully finished;
+12 job(s) are pending;
+8 job(s) are running;
+41 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+190 job(s) successfully finished;
+12 job(s) are pending;
+8 job(s) are running;
+41 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+190 job(s) successfully finished;
+10 job(s) are pending;
+8 job(s) are running;
+43 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+192 job(s) successfully finished;
+9 job(s) are pending;
+8 job(s) are running;
+43 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+192 job(s) successfully finished;
+8 job(s) are pending;
+8 job(s) are running;
+43 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+193 job(s) successfully finished;
+6 job(s) are pending;
+8 job(s) are running;
+44 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+195 job(s) successfully finished;
+5 job(s) are pending;
+8 job(s) are running;
+44 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+197 job(s) successfully finished;
+1 job(s) are pending;
+8 job(s) are running;
+45 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 251 jobs to complete.
+
+251 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+198 job(s) successfully finished;
+0 job(s) are pending;
+8 job(s) are running;
+45 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds005752-mriqc/babs-project/analysis/logs
+ 

@@ -1,0 +1,185 @@
+>>> dirname run-e2e.sh
+>> cd .
+>> pwd
+> SCRIPT_DIR=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs
+> cd /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs
+> DATASET_URL=
+> PIPELINE=
+> CLUSTER_CONFIG=
+> WORKING_DIR=
+> OUTPUT=
+> PROCESSING_LEVEL=subject
+> [[ 10 -gt 0 ]]
+> case $1 in
+> DATASET_URL=https://github.com/ReproNim/ds000003-demo.git
+> shift 2
+> [[ 8 -gt 0 ]]
+> case $1 in
+> PIPELINE=pipelines/mriqc-24.0.2.yaml
+> shift 2
+> [[ 6 -gt 0 ]]
+> case $1 in
+> CLUSTER_CONFIG=clusters/dartmouth.yaml
+> shift 2
+> [[ 4 -gt 0 ]]
+> case $1 in
+> WORKING_DIR=processing/ds000003-demo-mriqc-20260406
+> shift 2
+> [[ 2 -gt 0 ]]
+> case $1 in
+> OUTPUT=derivative-datasets/ds000003-demo-mriqc-20260406
+> shift 2
+> [[ 0 -gt 0 ]]
+> [[ -z https://github.com/ReproNim/ds000003-demo.git ]]
+> [[ -z pipelines/mriqc-24.0.2.yaml ]]
+> [[ -z clusters/dartmouth.yaml ]]
+> [[ -z processing/ds000003-demo-mriqc-20260406 ]]
+> source .venv/bin/activate
+>> '[' -z '' ']'
+>> '[' -n x ']'
+>> SCRIPT_PATH=.venv/bin/activate
+>> '[' .venv/bin/activate = run-e2e.sh ']'
+>> deactivate nondestructive
+>> unset -f pydoc
+>> '[' -z '' ']'
+>> '[' -z '' ']'
+>> hash -r
+>> '[' -z '' ']'
+>> unset VIRTUAL_ENV
+>> unset VIRTUAL_ENV_PROMPT
+>> '[' '!' nondestructive = nondestructive ']'
+>> VIRTUAL_ENV=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv
+>> '[' linux-gnu = cygwin ']'
+>> '[' linux-gnu = msys ']'
+>> export VIRTUAL_ENV
+>> '[' -z '' ']'
+>> unset SCRIPT_PATH
+>> _OLD_VIRTUAL_PATH=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin:/dartfs-hpc/rc/home/8/f006rq8/.local/bin:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex/usr/lib/git-annex.linux/:/optnfs/common/miniconda3/condabin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin
+>> PATH=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin:/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin:/dartfs-hpc/rc/home/8/f006rq8/.local/bin:/dartfs/rc/lab/D/DBIC/DBIC/archive/git-annex/usr/lib/git-annex.linux/:/optnfs/common/miniconda3/condabin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin:/dartfs-hpc/admin/local/bin:/dartfs-hpc/rc/home/8/f006rq8/bin
+>> export PATH
+>> '[' x '!=' x ']'
+>>> basename /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv
+>> VIRTUAL_ENV_PROMPT=.venv
+>> export VIRTUAL_ENV_PROMPT
+>> '[' -z '' ']'
+>> '[' -z '' ']'
+>> _OLD_VIRTUAL_PS1=
+>> PS1='(.venv) '
+>> export PS1
+>> alias pydoc
+>> true
+>> hash -r
+>> python3 -c 'import yaml; print(yaml.safe_load(open('\''pipelines/mriqc-24.0.2.yaml'\''))['\''container'\'']['\''name'\''])'
+> CONTAINER_NAME=bids-mriqc
+>> python3 -c 'import yaml; print(yaml.safe_load(open('\''pipelines/mriqc-24.0.2.yaml'\''))['\''container'\'']['\''repo'\''])'
+> CONTAINER_DS=repronim-containers
+>> basename https://github.com/ReproNim/ds000003-demo.git .git
+> DATASET_ID=ds000003-demo
+> echo https://github.com/ReproNim/ds000003-demo.git
+> grep -q OpenNeuroDatasets
+>> mkdir -p processing/ds000003-demo-mriqc-20260406
+>> cd processing/ds000003-demo-mriqc-20260406
+>> pwd
+> WORKING_DIR=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406
+> mkdir -p /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406
+> python3 merge_config.py --pipeline pipelines/mriqc-24.0.2.yaml --cluster clusters/dartmouth.yaml --dataset-url https://github.com/ReproNim/ds000003-demo.git
+> babs init /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project --container-ds repronim-containers --container-name bids-mriqc --container-config /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-config.yaml --processing-level subject --queue slurm
+[INFO] Running procedure cfg_yoda 
+[INFO] == Command start (output follows) ===== 
+[INFO] == Command exit (modification check follows) ===== 
+[INFO] Creating a new RIA store at /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/output_ria 
+[INFO] create siblings 'output' and 'output-storage' ... 
+[INFO] Fetching updates for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis) 
+[INFO] Configure additional publication dependency on "output-storage" 
+[INFO] Creating a new RIA store at /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/input_ria 
+[INFO] create sibling 'input' ... 
+[INFO] Fetching updates for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis) 
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/inputs/data/BIDS 
+[INFO] Attempting to clone from https://github.com/ReproNim/ds000003-demo.git to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/inputs/data/BIDS 
+[INFO] Start enumerating objects 
+[INFO] Start receiving objects 
+[INFO] Start resolving deltas 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/inputs/data/BIDS) 
+[INFO] Remote origin not usable by git-annex; setting annex-ignore 
+[INFO] https://github.com/ReproNim/ds000003-demo.git/config download failed: Not Found 
+[INFO] access to 1 dataset sibling s3-PRIVATE not auto-enabled, enable with:
+| 		datalad siblings -d "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/inputs/data/BIDS" enable -s s3-PRIVATE 
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/containers 
+[INFO] Attempting to clone from repronim-containers to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/containers 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/containers) 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start receiving objects 
+[INFO] Start resolving deltas 
+[INFO] Finished 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Transfer data 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis) 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Transfer data 
+[INFO] Transfer data 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis) 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis) 
+>> datalad containers-list -d /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis
+>> grep bids-mriqc
+>> sed 's/.*-> //'
+> CONTAINER_IMAGE=containers/images/bids/bids-mriqc--24.0.2.sif
+> datalad get -d /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/containers/images/bids/bids-mriqc--24.0.2.sif
+> INCLUSION_CSV=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/code/processing_inclusion.csv
+>> sed -n 2p /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/analysis/code/processing_inclusion.csv
+>> cut -d, -f1
+> FIRST_SUB=sub-02
+> '[' subject = session ']'
+> babs submit /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project --select sub-02
+> babs status --wait /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project
+> babs merge /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/merge_ds 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/output_ria/484/5aa22-2795-488a-99e0-5c3e2b19f5a0 to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/merge_ds 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/merge_ds) 
+[INFO] Configure additional publication dependency on "output-storage" 
+To /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/output_ria/484/5aa22-2795-488a-99e0-5c3e2b19f5a0
+   20b06c5..67dd84e  master -> master
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/merge_ds) 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/merge_ds) 
+> [[ -n derivative-datasets/ds000003-demo-mriqc-20260406 ]]
+> datalad clone ria+file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/output_ria#~data derivative-datasets/ds000003-demo-mriqc-20260406
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc-20260406 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc-20260406/babs-project/output_ria/alias/data to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc-20260406 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc-20260406) 
+[INFO] Configure additional publication dependency on "output-storage" 
+> cd derivative-datasets/ds000003-demo-mriqc-20260406
+> datalad get sub-02_mriqc-24-0-2.zip
+> cd derivative-datasets/ds000003-demo-mriqc-20260406
+> datalad run -m 'Extracting all .zip files' --input '*.zip' -- bash -c 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done'
+[INFO] Making sure inputs are available (this may take some time) 
+[INFO] == Command start (output follows) ===== 
+[INFO] Adding content of the archive sub-02_mriqc-24-0-2.zip into annex AnnexRepo(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc-20260406) 
+[INFO] Initializing special remote datalad-archives 
+[INFO] Extracting archive 
+[INFO] Finished adding sub-02_mriqc-24-0-2.zip: Files processed: 17, renamed: 17, +annex: 17 
+[INFO] Finished extraction 
+[INFO] == Command exit (modification check follows) ===== 

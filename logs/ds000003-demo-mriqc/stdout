@@ -1,0 +1,255 @@
+DataLad version: 1.3.4
+
+Creating `analysis` folder (also a datalad dataset)...
+run(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis (dataset) [/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/m...]
+create(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis (dataset)
+action summary:
+  create (ok: 1)
+  run (ok: 1)
+add(ok): .gitignore (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+Save BABS project configurations in a YAML file ...
+Path to this yaml file will be: 'analysis/code/babs_proj_config.yaml'
+add(ok): code/babs_proj_config.yaml (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Creating output and input RIA...
+update(ok): . (dataset)
+update(ok): . (dataset)
+configure-sibling(ok): . (sibling)
+create-sibling-ria(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  create-sibling-ria (ok: 1)
+  update (ok: 1)
+update(ok): . (dataset)
+update(ok): . (dataset)
+configure-sibling(ok): . (sibling)
+create-sibling-ria(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  create-sibling-ria (ok: 1)
+  update (ok: 1)
+
+Registering the input dataset(s)...
+Cloning input dataset #1: BIDS
+install(ok): inputs/data/BIDS (dataset)
+add(ok): inputs/data/BIDS (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  install (ok: 1)
+  save (ok: 2)
+
+Adding the container as a sub-dataset of `analysis` dataset...
+install(ok): containers (dataset)
+add(ok): containers (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  install (ok: 1)
+  save (ok: 2)
+
+Registering container at analysis level: containers/images/bids/bids-mriqc--24.0.2.sif
+add(ok): .datalad/config (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+add(ok): .datalad/config (file)
+save(ok): . (dataset)
+containers_add(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis/containers/images/bids/bids-mriqc--24.0.2.sif (file)
+action summary:
+  add (ok: 1)
+  containers_add (ok: 1)
+  save (ok: 1)
+
+Generating zip script: bids-mriqc_zip.sh
+add(ok): code/bids-mriqc_zip.sh (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Generating a bash script for running jobs at participant (or session) level...
+This bash script will be named as `participant_job.sh`
+
+Determining the list of subjects (and sessions) to analyze...
+Did not provide an initial inclusion list. Examining input dataset BIDS to get an initial inclusion list.
+add(ok): code/processing_inclusion.csv (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Generating templates for job submission calls...
+The template text file will be named as `submit_job_template.yaml`.
+add(ok): code/check_setup/submit_test_job_template.yaml (file)
+add(ok): code/submit_job_template.yaml (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 2)
+  save (ok: 1)
+add(ok): code/check_setup/test_job.py (file)
+add(ok): code/participant_job.sh (file)
+add(ok): code/check_setup/call_test_job.sh (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  save (ok: 1)
+
+Final steps...
+DataLad dropping input dataset's contents...
+action summary:
+  drop (notneeded: 2)
+Updating input and output RIA...
+publish(ok): . (dataset) [refs/heads/master->input:refs/heads/master [new branch]]
+publish(ok): . (dataset) [refs/heads/git-annex->input:refs/heads/git-annex [new branch]]
+action summary:
+  publish (ok: 2)
+publish(ok): . (dataset) [refs/heads/master->output:refs/heads/master [new branch]]
+publish(ok): . (dataset) [refs/heads/git-annex->output:refs/heads/git-annex [new branch]]
+action summary:
+  publish (ok: 2)
+Adding an alias 'data' to output RIA store...
+
+
+BABS project has been initialized! Path to this BABS project: '/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project'
+`babs init` was successful!
+get(ok): containers/images/bids/bids-mriqc--24.0.2.sif (file) [from origin...]
+action summary:
+  get (notneeded: 1, ok: 1)
+Submitting the following jobs:
+   sub_id  submitted  is_failed state  ... name   job_id  task_id  has_results
+0  sub-02      False      False   NaN  ...  NaN  8023002        1        False
+1  sub-13      False      False   NaN  ...  NaN  8023002        2        False
+
+[2 rows x 13 columns]
+Job status:
+There are in total of 2 jobs to complete.
+
+2 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+0 job(s) are pending;
+2 job(s) are running;
+0 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 2 jobs to complete.
+
+2 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+0 job(s) are pending;
+2 job(s) are running;
+0 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis/logs
+ 
+Job status:
+There are in total of 2 jobs to complete.
+
+2 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+2 job(s) successfully finished;
+All jobs are completed!
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/analysis/logs
+ 
+
+All submitted jobs finished: 2 succeeded, 0 failed.
+Cloning output RIA to 'merge_ds'...
+configure-sibling(ok): . (sibling)
+install(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/ds000003-demo-mriqc/babs-project/merge_ds (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  install (ok: 1)
+
+Listing all branches in output RIA...
+
+Finding all valid job branches to merge...
+Git default branch's name of output RIA is: 'master'
+
+Merging valid job branches chunk by chunk...
+Total number of job branches to merge = 2
+Chunk size (number of job branches per chunk) = 2000
+--> Number of chunks = 1
+Merging chunk #1 (total of 1 chunk[s] to merge)...
+Fast-forwarding to: origin/job-8023002-1-sub-02
+Trying simple merge with origin/job-8023002-2-sub-13
+Merge made by the 'octopus' strategy.
+ logs/duct_sub-02_info.json   | 1 +
+ logs/duct_sub-02_stderr      | 1 +
+ logs/duct_sub-02_stdout      | 1 +
+ logs/duct_sub-02_usage.jsonl | 1 +
+ logs/duct_sub-13_info.json   | 1 +
+ logs/duct_sub-13_stderr      | 1 +
+ logs/duct_sub-13_stdout      | 1 +
+ logs/duct_sub-13_usage.jsonl | 1 +
+ sub-02_mriqc-24-0-2.zip      | 1 +
+ sub-13_mriqc-24-0-2.zip      | 1 +
+ 10 files changed, 10 insertions(+)
+ create mode 120000 logs/duct_sub-02_info.json
+ create mode 120000 logs/duct_sub-02_stderr
+ create mode 120000 logs/duct_sub-02_stdout
+ create mode 120000 logs/duct_sub-02_usage.jsonl
+ create mode 120000 logs/duct_sub-13_info.json
+ create mode 120000 logs/duct_sub-13_stderr
+ create mode 120000 logs/duct_sub-13_stdout
+ create mode 120000 logs/duct_sub-13_usage.jsonl
+ create mode 120000 sub-02_mriqc-24-0-2.zip
+ create mode 120000 sub-13_mriqc-24-0-2.zip
+
+
+Pushing merging actions to output RIA...
+
+dead here (recording state in git...)
+ok
+(recording state in git...)
+
+publish(ok): . (dataset) [refs/heads/git-annex->origin:refs/heads/git-annex 029fd70..935bb4d]
+action summary:
+  publish (notneeded: 1, ok: 1)
+
+
+`babs merge` was successful!
+
+Cleaning up merge_ds directory...
+uninstall(ok): . (dataset)
+Deleting merged branches for chunk #1...
+Deleted branch job-8023002-1-sub-02 (was b04c733).
+Deleted branch job-8023002-2-sub-13 (was 1c9e93d).
+
+configure-sibling(ok): . (sibling)
+install(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc (dataset)
+action summary:
+  configure-sibling (ok: 1)
+  install (ok: 1)
+get(ok): sub-13_mriqc-24-0-2.zip (file) [from output-storage...]
+get(ok): sub-02_mriqc-24-0-2.zip (file) [from output-storage...]
+action summary:
+  get (ok: 2)
+add-archive-content(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc (dataset)
+add-archive-content(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc (dataset)
+run(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/derivative-datasets/ds000003-demo-mriqc (dataset) [bash -c 'for f in *.zip; do datalad add-...]
+delete(ok): sub-02_mriqc-24-0-2.zip (symlink)
+delete(ok): sub-13_mriqc-24-0-2.zip (symlink)
+save(ok): . (dataset)
