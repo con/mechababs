@@ -14,6 +14,8 @@ bids_app_args:
 singularity_args:
   - --containall
   - --writable-tmpfs
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
+  - --env TEMPLATEFLOW_HOME=/templateflow
 
 # TODO: partition/nodes/ntasks should come from cluster config, not here.
 # Resource allocation is more complex: cluster sets limits, pipeline sets
