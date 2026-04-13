@@ -18,6 +18,18 @@ singularity_args:
   - --containall
   - --writable-tmpfs
 
+# TODO: partition/nodes/ntasks should come from cluster config, not here.
+# Resource allocation is more complex: cluster sets limits, pipeline sets
+# minimums, and dataset chunk size informs the actual request. See #3.
+cluster_resources:
+  interpreting_shell: "/bin/bash"
+  hard_runtime_limit: "24:00:00"
+  customized_text: |
+    #SBATCH --cpus-per-task=4
+    #SBATCH --mem=16G
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1
+
 all_results_in_one_zip: true
 zip_foldernames:
   mriqc: "24-0-2"

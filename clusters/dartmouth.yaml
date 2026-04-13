@@ -1,12 +1,3 @@
-cluster_resources:
-  interpreting_shell: "/bin/bash"
-  hard_runtime_limit: "24:00:00"
-  customized_text: |
-    #SBATCH --cpus-per-task=4
-    #SBATCH --mem=16G
-    #SBATCH --nodes=1
-    #SBATCH --ntasks=1
-
 script_preamble: |
   source /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin/activate
 
