@@ -15,7 +15,9 @@ singularity_args:
   - --containall
   - --writable-tmpfs
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/freesurfer/license.txt
   - --env TEMPLATEFLOW_HOME=/templateflow
+  - --env FREESURFER_HOME=/freesurfer
 
 # TODO: partition/nodes/ntasks should come from cluster config, not here.
 # Resource allocation is more complex: cluster sets limits, pipeline sets
