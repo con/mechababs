@@ -80,16 +80,17 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
 # ===== Step 4: Submit jobs =====================================================
 # TODO: remove (Just first job)
 # --select restriction, submit all subjects
-# INCLUSION_CSV="${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv"
-# FIRST_SUB=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f1)
-# if [ "${PROCESSING_LEVEL}" = "session" ]; then
-#     FIRST_SES=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f2)
-#     babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}" "${FIRST_SES}"
-# else  # subject-level
-#     babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}"
-# fi
+INCLUSION_CSV="${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv"
+FIRST_SUB=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f1)
+if [ "${PROCESSING_LEVEL}" = "session" ]; then
+    FIRST_SES=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f2)
+    babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}" "${FIRST_SES}"
+else  # subject-level
+    babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}"
+fi
+
 # all jobs
-babs submit "${WORKING_DIR}/babs-project"
+# babs submit "${WORKING_DIR}/babs-project"
 
 # ===== Step 5: Wait for jobs ==================================================
 babs status --wait "${WORKING_DIR}/babs-project"
