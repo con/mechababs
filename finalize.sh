@@ -35,10 +35,7 @@ datalad clone "ria+file://${WORKING_DIR}/babs-project/output_ria#~data" "${OUTPU
 ( cd "${OUTPUT}" && datalad get sub*.zip logs/duct* )
 
 # ===== Step 4: Extract archives ==============================================
-# TODO: add --existing overwrite to handle shared files (e.g. dataset_description.json)
-# that appear in every subject's zip. Currently the second extraction fails.
-# Also: if datalad add-archive-content accepted multiple archives, how should
-# it handle cross-archive collisions? (skip? overwrite? error?)
+# TODO: datalad add-archive-content processes one zip at a time; propose multi-archive support upstream
 ( cd "${OUTPUT}" && datalad run -m "Extracting all .zip files" \
     --input '*.zip' \
-    -- bash -c 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
+    -- bash -c 'for f in *.zip; do datalad add-archive-content -D --allow-dirty --no-commit --existing overwrite --strip-leading-dirs --leading-dirs-depth 1 --annex-options="--no-check-gitignore" "$f"; done' )
