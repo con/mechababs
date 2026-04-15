@@ -32,6 +32,16 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 | `fairly-big-processing-workflow/` | https://github.com/psychoinformatics-de/fairly-big-processing-workflow | The FAIRly Big pattern that BABS implements |
 | `containers/` | https://github.com/ReproNim/containers | ReproNim container dataset — archives built SIFs |
 
+## Running a dataset
+
+To kick off a pipeline on a new dataset:
+
+1. Check `candidates.tsv` for MRIQC/fmriprep status and `local-notes/upstream_studies_2026-04-13.tsv` for dataset metadata (subjects, sessions, datatypes, size)
+2. Determine processing level: use `--processing-level session` if `sessions_min` > 1 and per-session jobs are preferred; otherwise default `subject` is fine
+3. For datasets with many sessions per subject, check how many sessions the first subject actually has (it may differ from the dataset average)
+4. Use `--count 1` to test on a single subject before submitting all
+5. See `local-notes/cluster-workflow.md` for per-dataset processing notes and ndoli run instructions
+
 ## Repo layout
 
 ```
