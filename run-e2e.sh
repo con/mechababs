@@ -20,6 +20,7 @@ CLUSTER_CONFIG=""
 WORKING_DIR=""
 OUTPUT=""
 PROCESSING_LEVEL="subject"
+COUNT=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -29,6 +30,7 @@ while [[ $# -gt 0 ]]; do
         --working-dir) WORKING_DIR="$2"; shift 2 ;;
         --output) OUTPUT="$2"; shift 2 ;;
         --processing-level) PROCESSING_LEVEL="$2"; shift 2 ;;
+        --count) COUNT="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -78,19 +80,7 @@ datalad get -d "${WORKING_DIR}/babs-project/analysis" \
     "${WORKING_DIR}/babs-project/analysis/${CONTAINER_IMAGE}"
 
 # ===== Step 4: Submit jobs =====================================================
-# TODO: remove (Just first job)
-# --select restriction, submit all subjects
-INCLUSION_CSV="${WORKING_DIR}/babs-project/analysis/code/processing_inclusion.csv"
-FIRST_SUB=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f1)
-if [ "${PROCESSING_LEVEL}" = "session" ]; then
-    FIRST_SES=$(sed -n '2p' "${INCLUSION_CSV}" | cut -d, -f2)
-    babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}" "${FIRST_SES}"
-else  # subject-level
-    babs submit "${WORKING_DIR}/babs-project" --select "${FIRST_SUB}"
-fi
-
-# all jobs
-# babs submit "${WORKING_DIR}/babs-project"
+babs submit "${WORKING_DIR}/babs-project" ${COUNT:+--count ${COUNT}}
 
 # ===== Step 5: Wait for jobs ==================================================
 babs status --wait "${WORKING_DIR}/babs-project"
