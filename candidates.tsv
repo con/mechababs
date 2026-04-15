@@ -1,17 +1,17 @@
-dataset_id	status	issue	notes
-ds000113	1sub-done		
-ds000221	1sub-done		321 subjects! good scale test 
-ds001499	1sub-done		
-ds002685	fail	#5	mriqc doesn't like T2w | DONE UPSTREAM https://github.com/OpenNeuroDerivatives/ds002685-mriqc
-ds002766	1sub-1ses-done		
-ds003643	1sub-done		
-ds003798	1sub-1ses-done		
-ds004636	1sub-done		
-ds004884	fail		mriqc NaN in ComputeQI2 (divide by zero on 99th percentile)
-ds005165	1sub-1ses-done		duct integration verified; inner logs need --output logs/ fix; check outer duct 2.2TB VSZ peak
-ds005237	todo		
-ds005256	1sub-1sess-done		
-ds005747	1sub-done		
-ds005752	todo		
-ds005896	todo		
-ds006623	todo		
+dataset_id	mriqc	fmriprep	issue	notes
+ds000113	1sub-done			
+ds000221	1sub-done			321 subjects! good scale test 
+ds001499	1sub-done			
+ds002685	fail		#5	mriqc doesn't like T2w | DONE UPSTREAM https://github.com/OpenNeuroDerivatives/ds002685-mriqc
+ds002766	1sub-1ses-done			
+ds003643	1sub-done			
+ds003798	1sub-1ses-done			
+ds004636	1sub-done			
+ds004884	fail			mriqc NaN in ComputeQI2 (divide by zero on 99th percentile)
+ds005165	1sub-1ses-done			duct integration verified; inner logs need --output logs/ fix; check outer duct 2.2TB VSZ peak
+ds005237	todo			
+ds005256	1sub-1sess-done			
+ds005747	1sub-done			
+ds005752	todo			
+ds005896	todo			
+ds006623	todo			
