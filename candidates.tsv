@@ -5,7 +5,7 @@ ds001499	1sub-done
 ds002685	fail		#5	mriqc doesn't like T2w | DONE UPSTREAM https://github.com/OpenNeuroDerivatives/ds002685-mriqc
 ds002766	1sub-1ses-done			
 ds003643	1sub-done			
-ds003798	1sub-1ses-done	needs-extract		117 subjects done, 1 extracted; rest need --existing overwrite fix
+ds003798	1sub-1ses-done	done		117 subjects, all extracted
 ds004636	1sub-done			
 ds004884	fail			mriqc NaN in ComputeQI2 (divide by zero on 99th percentile)
 ds005165	1sub-1ses-done			duct integration verified; inner logs need --output logs/ fix; check outer duct 2.2TB VSZ peak
