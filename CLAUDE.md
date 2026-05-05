@@ -37,6 +37,17 @@ design and implementation decisions. When in doubt, ask: does this make
 the research object more Self-contained, Tracked, Actionable, Modular,
 Portable, Ephemeral, and Distributable?
 
+## Babs source
+
+We develop against `~/devel/babs/.git/my-worktrees/mechababs-working-branch`
+(Austin's working branch on the babs fork), not upstream `main`. Install
+into the venv with:
+
+```bash
+source .venv/bin/activate
+pip install -e ~/devel/babs/.git/my-worktrees/mechababs-working-branch
+```
+
 ## Reference repos
 
 Cloned into `reference/` (gitignored). Before using any reference repo,
@@ -44,7 +55,6 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 
 | Directory | Upstream | Purpose |
 |---|---|---|
-| `babs/` | https://github.com/PennLINC/babs | Execution engine — read source to understand what mechababs drives |
 | `babs_demo/` | (local, Dorota's walkthrough) | Reference scripts for babs workflow with .env-based cluster config |
 | `babs-containers-run-test/` | (local, Austin's test scripts) | Reference scripts for testing babs init with containers-run branch |
 | `principles-paper/` | https://github.com/myyoda/principles-paper | STAMPED properties paper — the principles guiding this project |
