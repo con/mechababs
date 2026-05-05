@@ -1,9 +1,9 @@
 #!/bin/bash
-# End-to-end babs automation
+# End-to-end babs automation for one dataset.
 #
 # Usage:
-#   bash run-e2e.sh \
-#       --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git \
+#   bash execute-dataset.sh \
+#       --dataset-url https://github.com/OpenNeuroDatasets/ds000003 \
 #       --pipeline pipelines/mriqc-24.0.2.yaml \
 #       --cluster clusters/dartmouth.yaml \
 #       --working-dir processing/ds000003-mriqc
