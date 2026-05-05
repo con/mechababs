@@ -67,10 +67,7 @@ that need mriqc. Run `python3 update_candidates.py` to refresh.
 
 ## Docs
 
-- [SPEC.md](SPEC.md) — design spec
 - [CLAUDE.md](CLAUDE.md) — project conventions and reference repos
-- [babs_automation_gaps.md](babs_automation_gaps.md) — what babs
-  could do to make this tool unnecessary
 
 ## Upstream
 

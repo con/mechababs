@@ -1,8 +1,34 @@
 # mechababs
 
 Automation glue for running BIDS apps across many datasets on HPC
-clusters using BABS. See [SPEC.md](SPEC.md) for design,
-[babs_automation_gaps.md](babs_automation_gaps.md) for proposed upstream changes.
+clusters using BABS.
+
+## Concept
+
+An execution is the composition of three things: a dataset, a
+pipeline, and a cluster config. mechababs merges them and drives
+babs.
+
+- **Pipeline config** — what to run (one per BIDS app version, in `pipelines/`)
+- **Cluster config** — where to run (one per cluster, in `clusters/`)
+- **Execution args** — per-run things (`--dataset-url`, `--processing-level`, etc.)
+
+## OpenNeuro ecosystem
+
+Three GitHub orgs work together:
+
+| Org | Role | Example |
+|---|---|---|
+| **OpenNeuroDatasets** | Raw BIDS data | `ds005256` |
+| **OpenNeuroDerivatives** | Processing outputs | `ds000001-mriqc` |
+| **OpenNeuroStudies** | Glue — links raw to derivatives | `study-ds000001` |
+
+`OpenNeuroStudies/OpenNeuroStudies` is a datalad superdataset; each
+`study-dsXXXXXX/` subdataset has `sourcedata/dsXXXXXX` linking to
+OpenNeuroDatasets and `derivatives/<Pipeline-Ver>/` linking to
+OpenNeuroDerivatives. `studies.tsv` (maintained by Yarik) is the
+authoritative index — columns include `study_id`, `raw_version`,
+`derivative_count`, `derivative_ids`.
 
 ## Principles
 
@@ -10,11 +36,6 @@ The STAMPED paper (`reference/principles-paper/`) should inform all
 design and implementation decisions. When in doubt, ask: does this make
 the research object more Self-contained, Tracked, Actionable, Modular,
 Portable, Ephemeral, and Distributable?
-
-## Spec
-
-SPEC.md is the source of truth. If the implementation drifts from the
-spec, update the spec first or concurrently — never let them diverge.
 
 ## Reference repos
 
