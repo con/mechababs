@@ -77,7 +77,7 @@ To kick off a pipeline on a new dataset:
 
 ```
 mechababs/
-├── run-e2e.sh             # the workflow script
+├── execute-dataset.sh     # the per-dataset workflow script
 ├── merge_config.py        # YAML merge (only Python needed)
 ├── setup-dev.sh           # venv + babs + repronim/containers
 ├── preflight.py           # pre-run checks

@@ -33,7 +33,7 @@ Use the output to decide processing level:
 ```bash
 DATASET_ID=ds000113
 duct -p logs/${DATASET_ID}-mriqc/ \
-  bash run-e2e.sh \
+  bash execute-dataset.sh \
     --dataset-url https://github.com/OpenNeuroDatasets/${DATASET_ID}.git \
     --pipeline pipelines/mriqc-24.0.2.yaml \
     --cluster clusters/dartmouth.yaml \
@@ -43,7 +43,7 @@ duct -p logs/${DATASET_ID}-mriqc/ \
 
 Add `--processing-level session` if needed.
 
-`run-e2e.sh` handles: config merge → babs init → container pull → submit
+`execute-dataset.sh` handles: config merge → babs init → container pull → submit
 all jobs → wait → finalize (merge + clone + extract archives).
 
 ### 3. If the run is interrupted after jobs complete

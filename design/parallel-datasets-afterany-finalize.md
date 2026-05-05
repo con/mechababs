@@ -5,7 +5,7 @@ instead of one-at-a-time.
 
 ## Goal
 
-Today `run-e2e.sh` does one dataset end-to-end synchronously. We want
+Today `execute-dataset.sh` does one dataset end-to-end synchronously. We want
 to fan out across the priority OpenNeuro list (≥30 studies) so each
 study advances independently and the only serialization is the cluster
 scheduler. Eventually, we should be able to handle more datasets, either by running in batches, or
@@ -38,7 +38,7 @@ no need for a third slurm job just to enqueue the other two.
 
 `submit-all.sh` (new, login-side) does, for each in-scope study:
 
-1. Run prep (current `run-e2e.sh` steps 1-4): merge config, `babs init`,
+1. Run prep (current `execute-dataset.sh` steps 1-4): merge config, `babs init`,
    pull container, `babs submit`.
 2. Read `processing/<study>-<pipeline>/babs-project/analysis/code/job_submit.csv`
    to capture the array job id.
@@ -78,13 +78,13 @@ if the array is cancelled.
 
 ## Refactoring required
 
-Split current `run-e2e.sh` so prep+submit can be reused by both flows:
+Split current `execute-dataset.sh` so prep+submit can be reused by both flows:
 
-- **`prep-submit.sh`** (new) — current `run-e2e.sh` steps 1-4. The
+- **`prep-submit.sh`** (new) — current `execute-dataset.sh` steps 1-4. The
   login-side half.
 - **`finalize.sh`** (existing) — unchanged for v1. May add a `babs
   status` log call at the top.
-- **`run-e2e.sh`** — becomes a thin wrapper for the single-dataset case:
+- **`execute-dataset.sh`** — becomes a thin wrapper for the single-dataset case:
   calls `prep-submit.sh`, then `babs status --wait`, then `finalize.sh`.
   Existing single-dataset ergonomics preserved.
 - **`submit-all.sh`** (new) — the parallel-fanout driver described
@@ -148,7 +148,7 @@ Filesystem-derived; no state file required.
 
 Briefly, why we didn't go with these:
 
-- **GNU parallel / xargs over `run-e2e.sh`.** N concurrent shells each
+- **GNU parallel / xargs over `execute-dataset.sh`.** N concurrent shells each
   blocking on `babs status --wait` for cluster wall time. Login-node
   disconnect kills all of them; resume is ad-hoc.
 - **Makefile with sentinel files per phase.** Clean DAG model, but
