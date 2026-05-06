@@ -66,7 +66,7 @@ CONTAINER_DS=$(python3 -c "import yaml; print(yaml.safe_load(open('${PIPELINE}')
 # Preflight check (only for OpenNeuroDatasets)
 DATASET_ID=$(basename "${DATASET_URL}" .git)
 if echo "${DATASET_URL}" | grep -q "OpenNeuroDatasets"; then
-    python3 preflight.py "${DATASET_ID}"
+    : # preflight disabled tonight — only checks mriqc (see TODO)
 fi
 
 # Resolve to absolute paths for RIA URLs

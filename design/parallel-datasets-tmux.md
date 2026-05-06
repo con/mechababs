@@ -239,14 +239,23 @@ better STAMPED Tracked.
   sentinel files and prints a per-dataset summary.
 - Refine filter rules with Yarik (see Open question 1).
 - Fall-back / skip behavior for datasets without sessions.
-- **preflight.py false-passes on git auth/network failures.** When
-  `git ls-remote` errors (missing ssh-agent, encrypted key with no
-  passphrase, network issue), preflight currently treats empty
-  output as "no derivative exists" and PASSes. Should distinguish
-  "Repository not found" (legit pass) from auth/network errors
-  (fail). Also: only checks mriqc; with multiple pipelines should
-  be pipeline-aware. Found 2026-05-05 when fmriprep spawn-all
-  proceeded despite an empty ssh-agent.
+- **preflight.py is pipeline-blind, currently disabled.** Two
+  related problems found 2026-05-05 night:
+  1. **False-passes on git auth/network failures.** When
+     `git ls-remote` errors (missing ssh-agent, encrypted key,
+     network), preflight treats empty output as "no derivative
+     exists" and PASSes. Should distinguish "Repository not found"
+     (legit pass) from auth/network errors (fail).
+  2. **Only checks mriqc.** When ssh-agent worked and preflight
+     could legitimately authenticate, 17/30 fmriprep runs were
+     blocked because their *mriqc* derivative exists upstream —
+     but we were running fmriprep, not mriqc.
+  **Currently disabled in `execute-dataset.sh`** (the
+  `python3 preflight.py` call replaced with `:`) to unblock
+  fmriprep runs. Restore with proper pipeline-aware fix before
+  next run: take `<pipeline>` shortname as second arg, build URL
+  with that pipeline, and treat `git ls-remote` non-zero exit as
+  fail (not silent pass).
 - **Per-(sub, ses) row aggregation in `select-eligible-sub-ses.py`.**
   Some studies (e.g., ds001499, ds004496) split modalities into
   separate rows for the same (sub, ses) — one row for `anat`, another
