@@ -5,9 +5,13 @@ clusters using [BABS](https://github.com/PennLINC/babs).
 
 ## Quick start
 
-> **Kerberos/NFS clusters (e.g., Dartmouth):** Run `krenew -b` in your
-> tmux session before starting. Long runs (>10h) can outlive your
-> Kerberos ticket, causing stale NFS file handles and crashes.
+> **Before any long run on Kerberos/NFS clusters (e.g., Dartmouth):**
+>
+> 1. Start a tmux session — `tmux new -s mecha` — so the run survives
+>    ssh disconnects. Reattach later with `tmux attach -t mecha`.
+> 2. Inside the tmux session, run `krenew -b` to keep your Kerberos
+>    ticket alive. Long runs (>10h) can outlive the ticket, causing
+>    stale NFS file handles and crashes.
 
 ```bash
 # One-time setup: creates venv, installs babs + datalad, clones containers
@@ -34,7 +38,7 @@ Use the output to decide processing level:
 DATASET_ID=ds000113
 duct -p logs/${DATASET_ID}-mriqc/ \
   bash execute-dataset.sh \
-    --dataset-url https://github.com/OpenNeuroDatasets/${DATASET_ID}.git \
+    --dataset-url https://github.com/OpenNeuroDatasets/${DATASET_ID} \
     --pipeline pipelines/mriqc-24.0.2.yaml \
     --cluster clusters/dartmouth.yaml \
     --working-dir processing/${DATASET_ID}-mriqc \
@@ -57,13 +61,43 @@ bash finalize.sh \
   --output derivative-datasets/${DATASET_ID}-mriqc
 ```
 
-## Candidates
+## Parallel runs
 
-`candidates.tsv` lists datasets from
-[OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies)
-that need mriqc. Run `python3 update_candidates.py` to refresh.
+`spawn-all.sh` fans a pipeline out across the priority list — one
+detached tmux session per dataset, each running `execute-dataset.sh`
+end-to-end. See
+[design/parallel-datasets-tmux.md](design/parallel-datasets-tmux.md)
+for the full design.
 
-`python3 preflight.py ds005256` checks a dataset before processing.
+```bash
+bash spawn-all.sh \
+    --pipeline pipelines/mriqc-24.0.2.yaml \
+    --cluster clusters/dartmouth.yaml \
+    --experiment parallel-exp1 \
+    [--per-dataset-count N]   # cap each dataset to N (sub, ses) tasks
+    [--candidates PATH]       # default: priority-openneuro-datasets.csv
+    [--dry-run]               # write inclusion CSVs, don't spawn tmux
+```
+
+Per-dataset artifacts land at:
+- `processing/<experiment>/<ds>-<pipeline>/` — working dir, inclusion CSV, `.status` sentinel
+- `derivative-datasets/<experiment>/<ds>-<pipeline>/` — extracted output
+- tmux session `mecha-<ds>-<pipeline>` — find with `tmux ls`, attach with `tmux attach -t <name>`
+
+## Dataset selection
+
+`priority-openneuro-datasets.csv` lists the datasets we're targeting.
+
+For session-level processing, `select-eligible-sub-ses.py` fetches
+the OpenNeuroStudies metadata TSV for one study and applies a
+hardcoded per-pipeline filter (mriqc: anat + T1w; fmriprep: anat +
+func + T1w + BOLD). Falls back to subject-level for datasets without
+sessions. Outputs an inclusion CSV that `babs submit --inclusion-file`
+consumes. `spawn-all.sh` calls it automatically.
+
+`python3 preflight.py <dataset_id>` ad-hoc checks an OpenNeuroDatasets
+study before processing. `execute-dataset.sh` runs preflight as part
+of the flow.
 
 ## Docs
 
