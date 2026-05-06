@@ -8,10 +8,6 @@
 #
 # See design/parallel-datasets-tmux.md for the full design.
 #
-# NOTE: requires execute-dataset.sh to accept `--inclusion-file <path>`,
-# which is not yet wired (see TODO in design doc). --dry-run is fully
-# functional; real spawn requires that companion change.
-#
 # Usage:
 #   bash spawn-all.sh \
 #       --pipeline pipelines/mriqc-24.0.2.yaml \
