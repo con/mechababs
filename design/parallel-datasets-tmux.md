@@ -239,3 +239,12 @@ better STAMPED Tracked.
   sentinel files and prints a per-dataset summary.
 - Refine filter rules with Yarik (see Open question 1).
 - Fall-back / skip behavior for datasets without sessions.
+- **Per-(sub, ses) row aggregation in `select-eligible-sub-ses.py`.**
+  Some studies (e.g., ds001499, ds004496) split modalities into
+  separate rows for the same (sub, ses) — one row for `anat`, another
+  for `fmap,func`. Our row-by-row filter never sees both at once, so
+  these datasets fail the fmriprep rule even though they have
+  fmriprep-compatible data. Fix: group by (sub_id, ses_id) before
+  filtering, union `datatypes` strings, sum count columns, then apply
+  the rule. Found during fmriprep dry-run on 2026-05-05; would unlock
+  ~2 datasets.
