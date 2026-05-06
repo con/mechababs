@@ -133,6 +133,12 @@ for openneuro_id in "${openneuro_ids[@]}"; do
         echo "[${openneuro_id}] spawning tmux session ${session_name}"
         tmux new-session -d -s "${session_name}" "${execute_cmd[*]}"
         tmux set-option -t "${session_name}" remain-on-exit on
+        # Stagger: not just datalad create — the whole babs init flow
+        # (RIA setup, source-dataset clone, container fetch, git-annex
+        # setup) contends on shared NFS / git-annex locks. 5 min lets
+        # each session get well past the heavy phase before the next
+        # starts. Conservative; tighten later once we have data.
+        sleep 300
     fi
     n_spawned=$((n_spawned + 1))
 done
