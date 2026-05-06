@@ -239,6 +239,14 @@ better STAMPED Tracked.
   sentinel files and prints a per-dataset summary.
 - Refine filter rules with Yarik (see Open question 1).
 - Fall-back / skip behavior for datasets without sessions.
+- **preflight.py false-passes on git auth/network failures.** When
+  `git ls-remote` errors (missing ssh-agent, encrypted key with no
+  passphrase, network issue), preflight currently treats empty
+  output as "no derivative exists" and PASSes. Should distinguish
+  "Repository not found" (legit pass) from auth/network errors
+  (fail). Also: only checks mriqc; with multiple pipelines should
+  be pipeline-aware. Found 2026-05-05 when fmriprep spawn-all
+  proceeded despite an empty ssh-agent.
 - **Per-(sub, ses) row aggregation in `select-eligible-sub-ses.py`.**
   Some studies (e.g., ds001499, ds004496) split modalities into
   separate rows for the same (sub, ses) — one row for `anat`, another

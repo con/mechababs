@@ -13,7 +13,16 @@ import sys
 
 
 def check_no_mriqc_repo(dataset_id):
-    """Check that no mriqc derivative repo exists on GitHub."""
+    """Check that no mriqc derivative repo exists on GitHub.
+
+    TODO: false-passes on `git ls-remote` failures. Returncode != 0 +
+    empty stdout currently returns "no derivative" — but that case
+    includes auth failures (no ssh-agent, encrypted-key with no
+    passphrase entered), network errors, and any other git failure.
+    Should distinguish "Repository not found" in stderr (legit
+    pass) from auth/network errors (fail preflight). Also: only
+    checks mriqc; with multiple pipelines should be pipeline-aware.
+    """
     url = f"git@github.com:OpenNeuroDerivatives/{dataset_id}-mriqc.git"
     result = subprocess.run(
         ["git", "ls-remote", url, "HEAD"],
