@@ -7,21 +7,17 @@ bids_app_args:
   -w: ".git/tmp/wkdir"
   --skip-bids-validation: ""
   --stop-on-first-crash: ""
-  --fs-license-file: "/freesurfer/license.txt"
+  # Pass the HOST path. BABS auto-binds it to
+  # /SGLR/FREESURFER_HOME/license.txt and rewrites this flag in the
+  # generated singularity invocation. Do NOT also bind it manually.
+  --fs-license-file: "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt"
   --nprocs: "8"
   --mem-mb: "32000"
 
-# Bind the license at an arbitrary path and tell fmriprep where it
-# is via --fs-license-file. Do NOT override FREESURFER_HOME — the
-# container ships its own FreeSurfer install (including
-# subjects/fsaverage) at the container-native FREESURFER_HOME, and
-# pointing FREESURFER_HOME at our license-only bind makes fmriprep
-# fail with "Expected to find '/freesurfer/subjects/fsaverage'".
 singularity_args:
   - --containall
   - --writable-tmpfs
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
-  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/freesurfer/license.txt
   - --env TEMPLATEFLOW_HOME=/templateflow
 
 # TODO: partition/nodes/ntasks should come from cluster config, not here.
