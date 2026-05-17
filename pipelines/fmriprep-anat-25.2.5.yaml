@@ -31,10 +31,16 @@ bids_app_args:
   --omp-nthreads: "2"
   --mem-mb: "16000"
 
+# NOTE: with babs's add-containers-run-v2 path, BABS no longer
+# auto-binds the FreeSurfer license (that logic was in the old
+# bidsapp_run.sh.jinja2 template, not the containers-run path).
+# So we bind manually to /SGLR/FREESURFER_HOME/license.txt, which
+# is the path BABS still rewrites --fs-license-file to.
 singularity_args:
   - --containall
   - --writable-tmpfs
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt
   - --env TEMPLATEFLOW_HOME=/templateflow
 
 # Resource sizing: anat-only is dominated by FreeSurfer recon-all,
