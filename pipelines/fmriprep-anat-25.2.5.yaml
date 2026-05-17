@@ -1,0 +1,52 @@
+container:
+  repo: repronim-containers
+  name: bids-fmriprep
+
+# fmriprep --anat-only run.
+# Produces the anatomical scaffold + FreeSurfer recon-all under
+# sourcedata/freesurfer/ inside the zipped output. Feeds the
+# --level full step that follows.
+#
+# Flag set matches OpenNeuroDerivatives/fmriprepDerivatives#1
+# (the opinions doc), with --skull-strip-t1w force matching Joe's
+# practice until we have a per-dataset gating mechanism.
+bids_app_args:
+  $SUBJECT_SELECTION_FLAG: "--participant-label"
+  -w: ".git/tmp/wkdir"
+  --anat-only: ""
+  --output-spaces: "MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2"
+  --cifti-output: "91k"
+  --random-seed: "12345"
+  --skull-strip-fixed-seed: ""
+  --skull-strip-t1w: "force"
+  --notrack: ""
+  --md-only-boilerplate: ""
+  --skip-bids-validation: ""
+  --nprocs: "2"
+  --omp-nthreads: "2"
+  --mem-mb: "16000"
+
+singularity_args:
+  - --containall
+  - --writable-tmpfs
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/freesurfer/license.txt
+  - --env TEMPLATEFLOW_HOME=/templateflow
+  - --env FREESURFER_HOME=/freesurfer
+
+# Resource sizing: anat-only is dominated by FreeSurfer recon-all,
+# which is largely single-threaded. 4 cores allocated with 2 nprocs ×
+# 2 omp-nthreads matches the request (no oversubscription). 36h
+# walltime is generous; we'll tighten based on duct logs later.
+cluster_resources:
+  interpreting_shell: "/bin/bash"
+  hard_runtime_limit: "36:00:00"
+  customized_text: |
+    #SBATCH --cpus-per-task=4
+    #SBATCH --mem=16G
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1
+
+all_results_in_one_zip: true
+zip_foldernames:
+  fmriprep_anat: "25-2-5"
