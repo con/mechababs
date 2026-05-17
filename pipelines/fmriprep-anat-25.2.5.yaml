@@ -22,17 +22,23 @@ bids_app_args:
   --notrack: ""
   --md-only-boilerplate: ""
   --skip-bids-validation: ""
+  --fs-license-file: "/freesurfer/license.txt"
   --nprocs: "2"
   --omp-nthreads: "2"
   --mem-mb: "16000"
 
+# Bind the license at an arbitrary path and tell fmriprep where it
+# is via --fs-license-file. Do NOT override FREESURFER_HOME — the
+# container ships its own FreeSurfer install (including
+# subjects/fsaverage) at the container-native FREESURFER_HOME, and
+# pointing FREESURFER_HOME at our license-only bind makes fmriprep
+# fail with "Expected to find '/freesurfer/subjects/fsaverage'".
 singularity_args:
   - --containall
   - --writable-tmpfs
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/freesurfer/license.txt
   - --env TEMPLATEFLOW_HOME=/templateflow
-  - --env FREESURFER_HOME=/freesurfer
 
 # Resource sizing: anat-only is dominated by FreeSurfer recon-all,
 # which is largely single-threaded. 4 cores allocated with 2 nprocs ×
