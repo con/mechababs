@@ -22,6 +22,7 @@ bids_app_args:
   --notrack: ""
   --md-only-boilerplate: ""
   --skip-bids-validation: ""
+  --stop-on-first-crash: ""
   --fs-license-file: "/freesurfer/license.txt"
   --nprocs: "2"
   --omp-nthreads: "2"

@@ -6,6 +6,7 @@ bids_app_args:
   $SUBJECT_SELECTION_FLAG: "--participant-label"
   -w: ".git/tmp/wkdir"
   --skip-bids-validation: ""
+  --stop-on-first-crash: ""
   --fs-license-file: "/freesurfer/license.txt"
   --nprocs: "8"
   --mem-mb: "32000"
