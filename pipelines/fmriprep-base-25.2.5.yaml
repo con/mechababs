@@ -16,7 +16,7 @@ bids_app_args:
 
 singularity_args:
   - --containall
-  - -B ${JOB_TMP}:/tmp
+  - -B $JOB_TMP:/tmp
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt
   - --env TEMPLATEFLOW_HOME=/templateflow
