@@ -50,6 +50,7 @@ singularity_args:
 cluster_resources:
   interpreting_shell: "/bin/bash"
   hard_runtime_limit: "36:00:00"
+  temporary_disk_space: 200G
   customized_text: |
     #SBATCH --cpus-per-task=4
     #SBATCH --mem=16G
