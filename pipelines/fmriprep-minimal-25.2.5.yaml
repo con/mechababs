@@ -26,9 +26,9 @@ bids_app_args:
   # HOST path; BABS rewrites to /SGLR/FREESURFER_HOME/license.txt.
   --fs-license-file: "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt"
   # Path inside the unzipped fmriprep_anat input. The double nesting
-  # is real: path_in_babs is inputs/data/fmriprep_anat, and the zip's
+  # is real: path_in_babs is sourcedata/fmriprep_anat, and the zip's
   # top folder is also fmriprep_anat/.
-  --fs-subjects-dir: '"${PWD}"/inputs/data/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer'
+  --fs-subjects-dir: '"${PWD}"/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer'
   --nprocs: "4"
   --omp-nthreads: "2"
   --mem-mb: "32000"
@@ -50,7 +50,7 @@ input_datasets:
       - "*fmriprep_anat*.zip"
     is_zipped: true
     origin_url: "ria+file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-05-17/ds005896-fmriprep-anat/babs-project/output_ria#~data"
-    path_in_babs: inputs/data/fmriprep_anat
+    path_in_babs: sourcedata/fmriprep_anat
 
 cluster_resources:
   interpreting_shell: "/bin/bash"

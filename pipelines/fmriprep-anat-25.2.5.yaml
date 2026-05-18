@@ -26,6 +26,7 @@ bids_app_args:
   # Pass the HOST path. BABS auto-binds it to
   # /SGLR/FREESURFER_HOME/license.txt and rewrites this flag in the
   # generated singularity invocation. Do NOT also bind it manually.
+  # TODO babs should not mess with these args.
   --fs-license-file: "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt"
   --nprocs: "2"
   --omp-nthreads: "2"
