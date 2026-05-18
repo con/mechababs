@@ -31,15 +31,16 @@ def merge_babs_config(pipeline_config, cluster_config, dataset_url):
     for k, v in cluster_config.items():
         merged[k] = v
 
-    # Input dataset
-    # TODO path_in_babs configurable
-    merged["input_datasets"] = {
-        "BIDS": {
-            "is_zipped": False,
-            "origin_url": dataset_url,
-            "path_in_babs": "sourcedata/raw",
-        }
+    # Preserve any input_datasets already declared in the pipeline YAML
+    # (e.g. chained-pipeline anat-input for fmriprep-full). Always add
+    # or overwrite the BIDS entry from --dataset-url.
+    input_datasets = merged.get("input_datasets") or {}
+    input_datasets["BIDS"] = {
+        "is_zipped": False,
+        "origin_url": dataset_url,
+        "path_in_babs": "sourcedata/raw",
     }
+    merged["input_datasets"] = input_datasets
 
     return merged
 
