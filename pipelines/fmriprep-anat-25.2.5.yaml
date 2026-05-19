@@ -23,9 +23,10 @@ bids_app_args:
   --md-only-boilerplate: ""
   --skip-bids-validation: ""
   --stop-on-first-crash: ""
-  # Pass the HOST path. BABS auto-binds it to
-  # /SGLR/FREESURFER_HOME/license.txt and rewrites this flag in the
-  # generated singularity invocation. Do NOT also bind it manually.
+  # Pass the HOST path. BABS rewrites this flag's value to
+  # /SGLR/FREESURFER_HOME/license.txt in the generated singularity
+  # invocation; on the add-containers-run-v2 branch BABS does NOT
+  # auto-bind, so we bind manually in singularity_args below.
   # TODO babs should not mess with these args.
   --fs-license-file: "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt"
   --nprocs: "2"
