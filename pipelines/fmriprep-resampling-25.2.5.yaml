@@ -20,6 +20,7 @@ bids_app_args:
   --skull-strip-fixed-seed: ""
   --skull-strip-t1w: "force"
   --use-syn-sdc: "warn"
+  --me-output-echos: ""
   --notrack: ""
   --md-only-boilerplate: ""
   --skip-bids-validation: ""
