@@ -1,17 +1,12 @@
 # mechababs
 
 Automation glue for running BIDS apps across many datasets on HPC
-clusters using BABS.
+clusters using BABS. **User-facing usage and per-dataset workflow:
+see [README.md](README.md). Current-state of the fmriprep pipeline work:
+see [SPOKE_CONTEXT.md](SPOKE_CONTEXT.md).**
 
-## Concept
-
-An execution is the composition of three things: a dataset, a
-pipeline, and a cluster config. mechababs merges them and drives
-babs.
-
-- **Pipeline config** — what to run (one per BIDS app version, in `pipelines/`)
-- **Cluster config** — where to run (one per cluster, in `clusters/`)
-- **Execution args** — per-run things (`--dataset-url`, `--processing-level`, etc.)
+This file holds project conventions, terminology, and pointers a
+contributor (or fresh Claude session) needs that don't fit in either.
 
 ## OpenNeuro ecosystem
 
@@ -30,12 +25,32 @@ OpenNeuroDerivatives. `studies.tsv` (maintained by Yarik) is the
 authoritative index — columns include `study_id`, `raw_version`,
 `derivative_count`, `derivative_ids`.
 
+## Conventions
+
+- **Three-axis composition.** Every run = `dataset × pipeline × cluster`.
+  Pipeline YAMLs (`pipelines/`) hold BIDS-app flags + container; cluster
+  YAMLs (`clusters/`) hold SLURM resources + script preamble. Never
+  bake cluster details into a pipeline YAML or vice versa. `merge_config.py`
+  composes them.
+- **Inclusion files are canonical.** Don't rely on `babs submit --count`
+  to pick subjects. Produce an inclusion CSV (auto via
+  `select-eligible-sub-ses.py`, or hand-written one-row for smoke
+  tests), pass via `--inclusion-file`. `execute-dataset.sh` pins it
+  into `analysis/code/inclusion.csv` via `datalad run` so what was
+  scheduled is recorded in git.
+- **Wrap runs in duct.** Any `execute-dataset.sh` invocation goes
+  through `duct -p logs/...` so we get usage/resource logs alongside
+  the outputs. `spawn-all.sh` also wraps the per-tmux invocations.
+- **Curated facts live in `priority-openneuro-datasets.csv`.** It's the
+  human-edited list of datasets we care about. Don't synthesize a parallel
+  source; add columns here if a per-dataset fact needs to be tracked.
+
 ## Principles
 
 The STAMPED paper (`reference/principles-paper/`) should inform all
 design and implementation decisions. When in doubt, ask: does this make
-the research object more Self-contained, Tracked, Actionable, Modular,
-Portable, Ephemeral, and Distributable?
+the research object more **S**elf-contained, **T**racked, **A**ctionable,
+**M**odular, **P**ortable, **E**phemeral, and **D**istributable?
 
 ## Babs source
 
@@ -48,6 +63,11 @@ source .venv/bin/activate
 pip install -e ~/devel/babs/.git/my-worktrees/mechababs-working-branch
 ```
 
+Other active worktrees under `~/devel/babs/.git/my-worktrees/`:
+`add-containers-run-v2` (current container-handling branch the pipeline
+YAMLs target), `optional-zipping`, `status-wait`, `babs-config-composition`,
+`pipeline-of-one`, etc.
+
 ## Reference repos
 
 Cloned into `reference/` (gitignored). Before using any reference repo,
@@ -55,44 +75,23 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 
 | Directory | Upstream | Purpose |
 |---|---|---|
-| `babs_demo/` | (local, Dorota's walkthrough) | Reference scripts for babs workflow with .env-based cluster config |
-| `babs-containers-run-test/` | (local, Austin's test scripts) | Reference scripts for testing babs init with containers-run branch |
 | `principles-paper/` | https://github.com/myyoda/principles-paper | STAMPED properties paper — the principles guiding this project |
 | `OpenNeuroStudies/` | https://github.com/OpenNeuroStudies/OpenNeuroStudies | The superdataset mechababs feeds into |
 | `OpenNeuroDerivatives/` | https://github.com/OpenNeuroDerivatives/OpenNeuroDerivatives | Upstream mirrors for derivative datasets |
 | `fairly-big-processing-workflow/` | https://github.com/psychoinformatics-de/fairly-big-processing-workflow | The FAIRly Big pattern that BABS implements |
 | `containers/` | https://github.com/ReproNim/containers | ReproNim container dataset — archives built SIFs |
+| `babs_demo/` | (local, Dorota's walkthrough) | Reference scripts for babs workflow with .env-based cluster config |
+| `babs-containers-run-test/` | (local, Austin's test scripts) | Reference scripts for testing babs init with containers-run branch |
+| `bootstrap_fMRIprep/` | Felix's cerebra.fz-juelich.de gitea | Felix's canonical fmriprep wrapper — reference for opinions repo |
+| `ds001761-fmriprep/`, `ds005374-fmriprep/` | OpenNeuroDerivatives mirrors | Joe's published fmriprep runs (2022 + 2025) — reference for output shape |
 
-## Running a dataset
+## Where to read in
 
-To kick off a pipeline on a new dataset:
+For overall project usage: **`README.md`**.
 
-1. Check `candidates.tsv` for MRIQC/fmriprep status and `local-notes/upstream_studies_2026-04-13.tsv` for dataset metadata (subjects, sessions, datatypes, size)
-2. Determine processing level: use `--processing-level session` if `sessions_min` > 1 and per-session jobs are preferred; otherwise default `subject` is fine
-3. For datasets with many sessions per subject, check how many sessions the first subject actually has (it may differ from the dataset average)
-4. Use `--count 1` to test on a single subject before submitting all
-5. See `local-notes/cluster-workflow.md` for per-dataset processing notes and ndoli run instructions
+For the current fmriprep pipeline work: **`SPOKE_CONTEXT.md`** — it has
+the staged-pipeline shape, decided config, single-subject test outputs,
+open/in-flight items, and the right pointers into `local-notes/OpenNeuro/`
+for meeting transcripts and curriculum.
 
-## Repo layout
-
-```
-mechababs/
-├── execute-dataset.sh     # the per-dataset workflow script
-├── merge_config.py        # YAML merge (only Python needed)
-├── setup-dev.sh           # venv + babs + repronim/containers
-├── preflight.py           # pre-run checks
-├── update_candidates.py   # refresh candidate list from studies.tsv
-├── candidates.tsv         # datasets to process
-├── pipelines/             # pipeline configs
-├── clusters/              # cluster configs
-├── design/                # diagrams, findings, ideas
-├── babs_automation_gaps.md
-├── SPEC.md
-├── README.md
-├── CLAUDE.md              # this file
-├── repronim-containers/   # local container clone (gitignored)
-├── processing/            # working dirs (gitignored)
-├── derivative-datasets/   # output derivatives
-├── local-notes/           # local scratch (gitignored)
-└── reference/             # cloned upstream repos (gitignored)
-```
+For mechababs's own gaps and upstream BABS issues: `local-notes/babs_automation_gaps.md`.
