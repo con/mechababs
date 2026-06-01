@@ -1,18 +1,22 @@
 # Shared config + helpers for the June 1 fmriprep deployment.
 #
-# SOURCE this from the numbered step scripts (1-anat.sh, 2-merge.sh,
-# 3-minimal.sh); do not execute it directly. It defines the deployment
-# constants, the path conventions (so no step hardcodes layout), the
-# per-study ledger() wrapper, and the dry-run-aware run() helper. Each
-# step sets its own `set -eu` and parses its own --dry-run into DRY_RUN.
+# SOURCE this from the numbered step scripts (0-init.sh .. 3-minimal.sh);
+# do not execute it directly. It defines the deployment constants, the path
+# conventions (so no step hardcodes layout), the per-study ledger() wrapper,
+# and the dry-run-aware run() helper. Each step sets its own `set -eu` and
+# parses its own args.
 #
 # The deployment runs as a sequence with manual gaps between steps:
-#   1-anat.sh     deploy anat-only (submit-only); writes the ledger
+#   0-init.sh     sanity checks + seed the ledger (select-once-freeze)
+#   1-anat.sh     deploy anat-only (submit-only) for pending rows [--batch N]
 #     (poll `babs status` by hand)
-#   2-merge.sh    babs merge each anat project + RIA-peek -> ledger anat_ok
-#   3-minimal.sh  deploy minimal (submit-only) for anat_ok studies
+#   2-merge.sh    per study: show `babs status`, prompt continue/skip/abort
+#                 -> babs merge + RIA-peek -> ledger anat_ok
+#   3-minimal.sh  deploy minimal (submit-only, --anat-ria) for anat_ok rows [--batch N]
 #
-# Cluster steps run on ndoli; use --dry-run anywhere to preview commands.
+# Run each step on ndoli inside a tmux/screen session so the long
+# login-node process survives disconnect. (We dropped spawn-all's per-
+# dataset session fan-out, not tmux itself.) --dry-run previews commands.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "lib.sh is a sourced library, not an executable script" >&2
