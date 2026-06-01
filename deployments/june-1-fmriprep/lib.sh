@@ -36,10 +36,10 @@ stage_wd()      { echo "processing/${EXPERIMENT}/$1-fmriprep-$2"; }       # ds, 
 stage_out()     { echo "derivative-datasets/${EXPERIMENT}/$1-fmriprep-$2"; }
 inclusion_csv() { echo "processing/${EXPERIMENT}/$1-inclusion.csv"; }     # study-level, shared
 log_prefix()    { echo "logs/${EXPERIMENT}/$1-fmriprep-$2/"; }
-# Absolute output_ria path of a study's anat project (for the merge peek)...
-anat_ria_path() { echo "${REPO_ROOT}/$(stage_wd "$1" anat)/babs-project/output_ria"; }
-# ...and its RIA URL (for minimal's --anat-ria).
-anat_ria_url()  { echo "ria+file://$(anat_ria_path "$1")#~data"; }
+# Absolute output_ria path of a study's stage project (for a merge peek)...
+stage_ria_path() { echo "${REPO_ROOT}/$(stage_wd "$1" "$2")/babs-project/output_ria"; }  # ds, stage
+# ...and its RIA URL (anat's feeds minimal's --anat-ria; minimal's feeds unzip).
+stage_ria_url()  { echo "ria+file://$(stage_ria_path "$1" "$2")#~data"; }
 
 # ===== Ledger wrapper =======================================================
 # ledger <subcommand> ...: run ledger.py against this deployment's LEDGER.

@@ -16,6 +16,9 @@ Columns:
   anat_ok            '' | true | false  (step 2 RIA-peek of merged output)
   anat_ria_url       ria+file://...#~data   (step 2, for minimal --anat-ria)
   minimal_status     '' | deployed | skipped           (step 3)
+  minimal_note       free text: skip / error reason    (step 3)
+  minimal_ok         '' | true | false   (RIA-peek of merged minimal output)
+  minimal_ria_url    ria+file://...#~data    (minimal output_ria, for unzip)
 
 Subcommands:
   init  --ledger P --studies ds1 ds2 ...   one 'pending' row per study
@@ -37,6 +40,9 @@ COLUMNS = [
     "anat_ok",
     "anat_ria_url",
     "minimal_status",
+    "minimal_note",
+    "minimal_ok",
+    "minimal_ria_url",
 ]
 
 # set subcommand: --flag -> column. Only provided flags are updated.
@@ -49,6 +55,9 @@ SETTABLE = {
     "anat_ok": "anat_ok",
     "anat_ria_url": "anat_ria_url",
     "minimal_status": "minimal_status",
+    "minimal_note": "minimal_note",
+    "minimal_ok": "minimal_ok",
+    "minimal_ria_url": "minimal_ria_url",
 }
 
 
