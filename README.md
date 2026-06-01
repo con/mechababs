@@ -83,7 +83,7 @@ duct -p logs/${DATASET_ID}-mriqc/ \
 6. **`babs status --wait`** — polls until jobs finish
 7. **`finalize.sh`** — `babs merge`, clone from output RIA, datalad-get archives and duct logs, extract zips
 
-`--submit-only` stops after step 5: jobs are submitted, then the script exits without steps 6–7 (no `babs status --wait`, no finalize). Used by staged deployments that poll + merge by hand (e.g. `june-1-fmriprep-deployment.sh`).
+`--submit-only` stops after step 5: jobs are submitted, then the script exits without steps 6–7 (no `babs status --wait`, no finalize). Used by staged deployments that poll + merge by hand (e.g. `deployments/june-1-fmriprep/`).
 
 A sentinel file is written at `<working-dir>/.status` on exit:
 

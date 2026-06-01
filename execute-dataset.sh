@@ -141,7 +141,7 @@ babs submit "${WORKING_DIR}/babs-project" \
 # ===== Step 5: Wait for jobs ==================================================
 # --submit-only stops here: jobs are submitted, but we don't block on
 # `babs status --wait` or run finalize. Used by staged deployments that
-# poll + merge by hand (e.g. june-1-fmriprep-deployment.sh).
+# poll + merge by hand (e.g. deployments/june-1-fmriprep/).
 if [[ "${SUBMIT_ONLY}" -eq 1 ]]; then
     echo "submit-only: jobs submitted; skipping 'babs status --wait' and finalize."
     exit 0

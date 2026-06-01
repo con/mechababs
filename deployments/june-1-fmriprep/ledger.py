@@ -59,7 +59,7 @@ def read_rows(path):
 
 def write_rows(path, rows):
     with open(path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(f, fieldnames=COLUMNS, delimiter="\t", lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({c: row.get(c, "") for c in COLUMNS})
