@@ -11,7 +11,8 @@
 #       --pipeline pipelines/mriqc-24.0.2.yaml \
 #       --cluster clusters/dartmouth.yaml \
 #       --working-dir processing/ds000003-mriqc \
-#       [--inclusion-file processing/.../inclusion.csv]
+#       [--inclusion-file processing/.../inclusion.csv] \
+#       [--submit-only]   # init + submit, then stop (no wait, no finalize)
 export PS4='> '
 set -eux
 
@@ -28,6 +29,7 @@ PROCESSING_LEVEL="subject"
 COUNT=""
 INCLUSION_FILE=""
 INCLUSION_FILE_IN_DATASET=""
+SUBMIT_ONLY=0
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -39,12 +41,13 @@ while [[ $# -gt 0 ]]; do
         --processing-level) PROCESSING_LEVEL="$2"; shift 2 ;;
         --count) COUNT="$2"; shift 2 ;;
         --inclusion-file) INCLUSION_FILE="$2"; shift 2 ;;
+        --submit-only) SUBMIT_ONLY=1; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
 if [[ -z "${DATASET_URL}" || -z "${PIPELINE}" || -z "${CLUSTER_CONFIG}" || -z "${WORKING_DIR}" ]]; then
-    echo "Usage: $0 --dataset-url URL --pipeline PATH --cluster PATH --working-dir PATH [--output PATH] [--processing-level subject|session] [--count N] [--inclusion-file PATH]"
+    echo "Usage: $0 --dataset-url URL --pipeline PATH --cluster PATH --working-dir PATH [--output PATH] [--processing-level subject|session] [--count N] [--inclusion-file PATH] [--submit-only]"
     exit 1
 fi
 
@@ -132,6 +135,13 @@ babs submit "${WORKING_DIR}/babs-project" \
     ${INCLUSION_FILE_IN_DATASET:+--inclusion-file ${INCLUSION_FILE_IN_DATASET}}
 
 # ===== Step 5: Wait for jobs ==================================================
+# --submit-only stops here: jobs are submitted, but we don't block on
+# `babs status --wait` or run finalize. Used by staged deployments that
+# poll + merge by hand (e.g. june-1-fmriprep-deployment.sh).
+if [[ "${SUBMIT_ONLY}" -eq 1 ]]; then
+    echo "submit-only: jobs submitted; skipping 'babs status --wait' and finalize."
+    exit 0
+fi
 babs status --wait "${WORKING_DIR}/babs-project"
 
 # ===== Step 6: Finalize =====================================================
