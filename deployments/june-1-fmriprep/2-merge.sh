@@ -1,18 +1,18 @@
 #!/bin/bash
-# Step 2 — June 1 fmriprep deployment: merge each anat-only project and
+# Step 2 — June 1 fmriprep deployment: merge each deployed anat project and
 # record whether it actually produced its zip.
 #
-# Run AFTER the anat SLURM jobs finish (poll `babs status` by hand). For
-# every study the ledger marks anat_status=deployed:
-#   1. `babs merge` the anat project (octopus-merge job results into the
-#      output_ria's master branch).
-#   2. RIA-peek: git ls-tree the merged output_ria (no clone, no content
-#      fetch) for the subject's *fmriprep_anat*.zip.
-#   3. Write anat_ok (true/false) + anat_ria_url back to the ledger.
-# Then run 3-minimal.sh, which deploys minimal for the anat_ok studies.
+# Run AFTER the anat jobs finish (poll `babs status`). Pure ledger consumer:
+# for each row with anat_status=deployed AND anat_ok still unset, babs merge
+# the anat project, then RIA-peek the merged output_ria (git ls-tree through
+# alias/data — git only, no annex content fetch) for the subject's
+# *fmriprep_anat*.zip, and write anat_ok (true/false) + anat_ria_url back.
+# Idempotent + batchable: a row whose anat_ok is already set is skipped.
 #
-# Run on ndoli (babs merge + the local RIA are there). --dry-run previews
-# the merge commands without merging, peeking, or touching the ledger.
+#   --batch N   merge at most N studies this run (default: all eligible)
+#   --dry-run   preview the merge commands; no merge, no peek, no ledger write
+#
+# Then run 3-minimal.sh. Run on ndoli (babs merge + the local RIA are there).
 export PS4='> '
 set -eu
 
@@ -21,14 +21,29 @@ source "${SCRIPT_DIR}/lib.sh"
 cd "${REPO_ROOT}"
 
 DRY_RUN=0
+BATCH=0   # 0 = all eligible
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run) DRY_RUN=1; shift ;;
-        *) echo "Usage: $0 [--dry-run]" >&2; exit 1 ;;
+        --batch) BATCH="$2"; shift 2 ;;
+        *) echo "Usage: $0 [--batch N] [--dry-run]" >&2; exit 1 ;;
     esac
 done
 
-while IFS=$'\t' read -r ds sub; do
+if [[ ! -e "${LEDGER}" ]]; then
+    echo "No ledger at ${LEDGER}. Run 0-init.sh first." >&2
+    exit 1
+fi
+
+# Deployed but not-yet-merged studies (anat_ok still unset), capped to batch.
+mapfile -t todo < <(ledger list --where anat_status=deployed --where anat_ok= --cols openneuro_id)
+if [[ "${BATCH}" -gt 0 ]]; then
+    todo=("${todo[@]:0:${BATCH}}")
+fi
+echo "Merge anat: ${#todo[@]} study(ies) this run"
+
+for ds in "${todo[@]}"; do
+    sub="$(ledger get "${ds}" sub)"
     anat_project="$(stage_wd "${ds}" anat)/babs-project"
     echo "[${ds}] merging anat (sub=${sub})"
 
@@ -55,7 +70,7 @@ while IFS=$'\t' read -r ds sub; do
             --anat-note "anat zip not found (merge exit ${merge_rc})"
         echo "  anat_ok=false (merge exit ${merge_rc})"
     fi
-done < <(ledger list --where anat_status=deployed --cols openneuro_id,sub)
+done
 
 echo ""
 echo "Merge anat done. Ledger: ${LEDGER}"
