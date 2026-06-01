@@ -64,10 +64,13 @@ run() {
 }
 
 # ===== Target studies =======================================================
-# Gated query: available on OpenNeuro AND has a published MRIQC derivative
-# (the pre-fmriprep QC gate). select-fmriprep-targets.py emits a pure id
-# list on stdout and refreshes the reference/OpenNeuroStudies index.
-mapfile -t STUDIES < <(python3 select-fmriprep-targets.py --require-available --require-mriqc)
+# All datasets available on OpenNeuro. The MRIQC gate (--require-mriqc) is
+# deliberately OFF here: this deployment is an error-collection shakeout —
+# we want wide coverage to surface the *types* of failures across the
+# priority list, not a narrowed QC'd set. (MRIQC becomes a real per-subject
+# gate in the final pipeline.) select-fmriprep-targets.py emits a pure id
+# list on stdout.
+mapfile -t STUDIES < <(python3 select-fmriprep-targets.py --require-available)
 echo "Pass: ${PASS}   Target studies (${#STUDIES[@]}):"
 printf '  %s\n' "${STUDIES[@]}"
 
