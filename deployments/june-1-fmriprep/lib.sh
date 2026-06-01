@@ -28,7 +28,8 @@ EXPERIMENT="openneuro-pipe-2026-06-01"
 CLUSTER="clusters/dartmouth.yaml"
 ANAT_PIPELINE="pipelines/fmriprep-anat-25.2.5.yaml"
 MINIMAL_PIPELINE="pipelines/fmriprep-minimal-25.2.5.yaml"
-LEDGER="processing/${EXPERIMENT}/deployment-status.tsv"
+# Overridable (export LEDGER=... before running) for testing.
+LEDGER="${LEDGER:-processing/${EXPERIMENT}/deployment-status.tsv}"
 
 # ===== Path conventions (all relative to REPO_ROOT / cwd) ===================
 # stage is "anat" or "minimal".
