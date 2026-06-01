@@ -21,7 +21,7 @@ import sys
 import yaml
 
 
-def merge_babs_config(pipeline_config, cluster_config, dataset_url):
+def merge_babs_config(pipeline_config, cluster_config, dataset_url, anat_ria=None):
     """Merge pipeline and cluster configs with dataset URL into a babs config dict."""
     # Pipeline config (bids_app_args, singularity_args, zip_foldernames, etc.)
     # Exclude 'container' — that's metadata for babs init args, not babs config
@@ -48,6 +48,16 @@ def merge_babs_config(pipeline_config, cluster_config, dataset_url):
     for k, v in yaml_input_datasets.items():
         if k != "BIDS":
             input_datasets[k] = v
+
+    # Chained-pipeline anat input: the minimal/full YAML declares a
+    # `fmriprep_anat` input but leaves origin_url out (it's a per-run
+    # absolute RIA path). --anat-ria injects it here so nothing is
+    # hardcoded in the YAML.
+    if anat_ria:
+        if "fmriprep_anat" not in input_datasets:
+            sys.exit("merge_config: --anat-ria given but pipeline declares no 'fmriprep_anat' input_dataset")
+        input_datasets["fmriprep_anat"]["origin_url"] = anat_ria
+
     merged["input_datasets"] = input_datasets
 
     return merged
@@ -58,6 +68,8 @@ def main():
     parser.add_argument("--pipeline", required=True, help="Path to pipeline YAML config")
     parser.add_argument("--cluster", required=True, help="Path to cluster YAML config")
     parser.add_argument("--dataset-url", required=True, help="URL or path to input BIDS dataset")
+    parser.add_argument("--anat-ria", default=None,
+                        help="RIA URL for the chained anat-only output; sets fmriprep_anat.origin_url")
     args = parser.parse_args()
 
     with open(args.pipeline) as f:
@@ -65,7 +77,7 @@ def main():
     with open(args.cluster) as f:
         cluster_config = yaml.safe_load(f)
 
-    merged = merge_babs_config(pipeline_config, cluster_config, args.dataset_url)
+    merged = merge_babs_config(pipeline_config, cluster_config, args.dataset_url, args.anat_ria)
     yaml.dump(merged, sys.stdout, default_flow_style=False, sort_keys=False)
 
 

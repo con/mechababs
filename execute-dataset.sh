@@ -12,7 +12,8 @@
 #       --cluster clusters/dartmouth.yaml \
 #       --working-dir processing/ds000003-mriqc \
 #       [--inclusion-file processing/.../inclusion.csv] \
-#       [--submit-only]   # init + submit, then stop (no wait, no finalize)
+#       [--submit-only]    # init + submit, then stop (no wait, no finalize)
+#       [--anat-ria URL]   # chained anat output_ria -> fmriprep_anat.origin_url
 export PS4='> '
 set -eux
 
@@ -30,6 +31,7 @@ COUNT=""
 INCLUSION_FILE=""
 INCLUSION_FILE_IN_DATASET=""
 SUBMIT_ONLY=0
+ANAT_RIA=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -42,12 +44,13 @@ while [[ $# -gt 0 ]]; do
         --count) COUNT="$2"; shift 2 ;;
         --inclusion-file) INCLUSION_FILE="$2"; shift 2 ;;
         --submit-only) SUBMIT_ONLY=1; shift ;;
+        --anat-ria) ANAT_RIA="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
 if [[ -z "${DATASET_URL}" || -z "${PIPELINE}" || -z "${CLUSTER_CONFIG}" || -z "${WORKING_DIR}" ]]; then
-    echo "Usage: $0 --dataset-url URL --pipeline PATH --cluster PATH --working-dir PATH [--output PATH] [--processing-level subject|session] [--count N] [--inclusion-file PATH] [--submit-only]"
+    echo "Usage: $0 --dataset-url URL --pipeline PATH --cluster PATH --working-dir PATH [--output PATH] [--processing-level subject|session] [--count N] [--inclusion-file PATH] [--submit-only] [--anat-ria URL]"
     exit 1
 fi
 
@@ -96,6 +99,7 @@ python3 merge_config.py \
     --pipeline "${PIPELINE}" \
     --cluster "${CLUSTER_CONFIG}" \
     --dataset-url "${DATASET_URL}" \
+    ${ANAT_RIA:+--anat-ria ${ANAT_RIA}} \
     > "${WORKING_DIR}/babs-config.yaml"
 
 # ===== Step 2: Init babs project =============================================
