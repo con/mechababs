@@ -23,6 +23,7 @@ Columns:
 Subcommands:
   init  --ledger P --studies ds1 ds2 ...   one 'pending' row per study
   set   --ledger P ID [--sub ..] [--anat-status ..] ...  update a study's columns
+  get   --ledger P ID COL                  print one column's value for a study
   list  --ledger P [--where COL=VAL ...] [--cols c1,c2]  emit matching rows as TSV
 """
 
@@ -105,10 +106,20 @@ def cmd_list(args):
         col, _, val = cond.partition("=")
         rows = [r for r in rows if r.get(col, "") == val]
     cols = args.cols.split(",") if args.cols else COLUMNS
-    writer = csv.writer(sys.stdout, delimiter="\t")
+    # Plain tab-join (not csv.writer, whose default \r\n + quoting corrupts
+    # shell `read`). Ledger values never contain tabs.
     for row in rows:
-        writer.writerow([row.get(c, "") for c in cols])
+        print("\t".join(row.get(c, "") for c in cols))
     return 0
+
+
+def cmd_get(args):
+    for row in read_rows(args.ledger):
+        if row["openneuro_id"] == args.openneuro_id:
+            print(row.get(args.col, ""))
+            return 0
+    print(f"ledger get: no row for {args.openneuro_id}", file=sys.stderr)
+    return 1
 
 
 def main():
@@ -127,6 +138,12 @@ def main():
     for flag in SETTABLE:
         ps.add_argument(f"--{flag.replace('_', '-')}", dest=flag, default=None)
     ps.set_defaults(func=cmd_set)
+
+    pg = sub.add_parser("get", help="print one column's value for a study")
+    pg.add_argument("--ledger", required=True)
+    pg.add_argument("openneuro_id")
+    pg.add_argument("col")
+    pg.set_defaults(func=cmd_get)
 
     pl = sub.add_parser("list", help="emit matching rows as TSV (no header)")
     pl.add_argument("--ledger", required=True)
