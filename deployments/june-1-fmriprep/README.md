@@ -39,7 +39,15 @@ Per-study state is the ledger:
 
 Each step is idempotent — it acts only on rows in its "ready, not-yet-done"
 state, so re-running picks up where it left off and never double-acts.
-Inspect or query it with `ledger.py`:
+
+One-glance view (joins the ledger with live SLURM jobs — which job is which
+dataset, its state/time/node):
+
+```bash
+bash deployments/june-1-fmriprep/status.sh
+```
+
+Or query the ledger directly with `ledger.py`:
 
 ```bash
 python3 deployments/june-1-fmriprep/ledger.py list \
