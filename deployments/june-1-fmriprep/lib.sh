@@ -64,3 +64,15 @@ run() {
         "$@"
     fi
 }
+
+# ===== Interactive guards ===================================================
+# warn_if_no_tmux: prompt-to-continue when not inside tmux/screen, so a long
+# login-node run isn't silently lost on disconnect. Call from the steps that
+# hold a durable session (1-anat / 2-merge / 3-minimal); skip it under
+# --dry-run, which doesn't need to survive anything.
+warn_if_no_tmux() {
+    [[ -n "${TMUX:-}" || -n "${STY:-}" ]] && return 0
+    local ans
+    read -r -p "Not inside tmux/screen — a disconnect will kill this run. Continue anyway? [y/N] " ans
+    [[ "${ans}" == [yY]* ]] || { echo "Aborting." >&2; exit 1; }
+}

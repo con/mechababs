@@ -40,6 +40,8 @@ if [[ ! -e "${LEDGER}" ]]; then
     exit 1
 fi
 
+[[ "${DRY_RUN}" -eq 0 ]] && warn_if_no_tmux
+
 # Deployed but not-yet-merged studies (anat_ok still unset), capped to batch.
 mapfile -t candidates < <(ledger list --where anat_status=deployed --where anat_ok= --cols openneuro_id)
 if [[ "${BATCH}" -gt 0 ]]; then

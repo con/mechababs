@@ -72,9 +72,7 @@ for a in yaml.safe_load(open('${ANAT_PIPELINE}')).get('singularity_args', []):
     echo "  tools + files OK"
 
     # Prompt-to-continue: softer issues the user may knowingly accept.
-    if [[ -z "${TMUX:-}" && -z "${STY:-}" ]]; then
-        prompt_continue "Not inside tmux/screen — a disconnect will kill this run."
-    fi
+    warn_if_no_tmux
     git fetch --quiet 2>/dev/null || true
     behind="$(git rev-list --count HEAD..@{u} 2>/dev/null || echo 0)"
     if [[ "${behind}" -gt 0 ]]; then

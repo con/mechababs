@@ -36,6 +36,8 @@ if [[ ! -e "${LEDGER}" ]]; then
     exit 1
 fi
 
+[[ "${DRY_RUN}" -eq 0 ]] && warn_if_no_tmux
+
 # anat_ok studies not yet given a minimal job, capped to batch. Read fields
 # per study (not positional split — ses may be empty and a tab-IFS `read`
 # would collapse it and shift the columns).

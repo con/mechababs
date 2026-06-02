@@ -35,6 +35,8 @@ if [[ ! -e "${LEDGER}" ]]; then
     exit 1
 fi
 
+[[ "${DRY_RUN}" -eq 0 ]] && warn_if_no_tmux
+
 # Pending studies, capped to the batch size.
 mapfile -t pending < <(ledger list --where anat_status=pending --cols openneuro_id)
 if [[ "${BATCH}" -gt 0 ]]; then
