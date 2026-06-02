@@ -4,7 +4,7 @@
 #
 # For each row with anat_status=deployed AND anat_ok still unset, show
 # `babs status` for that project and let the user decide:
-#   [c]ontinue  -> babs merge + RIA-peek -> ledger anat_ok (true/false)
+#   [c]ontinue  -> babs merge + RIA-peek -> ledger anat_status (merged/failed) + anat_ok (true/false)
 #   [s]kip      -> leave anat_ok unset (picked up by a later run)
 #   [a]bort     -> stop here
 #
@@ -69,12 +69,12 @@ for ds in "${candidates[@]}"; do
                 # Confirm the merged output_ria actually carries the zip.
                 if git -C "$(stage_ria_path "${ds}" anat)/alias/data" ls-tree -r --name-only HEAD 2>/dev/null \
                      | grep -qE "${sub}.*fmriprep_anat.*\.zip"; then
-                    ledger set "${ds}" --anat-ok true --anat-ria-url "${ria_url}"
-                    echo "  anat_ok=true"
+                    ledger set "${ds}" --anat-status merged --anat-ok true --anat-ria-url "${ria_url}"
+                    echo "  anat_status=merged anat_ok=true"
                 else
-                    ledger set "${ds}" --anat-ok false --anat-ria-url "${ria_url}" \
+                    ledger set "${ds}" --anat-status failed --anat-ok false --anat-ria-url "${ria_url}" \
                         --anat-note "merged but zip not found (merge exit ${merge_rc})"
-                    echo "  anat_ok=false (merge exit ${merge_rc})"
+                    echo "  anat_status=failed anat_ok=false (merge exit ${merge_rc})"
                 fi
                 break ;;
             s|S) echo "  skipped (left for a later run)"; break ;;
