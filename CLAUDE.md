@@ -44,6 +44,7 @@ authoritative index — columns include `study_id`, `raw_version`,
 - **Curated facts live in `priority-openneuro-datasets.csv`.** It's the
   human-edited list of datasets we care about. Don't synthesize a parallel
   source; add columns here if a per-dataset fact needs to be tracked.
+- Never reference untracked local files in upstream-facing stuff (tracked files, issues, etc)
 
 ## Principles
 
@@ -54,18 +55,18 @@ the research object more **S**elf-contained, **T**racked, **A**ctionable,
 
 ## Babs source
 
-We develop against `~/devel/babs/.git/my-worktrees/mechababs-working-branch`
+We develop against `~/devel/babs/.worktrees/mechababs-working-branch`
 (Austin's working branch on the babs fork), not upstream `main`. Install
 into the venv with:
 
 ```bash
 source .venv/bin/activate
-pip install -e ~/devel/babs/.git/my-worktrees/mechababs-working-branch
+pip install -e ~/devel/babs/.worktrees/mechababs-working-branch
 ```
 
-Other active worktrees under `~/devel/babs/.git/my-worktrees/`:
+Other active worktrees under `~/devel/babs/.worktrees/`:
 `add-containers-run-v2` (current container-handling branch the pipeline
-YAMLs target), `optional-zipping`, `status-wait`, `babs-config-composition`,
+YAMLs target), `optional-zipping`, `babs-config-composition`,
 `pipeline-of-one`, etc.
 
 ## Reference repos
