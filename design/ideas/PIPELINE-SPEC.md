@@ -1,5 +1,12 @@
 # Pipeline-as-unit for BABS
 
+> **Reframe (probably no longer needed) — filed `fuzzy/slop`, no milestone.**
+> A real "pipeline-as-unit" is likely *not* needed: we run anat (its own
+> dataset) and minimal (its own dataset) as a **fan-out**, which works. The one
+> piece that may still be worth pulling out of this: having **`babs merge` run
+> in SLURM** (not on the login node) — but that would change this issue
+> *dramatically*. Not acting on the reframe yet; just noting it at the top.
+
 Working draft.
 The unit of BABS is currently a single BIDS-app run that produces one fresh output dataset per project.
 This document proposes making the **pipeline** the unit instead, with the single-app case as a degenerate one-step pipeline.
