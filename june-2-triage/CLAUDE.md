@@ -185,11 +185,11 @@ When triage is done, file everything and collapse this scaffolding:
 1. **File all drafted issues to GitHub** — the `issues/*.md` drafts, the §1b
    relabels (#3–#11), and the "Upstream babs — tracked" list. **Qualify every
    cross-reference as `owner/repo#N`** (see Cross-repo refs / filing).
-2. **Roll `ISSUES.md` + `SPOKE_CONTEXT.md` into a root `STATE.md`** — one
-   hub-state-style doc that tracks **the ledger**. After filing, the ledger
-   points to **filed GitHub issue numbers**, not local file paths. **Trim most
-   of SPOKE_CONTEXT *during* this roll, not before — and the roll happens
-   *after* issues are filed to GitHub, so we don't trim/migrate twice.**
+2. **Build a root `STATE.md` ledger incrementally as you file** — each filed
+   issue moves from `ISSUES.md` into `STATE.md` with its **GitHub link** (not a
+   file path). STATE.md is hub-state-style and **never stale**. Roll any
+   remainder + `SPOKE_CONTEXT.md` in at the end, **trimming SPOKE *then*** (not
+   before) so we don't migrate twice.
 3. **Root `TRIAGE.md` stays as-is** — the dwindling inbox.
 4. **Remove `june-2-triage/`** once everything's filed/migrated.
    - Open (decide at wind-down): where `notes/` lands (likely a root `notes/`)
