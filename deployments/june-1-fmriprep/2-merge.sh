@@ -1,4 +1,7 @@
 #!/bin/bash
+# TODO: 2-merge.sh and 4-merge.sh are near-identical (anat vs minimal stage)
+# — deduplicate into one stage-parametrized merge step.
+#
 # Step 2 — June 1 fmriprep deployment: merge each deployed anat project,
 # with a human-in-the-loop gate.
 #

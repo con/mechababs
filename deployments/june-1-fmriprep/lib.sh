@@ -13,6 +13,9 @@
 #   2-merge.sh    per study: show `babs status`, prompt continue/skip/abort
 #                 -> babs merge + RIA-peek -> ledger anat_ok
 #   3-minimal.sh  deploy minimal (submit-only, --anat-ria) for anat_ok rows [--batch N]
+#     (poll `babs status` by hand)
+#   4-merge.sh    per study: show `babs status`, prompt continue/skip/abort
+#                 -> babs merge + RIA-peek -> ledger minimal_ok + minimal_ria_url
 #
 # Run each step on ndoli inside a tmux/screen session so the long
 # login-node process survives disconnect. (We dropped spawn-all's per-
