@@ -18,6 +18,8 @@
 #                 -> babs merge + RIA-peek -> ledger minimal_ok + minimal_ria_url
 #   5-clone.sh    [on TYPHON] clone each merged output RIA from ndoli over SSH
 #                 (no content fetch) -> ${DEST_BASE}/<ds>-fmriprep-<stage>
+#   6-get.sh      [on TYPHON] datalad get . per cloned dataset (non-recursive)
+#                 -> fetches the per-subject zip + duct logs
 #
 # Steps 0-4 run on ndoli inside a tmux/screen session so the long login-node
 # process survives disconnect. (We dropped spawn-all's per-dataset session
