@@ -33,6 +33,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+[[ "${DRY_RUN}" -eq 0 ]] && warn_if_no_tmux
+
 [[ "${FETCH}" -eq 1 ]] && fetch_ledger
 if [[ ! -e "${LEDGER}" ]]; then
     echo "No ledger at ${LEDGER}. Run without --no-fetch (needs ndoli), or scp it manually." >&2
