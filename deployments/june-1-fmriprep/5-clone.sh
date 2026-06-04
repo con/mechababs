@@ -39,14 +39,20 @@ if [[ ! -e "${LEDGER}" ]]; then
     exit 1
 fi
 
-# Build the (ds, stage, ria_url) target list: each stage's merged RIA.
+# Build the (ds, stage, ria_url) target list: each stage's merged RIA, MINUS
+# any already cloned. Filter before the batch cap so --batch N picks N *pending*
+# targets (else --batch 1 keeps landing on the same already-cloned one).
 targets=()
+already=0
 for stage in anat minimal; do
     while IFS=$'\t' read -r ds ria_url; do
         [[ -z "${ds}" ]] && continue
         if [[ -z "${ria_url}" ]]; then
             echo "WARN: ${ds} ${stage}_ok=true but no ${stage}_ria_url; skipping" >&2
             continue
+        fi
+        if [[ -e "${DEST_BASE}/${ds}-fmriprep-${stage}/.datalad" ]]; then
+            already=$((already + 1)); continue
         fi
         targets+=("${ds}	${stage}	${ria_url}")
     done < <(ledger list --where "${stage}_ok=true" --cols "openneuro_id,${stage}_ria_url")
@@ -55,16 +61,12 @@ done
 if [[ "${BATCH}" -gt 0 ]]; then
     targets=("${targets[@]:0:${BATCH}}")
 fi
-echo "Clone: ${#targets[@]} (study,stage) target(s) -> ${DEST_BASE}"
+echo "Clone: ${#targets[@]} pending target(s) (${already} already cloned) -> ${DEST_BASE}"
 
 for t in "${targets[@]}"; do
     IFS=$'\t' read -r ds stage ria_url <<<"${t}"
     dest="${DEST_BASE}/${ds}-fmriprep-${stage}"
     ssh_url="$(ria_to_ssh "${ria_url}")"
-    if [[ -e "${dest}/.datalad" ]]; then
-        echo "[${ds} ${stage}] already cloned at ${dest} — skipping"
-        continue
-    fi
     echo "[${ds} ${stage}] ${ssh_url}"
     mkdir -p "${DEST_BASE}"
     run datalad clone "${ssh_url}" "${dest}"
