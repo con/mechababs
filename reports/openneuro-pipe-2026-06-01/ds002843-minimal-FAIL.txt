@@ -1,0 +1,215 @@
+=== ds002843 minimal — FAIL (failed) ===
+sub: sub-dmp0005  ses: ses-scan1
+ledger note: merged but zip not found (merge exit 1)
+project: processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project
+
+===== babs status =====
+Job status:
+There are in total of 1 jobs to complete.
+
+1 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+0 job(s) are pending;
+0 job(s) are running;
+1 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/logs
+ 
+
+===== SLURM job logs (processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/logs) =====
+
+--- tail -n 100 processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/logs/bid.e8733949_1 ---
+| An error occurred during recursive file tree walk. 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Failed while inserting ACE(s).
+| An error occurred during recursive file tree walk. 
+[INFO] Configure additional publication dependency on "output-storage" 
++ '[' -d sourcedata/raw/.git ']'
++ cd sourcedata/raw
++ git sparse-checkout init --no-cone
++ echo sub-dmp0005/ses-scan1
++ echo dataset_description.json
++ git sparse-checkout set --stdin
+++ find_single_zip_in_git_tree sourcedata/fmriprep_anat fmriprep_anat
+++ local zip_search_path=sourcedata/fmriprep_anat
+++ local name=fmriprep_anat
+++ local hits count
++++ git -C sourcedata/fmriprep_anat ls-tree -r --name-only HEAD
++++ grep -E 'sub-dmp0005.*ses-scan1.*fmriprep_anat.*\.zip$'
+++ hits=sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip
++++ printf '%s\n' sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip
++++ sed '/^$/d'
++++ wc -l
++++ tr -d ' '
+++ count=1
+++ '[' 1 -ne 1 ']'
+++ printf '%s/%s\n' sourcedata/fmriprep_anat sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip
++ FMRIPREP_ANAT_ZIP=sourcedata/fmriprep_anat/sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip
++ echo 'found fmriprep_anat zipfile:'
++ echo sourcedata/fmriprep_anat/sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip
++ CONTAINER_SHARED=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif
++ CONTAINER_JOB=containers/images/bids/bids-fmriprep--25.2.5.sif
++ '[' '!' -L /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif ']'
+++ dirname containers/images/bids/bids-fmriprep--25.2.5.sif
++ mkdir -p containers/images/bids
++ rm -f containers/images/bids/bids-fmriprep--25.2.5.sif
++ ln -s /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif containers/images/bids/bids-fmriprep--25.2.5.sif
++ '[' '!' -L containers/images/bids/bids-fmriprep--25.2.5.sif ']'
++ export DUCT_OUTPUT_PREFIX=logs/duct_sub-dmp0005_ses-scan1_
++ DUCT_OUTPUT_PREFIX=logs/duct_sub-dmp0005_ses-scan1_
++ datalad containers-run -n bids-fmriprep --explicit --input sourcedata/raw/sub-dmp0005/ses-scan1 --input sourcedata/raw/dataset_description.json --input sourcedata/fmriprep_anat/sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip --expand inputs --output outputs/fmriprep_minimal --output logs/ -m 'bids-fmriprep sub-dmp0005 ses-scan1' -- sourcedata/raw outputs/fmriprep_minimal participant -w .git/tmp/wkdir --level minimal --output-spaces MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2 --cifti-output 91k --random-seed 12345 --skull-strip-fixed-seed --skull-strip-t1w force --use-syn-sdc warn --me-output-echos --notrack --md-only-boilerplate --skip-bids-validation --stop-on-first-crash --fs-license-file /SGLR/FREESURFER_HOME/license.txt --fs-subjects-dir /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer --nprocs 4 --omp-nthreads 2 --mem-mb 32000 --participant-label sub-dmp0005
+[INFO] Making sure inputs are available (this may take some time) 
+[INFO] == Command start (output follows) ===== 
+2026-06-03T13:16:18-0400 [INFO    ] con-duct: python-dotenv not installed, skipping .env file loading
+2026-06-03T13:16:18-0400 [INFO    ] con-duct: duct 0.19.0 is executing 'singularity run -B /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds --pwd /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds --containall -B /scratch/f006rq8/sjob-tmp/8733949_1:/tmp -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt --env TEMPLATEFLOW_HOME=/templateflow containers/images/bids/bids-fmriprep--25.2.5.sif sourcedata/raw outputs/fmriprep_minimal participant -w .git/tmp/wkdir --level minimal --output-spaces MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2 --cifti-output 91k --random-seed 12345 --skull-strip-fixed-seed --skull-strip-t1w force --use-syn-sdc warn --me-output-echos --notrack --md-only-boilerplate --skip-bids-validation --stop-on-first-crash --fs-license-file /SGLR/FREESURFER_HOME/license.txt --fs-subjects-dir /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer --nprocs 4 --omp-nthreads 2 --mem-mb 32000 --participant-label sub-dmp0005'...
+2026-06-03T13:16:18-0400 [INFO    ] con-duct: Log files will be written to logs/duct_sub-dmp0005_ses-scan1_
+Process Process-2:
+Traceback (most recent call last):
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/bids/layout/utils.py", line 17, in __getitem__
+    return super().__getitem__(key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'RepetitionTime'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/fmriprep/cli/workflow.py", line 116, in build_workflow
+    retval['workflow'] = init_fmriprep_wf()
+                         ^^^^^^^^^^^^^^^^^^
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/fmriprep/workflows/base.py", line 108, in init_fmriprep_wf
+    single_subject_wf = init_single_subject_wf(subject_id, sessions, name=wf_name)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/fmriprep/workflows/base.py", line 875, in init_single_subject_wf
+    bold_wf = init_bold_wf(
+              ^^^^^^^^^^^^^
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/fmriprep/workflows/bold/base.py", line 248, in init_bold_wf
+    bold_fit_wf = init_bold_fit_wf(
+                  ^^^^^^^^^^^^^^^^^
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/fmriprep/workflows/bold/fit.py", line 333, in init_bold_fit_wf
+    tr=metadata['RepetitionTime'],
+       ~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/app/.pixi/envs/fmriprep/lib/python3.12/site-packages/bids/layout/utils.py", line 19, in __getitem__
+    raise KeyError(
+KeyError: "Metadata term 'RepetitionTime' unavailable for file /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-itc_run-1_bold.nii.gz."
+2026-06-03T13:16:53-0400 [INFO    ] con-duct: Summary:
+Exit Code: 1
+Command: singularity run -B /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds --pwd /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds --containall -B /scratch/f006rq8/sjob-tmp/8733949_1:/tmp -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt --env TEMPLATEFLOW_HOME=/templateflow containers/images/bids/bids-fmriprep--25.2.5.sif sourcedata/raw outputs/fmriprep_minimal participant -w .git/tmp/wkdir --level minimal --output-spaces MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2 --cifti-output 91k --random-seed 12345 --skull-strip-fixed-seed --skull-strip-t1w force --use-syn-sdc warn --me-output-echos --notrack --md-only-boilerplate --skip-bids-validation --stop-on-first-crash --fs-license-file /SGLR/FREESURFER_HOME/license.txt --fs-subjects-dir /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer --nprocs 4 --omp-nthreads 2 --mem-mb 32000 --participant-label sub-dmp0005
+Log files location: logs/duct_sub-dmp0005_ses-scan1_
+Wall Clock Time: 35.069 sec
+Memory Peak Usage (RSS): 785.2 MB
+Memory Average Usage (RSS): 452.3 MB
+Virtual Memory Peak Usage (VSZ): 5.7 GB
+Virtual Memory Average Usage (VSZ): 4.8 GB
+Memory Peak Percentage: 0.00%
+Memory Average Percentage: 0.00%
+CPU Peak Usage: 252.80%
+Average CPU Usage: 128.78%
+
+[INFO] == Command exit (modification check follows) ===== 
++ cleanup
++ set +e
++ '[' -d /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds ']'
++ cd /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds
++ datalad drop -r . --reckless availability --reckless modification
++ git annex dead here
++ cd /scratch/f006rq8
++ rm -rf /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1
+
+--- tail -n 100 processing/openneuro-pipe-2026-06-01/ds002843-fmriprep-minimal/babs-project/analysis/logs/bid.o8733949_1 ---
+# Branch name (also used as temporary directory):
+# Clone the data from input RIA:
+install(ok): /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds (dataset)
+# Register output RIA as remote for result deposition:
+# Create a new branch for this job's results:
+# Pull down the input session but don't retrieve data contents:
+install(ok): /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/raw (dataset) [Installed subdataset in order to get /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/raw/sub-dmp0005/ses-scan1]
+install(ok): /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/fmriprep_anat (dataset) [Installed subdataset in order to get /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/fmriprep_anat]
+found fmriprep_anat zipfile:
+sourcedata/fmriprep_anat/sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip
+260603-13:16:49,816 nipype.workflow IMPORTANT:
+	 Running fMRIPrep version 25.2.5
+
+         License NOTICE ##################################################
+         fMRIPrep 25.2.5
+         Copyright The NiPreps Developers.
+         
+         This product includes software developed by
+         the NiPreps Community (https://nipreps.org/).
+         
+         Portions of this software were developed at the Department of
+         Psychology at Stanford University, Stanford, CA, US.
+         
+         This software is also distributed as a Docker container image.
+         The bootstrapping file for the image ("Dockerfile") is licensed
+         under the MIT License.
+         
+         This software may be distributed through an add-on package called
+         "Docker Wrapper" that is under the BSD 3-clause License.
+         #################################################################
+260603-13:16:49,816 nipype.workflow IMPORTANT:
+	 Building fMRIPrep's workflow:
+           * BIDS dataset path: /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/raw.
+           * Participants and sessions: sub-dmp0005 ses-scan1.
+           * Run identifier: 20260603-131625_8708d0f8-49ca-4064-88ea-01c84a6c8866.
+           * Output spaces: MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2.
+           * Pre-run FreeSurfer's SUBJECTS_DIR: /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer.
+260603-13:16:51,612 nipype.workflow INFO:
+	 ANAT Stage 1: Adding template workflow
+260603-13:16:52,186 nipype.workflow INFO:
+	 ANAT Stage 2: Preparing brain extraction workflow
+260603-13:16:52,310 nipype.workflow INFO:
+	 ANAT Stage 3: Preparing segmentation workflow
+260603-13:16:52,314 nipype.workflow INFO:
+	 ANAT Stage 4: Preparing normalization workflow for ['MNI152NLin2009cAsym', 'MNI152NLin6Asym']
+260603-13:16:52,326 nipype.workflow INFO:
+	 ANAT Stage 5: Preparing surface reconstruction workflow
+260603-13:16:52,340 nipype.workflow INFO:
+	 ANAT Stage 6: Preparing mask refinement workflow
+260603-13:16:52,342 nipype.workflow INFO:
+	 ANAT Stage 7: Creating T2w template
+260603-13:16:52,345 nipype.workflow INFO:
+	 ANAT Stage 8: Creating GIFTI surfaces for ['white', 'pial', 'midthickness', 'sphere_reg', 'sphere']
+260603-13:16:52,358 nipype.workflow INFO:
+	 ANAT Stage 8: Creating GIFTI metrics for ['thickness', 'sulc']
+260603-13:16:52,363 nipype.workflow INFO:
+	 ANAT Stage 8a: Creating cortical ribbon mask
+260603-13:16:52,365 nipype.workflow INFO:
+	 ANAT Stage 9: Creating fsLR registration sphere
+260603-13:16:52,369 nipype.workflow INFO:
+	 ANAT Stage 10: Creating MSM-Sulc registration sphere
+260603-13:16:52,375 nipype.workflow INFO:
+	 ANAT Stage 11: Creating cortical surface mask
+260603-13:16:52,448 nipype.workflow INFO:
+	 B0 field inhomogeneity map will be estimated with the following 1 estimator(s): [<EstimatorType.PHASEDIFF: 3>].
+260603-13:16:52,494 nipype.workflow INFO:
+	 Setting up fieldmap "auto_00000" (EstimatorType.PHASEDIFF) with <sub-dmp0005_ses-scan1_phase1.nii.gz, sub-dmp0005_ses-scan1_phase2.nii.gz, sub-dmp0005_ses-scan1_magnitude1.nii.gz, sub-dmp0005_ses-scan1_magnitude2.nii.gz>
+260603-13:16:52,555 nipype.workflow INFO:
+	 No single-band-reference found for sub-dmp0005_ses-scan1_task-itc_run-1_bold.nii.gz.
+get(ok): sourcedata/fmriprep_anat/sub-dmp0005_ses-scan1_fmriprep_anat-25-2-5.zip (file) [from output-storage...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/fmap/sub-dmp0005_ses-scan1_magnitude2.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/fmap/sub-dmp0005_ses-scan1_phase1.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/anat/sub-dmp0005_ses-scan1_T1w.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/fmap/sub-dmp0005_ses-scan1_phase2.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/anat/sub-dmp0005_ses-scan1_T2w.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-risk_run-2_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/fmap/sub-dmp0005_ses-scan1_magnitude1.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-rest_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-itc_run-1_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-itc_run-3_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-itc_run-4_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-risk_run-3_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-risk_run-1_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-risk_run-4_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1/func/sub-dmp0005_ses-scan1_task-itc_run-2_bold.nii.gz (file) [from s3-PUBLIC...]
+get(ok): sourcedata/raw/sub-dmp0005/ses-scan1 (directory)
+run(error): /scratch/f006rq8/job-8733949-1-sub-dmp0005-ses-scan1/ds (dataset) [duct singularity run -B $PWD --pwd $PWD ...]
+action summary:
+  get (notneeded: 7, ok: 17)
+  run (error: 1)

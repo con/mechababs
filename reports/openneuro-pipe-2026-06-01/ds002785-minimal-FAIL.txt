@@ -1,0 +1,215 @@
+=== ds002785 minimal — FAIL (error) ===
+sub: sub-0001  ses: -
+ledger note: minimal submit failed (exit 1)
+project: processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project
+
+===== babs status =====
+usage: babs [-h] [--wait] [--wait-interval WAIT_INTERVAL] [PATH]
+babs: error: The path <processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project> does not exist.
+(babs status returned nonzero)
+
+===== duct submit-wrapper logs (logs/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/) =====
+
+--- tail -n 100 logs/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/stderr ---
+| 		datalad siblings -d "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/sourcedata/raw" enable -s s3-PRIVATE 
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/sourcedata/fmriprep_anat 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-anat/babs-project/output_ria/alias/data to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/sourcedata/fmriprep_anat 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/sourcedata/fmriprep_anat) 
+[INFO] Configure additional publication dependency on "output-storage" 
+[INFO] Attempting a clone into /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/containers 
+[INFO] Attempting to clone from repronim-containers to /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/containers 
+[INFO] Completed clone attempts for Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/containers) 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start receiving objects 
+[INFO] Start resolving deltas 
+[INFO] Finished 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Transfer data 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis) 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Determine push target 
+[INFO] Push refspecs 
+[INFO] Transfer data 
+[INFO] Transfer data 
+[INFO] Update availability information 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start compressing objects 
+[INFO] Start writing objects 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis) 
+[INFO] Finished push of Dataset(/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis) 
+Traceback (most recent call last):
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin/babs", line 10, in <module>
+    sys.exit(_main())
+             ^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/babs/cli.py", line 773, in _main
+    options.func(**args)
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/babs/cli.py", line 214, in babs_init_main
+    raise exc
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/babs/cli.py", line 198, in babs_init_main
+    babs_proj.babs_bootstrap(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/babs/bootstrap.py", line 390, in babs_bootstrap
+    _ = self.analysis_datalad_handle.drop(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/distribution/dataset.py", line 502, in apply_func
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/interface/base.py", line 772, in eval_func
+    return return_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/interface/base.py", line 762, in return_func
+    results = list(results)
+              ^^^^^^^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/interface/base.py", line 872, in _execute_command_
+    for r in _process_results(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/interface/utils.py", line 319, in _process_results
+    for res in results:
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/distributed/drop.py", line 268, in __call__
+    for res in _drop_dataset(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/distributed/drop.py", line 326, in _drop_dataset
+    yield from _drop_dataset(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/distributed/drop.py", line 383, in _drop_dataset
+    for res in _fatal_pre_drop_checks(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/distributed/drop.py", line 551, in _fatal_pre_drop_checks
+    for res in ds.status(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/interface/base.py", line 872, in _execute_command_
+    for r in _process_results(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/interface/utils.py", line 319, in _process_results
+    for res in results:
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/core/local/status.py", line 405, in __call__
+    for r in yield_dataset_status(
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/core/local/status.py", line 159, in yield_dataset_status
+    status = repo.diffstatus(
+             ^^^^^^^^^^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/support/gitrepo.py", line 3146, in diffstatus
+    props = self._diffstatus_get_state_props(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/lib64/python3.11/site-packages/datalad/support/gitrepo.py", line 3312, in _diffstatus_get_state_props
+    if against_commit or (f.exists() or f.is_symlink()) \
+                          ^^^^^^^^^^
+  File "/usr/lib64/python3.11/pathlib.py", line 1235, in exists
+    self.stat()
+  File "/usr/lib64/python3.11/pathlib.py", line 1013, in stat
+    return os.stat(self, follow_symlinks=follow_symlinks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/sourcedata/raw/derivatives/freesurfer/sub-0197/surf/rh.sphere.reg'
+> write_sentinel
+> local rc=1
+> [[ -n /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal ]]
+> [[ -d /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal ]]
+> echo exit_code=1
+>> date -u +%Y-%m-%dT%H:%M:%SZ
+> echo completed_at=2026-06-02T23:40:20Z
+> echo dataset_url=https://github.com/OpenNeuroDatasets/ds002785
+> echo pipeline=pipelines/fmriprep-minimal-25.2.5.yaml
+
+--- tail -n 100 logs/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/stdout ---
+add(ok): containers (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  install (ok: 1)
+  save (ok: 2)
+
+Registering container at analysis level: containers/images/bids/bids-fmriprep--25.2.5.sif
+add(ok): .datalad/config (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+add(ok): .datalad/config (file)
+save(ok): . (dataset)
+containers_add(ok): /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds002785-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif (file)
+action summary:
+  add (ok: 1)
+  containers_add (ok: 1)
+  save (ok: 1)
+
+Generating zip script: bids-fmriprep_zip.sh
+add(ok): code/bids-fmriprep_zip.sh (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Generating a bash script for running jobs at participant (or session) level...
+This bash script will be named as `participant_job.sh`
+
+Determining the list of subjects (and sessions) to analyze...
+Did not provide an initial inclusion list. Examining input dataset BIDS to get an initial inclusion list.
+Did not provide an initial inclusion list. Examining input dataset fmriprep_anat to get an initial inclusion list.
+add(ok): code/processing_inclusion.csv (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  save (ok: 1)
+
+Generating templates for job submission calls...
+The template text file will be named as `submit_job_template.yaml`.
+add(ok): code/submit_job_template.yaml (file)
+add(ok): code/check_setup/submit_test_job_template.yaml (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 2)
+  save (ok: 1)
+add(ok): code/check_setup/call_test_job.sh (file)
+add(ok): code/check_setup/test_job.py (file)
+add(ok): code/participant_job.sh (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 3)
+  save (ok: 1)
+
+Final steps...
+DataLad dropping input dataset's contents...
+
+`babs init` failed! Below is the error message:
+
+Cleaning up created BABS project...
+Removing input dataset(s) if cloned...
+uninstall(ok): sourcedata/raw (dataset)
+remove(ok): sourcedata/raw (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  remove (ok: 1)
+  save (ok: 1)
+  uninstall (ok: 1)
+uninstall(ok): sourcedata/fmriprep_anat (dataset)
+remove(ok): sourcedata/fmriprep_anat (dataset)
+add(ok): .gitmodules (file)
+save(ok): . (dataset)
+action summary:
+  add (ok: 1)
+  remove (ok: 1)
+  save (ok: 1)
+  uninstall (ok: 1)
+
+Running `git annex dead here`...
+
+Updating input and output RIA if created...
+publish(ok): . (dataset) [refs/heads/master->input:refs/heads/master [new branch]]
+publish(ok): . (dataset) [refs/heads/git-annex->input:refs/heads/git-annex [new branch]]
+action summary:
+  publish (ok: 2)
+publish(ok): . (dataset) [refs/heads/master->output:refs/heads/master [new branch]]
+publish(ok): . (dataset) [refs/heads/git-annex->output:refs/heads/git-annex [new branch]]
+action summary:
+  publish (ok: 2)
+
+Deleting created BABS project folder...
+
+Created BABS project has been cleaned up.

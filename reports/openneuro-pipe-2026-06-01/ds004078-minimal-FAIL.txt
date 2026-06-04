@@ -1,0 +1,225 @@
+=== ds004078 minimal — FAIL (failed) ===
+sub: sub-01  ses: -
+ledger note: merged but zip not found (merge exit 1)
+project: processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project
+
+===== babs status =====
+Job status:
+There are in total of 1 jobs to complete.
+
+1 job(s) have been submitted; 0 job(s) haven't been submitted.
+
+Among submitted jobs,
+0 job(s) successfully finished;
+0 job(s) are pending;
+0 job(s) are running;
+1 job(s) failed.
+
+All log files are located in folder: /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/logs
+ 
+
+===== SLURM job logs (processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/logs) =====
+
+--- tail -n 100 processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/logs/bid.e8732180_1 ---
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: /scratch/f006rq8/job-8732180-1-sub-01/ds/.git/annex/misctmp/gaprobe 
+[INFO] Failed to instantiate ACL.
+| An error occurred during recursive file tree walk. 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Failed while inserting ACE(s).
+| An error occurred during recursive file tree walk. 
++ cd ds
++ echo '# Register output RIA as remote for result deposition:'
++ git remote add outputstore /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/output_ria/f75/85940-a0f5-444c-bb4e-ec64f0bf6077
++ echo '# Create a new branch for this job'\''s results:'
++ git checkout -b job-8732180-1-sub-01
+Switched to a new branch 'job-8732180-1-sub-01'
++ git sparse-checkout init --cone
++ git sparse-checkout set .datalad code containers sourcedata/raw sourcedata/fmriprep_anat
++ git checkout -f
++ echo '# Pull down the input session but don'\''t retrieve data contents:'
++ datalad get -n sourcedata/raw/sub-01
+[INFO] Attempting a clone into /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/raw 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/input_ria/dd2/c42b7-ad18-4864-a997-d66489a1a3fb to /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/raw 
+[INFO] Attempting to clone from https://github.com/OpenNeuroDatasets/ds004078 to /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/raw 
+[INFO] Start enumerating objects 
+[INFO] Start counting objects 
+[INFO] Start receiving objects 
+[INFO] Start resolving deltas 
+[INFO] Completed clone attempts for Dataset(/scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/raw) 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/raw/.git/annex/misctmp/gaprobe 
+[INFO] Failed to instantiate ACL.
+| An error occurred during recursive file tree walk. 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Failed while inserting ACE(s).
+| An error occurred during recursive file tree walk. 
+[INFO] Remote origin not usable by git-annex; setting annex-ignore 
+[INFO] https://github.com/OpenNeuroDatasets/ds004078/config download failed: Not Found 
++ datalad get -n sourcedata/raw/dataset_description.json
++ datalad get -n sourcedata/fmriprep_anat
+[INFO] Attempting a clone into /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/input_ria/e95/19e24-15c7-464f-b043-0df5c89d91a4 to /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat 
+[INFO] Attempting to clone from file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-anat/babs-project/output_ria/alias/data to /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat 
+[INFO] Completed clone attempts for Dataset(/scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat) 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat/.git/annex/misctmp/gaprobe 
+[INFO] Failed to instantiate ACL.
+| An error occurred during recursive file tree walk. 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Operation to request attribute not supported: .git/annex/misctmp/gaprobe 
+[INFO] Failed while inserting ACE(s).
+| An error occurred during recursive file tree walk. 
+[INFO] Configure additional publication dependency on "output-storage" 
++ '[' -d sourcedata/raw/.git ']'
++ cd sourcedata/raw
++ git sparse-checkout init --no-cone
++ git sparse-checkout set --stdin
++ echo sub-01
++ echo dataset_description.json
+++ find_single_zip_in_git_tree sourcedata/fmriprep_anat fmriprep_anat
+++ local zip_search_path=sourcedata/fmriprep_anat
+++ local name=fmriprep_anat
+++ local hits count
++++ git -C sourcedata/fmriprep_anat ls-tree -r --name-only HEAD
++++ grep -E 'sub-01.*fmriprep_anat.*\.zip$'
+++ hits=sub-01_fmriprep_anat-25-2-5.zip
++++ printf '%s\n' sub-01_fmriprep_anat-25-2-5.zip
++++ sed '/^$/d'
++++ wc -l
++++ tr -d ' '
+++ count=1
+++ '[' 1 -ne 1 ']'
+++ printf '%s/%s\n' sourcedata/fmriprep_anat sub-01_fmriprep_anat-25-2-5.zip
++ FMRIPREP_ANAT_ZIP=sourcedata/fmriprep_anat/sub-01_fmriprep_anat-25-2-5.zip
++ echo 'found fmriprep_anat zipfile:'
++ echo sourcedata/fmriprep_anat/sub-01_fmriprep_anat-25-2-5.zip
++ CONTAINER_SHARED=/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif
++ CONTAINER_JOB=containers/images/bids/bids-fmriprep--25.2.5.sif
++ '[' '!' -L /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif ']'
+++ dirname containers/images/bids/bids-fmriprep--25.2.5.sif
++ mkdir -p containers/images/bids
++ rm -f containers/images/bids/bids-fmriprep--25.2.5.sif
++ ln -s /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/containers/images/bids/bids-fmriprep--25.2.5.sif containers/images/bids/bids-fmriprep--25.2.5.sif
++ '[' '!' -L containers/images/bids/bids-fmriprep--25.2.5.sif ']'
++ export DUCT_OUTPUT_PREFIX=logs/duct_sub-01_
++ DUCT_OUTPUT_PREFIX=logs/duct_sub-01_
++ datalad containers-run -n bids-fmriprep --explicit --input sourcedata/raw/sub-01 --input sourcedata/raw/dataset_description.json --input sourcedata/fmriprep_anat/sub-01_fmriprep_anat-25-2-5.zip --expand inputs --output outputs/fmriprep_minimal --output logs/ -m 'bids-fmriprep sub-01' -- sourcedata/raw outputs/fmriprep_minimal participant -w .git/tmp/wkdir --level minimal --output-spaces MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2 --cifti-output 91k --random-seed 12345 --skull-strip-fixed-seed --skull-strip-t1w force --use-syn-sdc warn --me-output-echos --notrack --md-only-boilerplate --skip-bids-validation --stop-on-first-crash --fs-license-file /SGLR/FREESURFER_HOME/license.txt --fs-subjects-dir /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer --nprocs 4 --omp-nthreads 2 --mem-mb 32000 --participant-label sub-01
+[INFO] Making sure inputs are available (this may take some time) 
+[INFO] == Command start (output follows) ===== 
+2026-06-03T01:34:04-0400 [INFO    ] con-duct: python-dotenv not installed, skipping .env file loading
+2026-06-03T01:34:04-0400 [INFO    ] con-duct: duct 0.19.0 is executing 'singularity run -B /scratch/f006rq8/job-8732180-1-sub-01/ds --pwd /scratch/f006rq8/job-8732180-1-sub-01/ds --containall -B /scratch/f006rq8/sjob-tmp/8732180_1:/tmp -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt --env TEMPLATEFLOW_HOME=/templateflow containers/images/bids/bids-fmriprep--25.2.5.sif sourcedata/raw outputs/fmriprep_minimal participant -w .git/tmp/wkdir --level minimal --output-spaces MNI152NLin2009cAsym:res-2 MNI152NLin6Asym:res-2 --cifti-output 91k --random-seed 12345 --skull-strip-fixed-seed --skull-strip-t1w force --use-syn-sdc warn --me-output-echos --notrack --md-only-boilerplate --skip-bids-validation --stop-on-first-crash --fs-license-file /SGLR/FREESURFER_HOME/license.txt --fs-subjects-dir /scratch/f006rq8/job-8732180-1-sub-01/ds/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer --nprocs 4 --omp-nthreads 2 --mem-mb 32000 --participant-label sub-01'...
+2026-06-03T01:34:04-0400 [INFO    ] con-duct: Log files will be written to logs/duct_sub-01_
+slurmstepd: error: *** JOB 8732180 ON s01 CANCELLED AT 2026-06-04T01:27:15 DUE TO TIME LIMIT ***
+++ cleanup
+++ set +e
+++ '[' -d /scratch/f006rq8/job-8732180-1-sub-01/ds ']'
+++ cd /scratch/f006rq8/job-8732180-1-sub-01/ds
+++ datalad drop -r . --reckless availability --reckless modification
+++ git annex dead here
+++ cd /scratch/f006rq8
+++ rm -rf /scratch/f006rq8/job-8732180-1-sub-01
+
+--- tail -n 100 processing/openneuro-pipe-2026-06-01/ds004078-fmriprep-minimal/babs-project/analysis/logs/bid.o8732180_1 ---
+260603-14:32:26,992 nipype.workflow INFO:
+	 [Node] Executing "make_ribbon" <smriprep.interfaces.surf.MakeRibbon>
+260603-14:32:27,538 nipype.workflow INFO:
+	 [Node] Finished "_regress_affine0", elapsed time 0.406293s.
+260603-14:32:28,48 nipype.workflow INFO:
+	 [Node] Finished "make_ribbon", elapsed time 1.055819s.
+260603-14:32:31,190 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00001.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00001/syn".
+260603-14:32:31,195 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-15:30:40,369 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 3489.167099s.
+260603-15:30:42,236 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00002.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00002/syn".
+260603-15:30:42,306 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-16:05:29,770 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 5595.715291s.
+260603-16:05:30,434 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00003.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00003/syn".
+260603-16:05:30,505 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-16:33:34,488 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 3772.17439s.
+260603-16:33:36,552 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00004.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00004/syn".
+260603-16:33:36,569 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-17:33:30,293 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 5279.781351s.
+260603-17:33:31,474 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00005.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00005/syn".
+260603-17:33:31,491 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-17:50:28,217 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 4611.647983s.
+260603-17:50:29,34 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00006.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00006/syn".
+260603-17:50:29,43 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-18:44:10,569 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 4239.077075s.
+260603-18:44:11,448 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00007.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00007/syn".
+260603-18:44:11,457 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-18:51:18,306 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 3649.263065s.
+260603-18:51:19,501 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00008.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00008/syn".
+260603-18:51:19,508 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-19:57:10,832 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 3951.323302s.
+260603-19:57:11,892 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00009.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00009/syn".
+260603-19:57:11,899 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-19:58:16,404 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 4444.946319s.
+260603-19:58:17,868 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00010.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00010/syn".
+260603-19:58:17,875 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-21:04:41,402 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 4049.502455s.
+260603-21:04:42,322 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00011.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00011/syn".
+260603-21:04:42,329 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-21:40:02,928 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 6105.052254s.
+260603-21:40:04,525 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00012.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00012/syn".
+260603-21:40:04,532 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-22:36:29,493 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 5507.162883s.
+260603-22:36:30,826 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00013.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00013/syn".
+260603-22:36:30,833 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260603-23:16:55,797 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 5811.263568s.
+260603-23:16:57,127 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00014.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00014/syn".
+260603-23:16:57,133 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260604-00:39:13,120 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 7362.286604s.
+260604-00:39:14,446 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00015.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00015/syn".
+260604-00:39:14,455 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
+260604-00:46:59,40 nipype.workflow INFO:
+	 [Node] Finished "syn", elapsed time 5401.905569s.
+260604-00:47:01,804 nipype.workflow INFO:
+	 [Node] Setting-up "fmriprep_25_2_wf.sub_01_wf.fmap_preproc_wf.wf_auto_00016.syn" in "/scratch/f006rq8/job-8732180-1-sub-01/ds/.git/tmp/wkdir/fmriprep_25_2_wf/sub_01_wf/fmap_preproc_wf/wf_auto_00016/syn".
+260604-00:47:01,813 nipype.workflow INFO:
+	 [Node] Executing "syn" <niworkflows.interfaces.fixes.FixHeaderRegistration>
