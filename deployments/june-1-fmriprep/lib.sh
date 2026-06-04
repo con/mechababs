@@ -16,10 +16,12 @@
 #     (poll `babs status` by hand)
 #   4-merge.sh    per study: show `babs status`, prompt continue/skip/abort
 #                 -> babs merge + RIA-peek -> ledger minimal_ok + minimal_ria_url
+#   5-clone.sh    [on TYPHON] clone each merged output RIA from ndoli over SSH
+#                 (no content fetch) -> ${DEST_BASE}/<ds>-fmriprep-<stage>
 #
-# Run each step on ndoli inside a tmux/screen session so the long
-# login-node process survives disconnect. (We dropped spawn-all's per-
-# dataset session fan-out, not tmux itself.) --dry-run previews commands.
+# Steps 0-4 run on ndoli inside a tmux/screen session so the long login-node
+# process survives disconnect. (We dropped spawn-all's per-dataset session
+# fan-out, not tmux itself.) Steps 5+ run on typhon. --dry-run previews commands.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "lib.sh is a sourced library, not an executable script" >&2
@@ -66,6 +68,28 @@ run() {
     else
         "$@"
     fi
+}
+
+# ===== Typhon-side clone/get/unzip (steps 5+) ===============================
+# Steps 5+ run on TYPHON, not ndoli: they clone each merged output RIA from
+# ndoli over SSH, then fetch + extract content there. ndoli records each RIA
+# in the ledger as a local `ria+file://<ndoli-abspath>#~data`; from typhon we
+# reach the same store as `ria+ssh://${NDOLI_HOST}/<abspath>#~data`. All three
+# are env-overridable for testing.
+NDOLI_HOST="${NDOLI_HOST:-ndoli}"                                   # ssh alias/host (set f006rq8@ndoli if config doesn't map the user)
+NDOLI_REPO="${NDOLI_REPO:-/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs}"  # repo root on ndoli (to locate the ledger)
+DEST_BASE="${DEST_BASE:-/data/asmacdo/${EXPERIMENT}}"              # where clones land on typhon
+
+# Rewrite a ledger ria+file:// URL (ndoli-local) to ria+ssh://${NDOLI_HOST}.
+# ria+file:///dartfs/.../output_ria#~data -> ria+ssh://ndoli/dartfs/.../output_ria#~data
+ria_to_ssh() { printf '%s\n' "${1/#ria+file:\/\//ria+ssh://${NDOLI_HOST}}"; }
+
+# Pull ndoli's authoritative ledger to the (gitignored) local path so the
+# typhon steps read current merge state. Not dry-run-gated: it only refreshes
+# a derived read-only cache (the real ledger lives on ndoli).
+fetch_ledger() {
+    mkdir -p "$(dirname "${LEDGER}")"
+    scp "${NDOLI_HOST}:${NDOLI_REPO}/${LEDGER}" "${LEDGER}"
 }
 
 # ===== Interactive guards ===================================================
