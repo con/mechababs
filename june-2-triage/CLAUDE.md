@@ -96,10 +96,27 @@ keeps the *milestone plan* from filling with issues nobody ever closes.
 - `dataset` — a specific-dataset failure/quirk
 - `pipeline:fmriprep`, `pipeline:mriqc` — which pipeline
 - `automation` — the deployment glue (the deploy pattern, ledger, scripts)
-- `babs-upstream` — fix lands in PennLINC/babs; carry the upstream `#N`
 - `decision` — a science/policy call (e.g. defacing gate, subject-vs-session)
 - `epic` — a parent tracking issue
 - `blocked` — waiting on something (say what, in-issue)
+
+### Upstream-tracking labels
+
+Fixes that land in a repo we don't own. **Repo-pointer** (which repo) +
+**status** (filed yet?):
+
+- `babs-upstream` — fix lands in `PennLINC/babs`; carry the upstream `#N`. (The
+  established babs-specific repo-pointer.)
+- `upstream` — generic repo-pointer for a **non-babs** upstream (con/duct,
+  fmriprep, datalad, OpenNeuro, …). Pair with a more specific pointer label
+  where one exists.
+- `upstream-NOT-FILED` — the upstream issue **hasn't been filed yet** (works for
+  babs *and* non-babs; replaced the old `babs-upstream-UNFILED`).
+- `duct` — touches `con/duct`.
+- `fmriprepDerivatives` — belongs in `OpenNeuroDerivatives/fmriprepDerivatives`
+  (the opinions repo).
+
+
 - `fuzzy/slop` — an exploratory / not-fully-baked idea we still want *in* the
   tracker so it isn't lost, but that hasn't earned a milestone. **Files to
   mechababs, no milestone.** The escape valve from "fuzzy stuff stays out of
@@ -169,6 +186,13 @@ to, so it will **mislink across repos**. **At filing time, qualify every
 cross-reference as `owner/repo#N`** (e.g. `PennLINC/babs#347`, `con/duct#424`,
 `datalad/datalad#7822`). Our staging docs (ISSUES.md, notes) use bare `#N` for
 brevity — qualify when posting to GitHub.
+
+**No untracked-local paths in issue bodies (always).** `local-notes/` is
+gitignored — those paths mean nothing to a reader on GitHub. When a draft cites
+one, **strip the path and keep the intent** (e.g. "the 'Resample question' in
+our fmriprep meeting notes is stale" — not the file path). Same for any
+untracked local file. Drafts may carry the path for our own use; remove it at
+filing time.
 
 ## SPOKE_CONTEXT stays thin
 
