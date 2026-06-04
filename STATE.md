@@ -87,6 +87,7 @@ as they sharpen.
 - [ ] BABS separate `git rm` deletion step (`participant_job.sh.jinja2`) is a workaround for `datalad/datalad#7822` (fixed 2026-03-13) — may now be removable; re-verify the min datalad version babs requires first
 - [ ] rebuild/rebase `mechababs-working-branch` when `PennLINC/babs#369` merges (parked, blocked on #369)
 - [ ] xcpd — check the OpenNeuro meeting transcript for what XCP-D refers to here / whether it's in scope
+- [ ] **consolidate the approach to upstream issues** — today it's mixed (per-milestone epics #38/#39 + `upstream-NOT-FILED` mechababs issues + bare `PennLINC/babs#N` deps in STATE). Pick one: either (a) file the `upstream-NOT-FILED` ones upstream and fold all deps into the epics, or (b) file a mechababs tracker per upstream issue
 
 ### Triage wind-down (collapse the `june-2-triage/` scaffolding)
 
