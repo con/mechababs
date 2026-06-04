@@ -97,7 +97,10 @@ keeps the *milestone plan* from filling with issues nobody ever closes.
 - `pipeline:fmriprep`, `pipeline:mriqc` — which pipeline
 - `automation` — the deployment glue (the deploy pattern, ledger, scripts)
 - `decision` — a science/policy call (e.g. defacing gate, subject-vs-session)
-- `epic` — a parent tracking issue
+- `epic` — a parent tracking issue (checklist of related work). Used for the
+  **per-milestone upstream-deps epic**: one epic per milestone aggregates the
+  `PennLINC/babs#N` dependencies as a checklist, so external deps surface in the
+  milestone plan without a tracker per dep. (#38 = M2, #39 = M4.)
 - `blocked` — waiting on something (say what, in-issue)
 
 ### Upstream-tracking labels

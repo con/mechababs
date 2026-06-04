@@ -11,6 +11,7 @@ the operational ledger — not a milestone.
 
 ## M2-Correct-Publishable
 
+- [#38](https://github.com/asmacdo/mechababs/issues/38) — **Epic:** upstream babs dependencies (M2) · `epic` `babs-upstream` · checklist of the M2 `PennLINC/babs#N` deps
 - [#4](https://github.com/asmacdo/mechababs/issues/4) — decide the requirements for pipeline output layouts (reframe of "Target setups thought dump") · `decision` · overlaps #7 #24 #25, PennLINC/babs#369
 - [#6](https://github.com/asmacdo/mechababs/issues/6) — avoid abs paths / make `datalad rerun` portable · `automation` `provenance`
 - [#7](https://github.com/asmacdo/mechababs/issues/7) — contain babs config within result `code/` · `babs-upstream` `provenance` · maybe solved by PennLINC/babs#369 (verify)
@@ -41,6 +42,7 @@ the operational ledger — not a milestone.
 
 ## M4-E2E-Automation
 
+- [#39](https://github.com/asmacdo/mechababs/issues/39) — **Epic:** upstream babs dependencies (M4) · `epic` `babs-upstream` · checklist of the M4 `PennLINC/babs#N` deps
 - [#3](https://github.com/asmacdo/mechababs/issues/3) — automate resource estimation (right-size from dataset properties) · `automation`
 - [#10](https://github.com/asmacdo/mechababs/issues/10) — preflight.py pipeline-blind + false-passes on git auth/network · `automation` · verified still valid 2026-06-03
 - [#12](https://github.com/asmacdo/mechababs/issues/12) — `babs status --done` machine-readable completion gate · `babs-upstream` `upstream-NOT-FILED`
@@ -56,9 +58,9 @@ the operational ledger — not a milestone.
 
 ## Upstream babs — tracked
 
-`PennLINC/babs#N` we depend on. External work, no mechababs milestone — listed
-here as dependencies, with the milestone-area each supports. (A real tracker
-issue / Project field is deferred; revisit if these need to go on a board.)
+`PennLINC/babs#N` we depend on. External work — surfaced in the milestone plan
+via per-milestone epics (#38 for M2, #39 for M4), each a checklist of the deps
+below. The upstream issue is the source of truth; the epic is the tracker.
 
 - **PennLINC/babs#365** (M2) — combine single-app + pipeline modes; gates #347 + #364. Referenced by #26, #27, #36.
 - **PennLINC/babs#347** (M2) — datalad containers-run (issue #328); re-triage after hooks + optional-zip land.
