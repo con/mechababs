@@ -20,6 +20,8 @@
 #                 (no content fetch) -> ${DEST_BASE}/<ds>-fmriprep-<stage>
 #   6-get.sh      [on TYPHON] datalad get . per cloned dataset (non-recursive)
 #                 -> fetches the per-subject zip + duct logs
+#   7-unzip.sh    [on TYPHON] datalad run add-archive-content per fetched zip
+#                 -> extracted derivatives, in place, provenance-tracked
 #
 # Steps 0-4 run on ndoli inside a tmux/screen session so the long login-node
 # process survives disconnect. (We dropped spawn-all's per-dataset session
