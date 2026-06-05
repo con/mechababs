@@ -12,7 +12,7 @@ the operational ledger — not a milestone.
 ## M2-Correct-Publishable
 
 - [#38](https://github.com/asmacdo/mechababs/issues/38) — **Epic:** upstream babs dependencies (M2) · `epic` `babs-upstream` · checklist of the M2 `PennLINC/babs#N` deps
-- [#4](https://github.com/asmacdo/mechababs/issues/4) — decide the requirements for pipeline output layouts (reframe of "Target setups thought dump") · `decision` · overlaps #7 #24 #25, PennLINC/babs#369
+- [#4](https://github.com/asmacdo/mechababs/issues/4) — decide the requirements for pipeline output layouts (reframe of "Target setups thought dump") · `decision` · overlaps #7 #24 #25, PennLINC/babs#369 · decided: derivative naming carries a `stage` axis (`{tool}-{ver}-{stage}+mb1`); TODO update fmriprepDerivatives README
 - [#6](https://github.com/asmacdo/mechababs/issues/6) — avoid abs paths / make `datalad rerun` portable · `automation` `provenance`
 - [#7](https://github.com/asmacdo/mechababs/issues/7) — contain babs config within result `code/` · `babs-upstream` `provenance` · maybe solved by PennLINC/babs#369 (verify)
 - [#16](https://github.com/asmacdo/mechababs/issues/16) — Re-integrate con/duct monitoring after babs working-branch rebuild · `babs-upstream` `duct` `provenance` · tracks PennLINC/babs#356
@@ -47,11 +47,12 @@ the operational ledger — not a milestone.
 
 ## M4-E2E-Automation
 
-- [#39](https://github.com/asmacdo/mechababs/issues/39) — **Epic:** upstream babs dependencies (M4) · `epic` `babs-upstream` · checklist of the M4 `PennLINC/babs#N` deps
+- [#39](https://github.com/asmacdo/mechababs/issues/39) — **Epic:** upstream babs dependencies (M4) · `epic` `babs-upstream` · checklist of the M4 `PennLINC/babs#N` deps + not-yet-filed trackers #12 #46
 - [#3](https://github.com/asmacdo/mechababs/issues/3) — automate resource estimation (right-size from dataset properties) · `automation` · first step = gather actuals (usage report from `duct_<sub>_info.json`, was 9-usage-report); cf #44 #34
 - [#10](https://github.com/asmacdo/mechababs/issues/10) — preflight.py pipeline-blind + false-passes on git auth/network · `automation` · verified still valid 2026-06-03
-- [#12](https://github.com/asmacdo/mechababs/issues/12) — `babs status --done` machine-readable completion gate · `babs-upstream` `upstream-NOT-FILED`
-- [#13](https://github.com/asmacdo/mechababs/issues/13) — Recording finished-job state — how is "done" stored? · `automation` `fuzzy/slop`
+- [#12](https://github.com/asmacdo/mechababs/issues/12) — `babs status --done`/`--merged [submitted|all]` machine-readable gates · `babs-upstream` `upstream-NOT-FILED` · `--merged` derived from branch ancestry; `--inclusion-file` scopes the gate (no-inclusion = current behavior); cf #46
+- [#13](https://github.com/asmacdo/mechababs/issues/13) — Recording finished-job state — how is "done" stored? · `automation` `fuzzy/slop` · collects the multi-cluster L2/L3 merge-state ledger scheme (to split later); cf #12 #24 #46
+- [#46](https://github.com/asmacdo/mechababs/issues/46) — `babs merge` as a dependent (`afterany`) compute job + post-merge hook · `babs-upstream` `upstream-NOT-FILED` · merge is heavy compute (worse post-#364), not login-node bookkeeping; post-hook writes L2; cf #13 #40
 - [#15](https://github.com/asmacdo/mechababs/issues/15) — duct SIGINT during deploy loop doesn't abort cleanly · `automation` `duct`
 - [#23](https://github.com/asmacdo/mechababs/issues/23) — Automate defacing / skull-strip verification · `automation` `fmriprepDerivatives` · depends on #22
 - [#26](https://github.com/asmacdo/mechababs/issues/26) — babs status: `OutputDataset` hardcodes `is_zipped=True` · `babs-upstream` `upstream-NOT-FILED` · cf PennLINC/babs#364 #327 #365
