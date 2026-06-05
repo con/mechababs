@@ -23,10 +23,10 @@ the operational ledger — not a milestone.
 - [#24](https://github.com/asmacdo/mechababs/issues/24) — Compose produced outputs into the bids-study superdataset · `automation` `blocked` · blocked by #4, blocks #25
 - [#25](https://github.com/asmacdo/mechababs/issues/25) — bids-study dataset: produce a `dataset_description.json` · `automation` `blocked` `provenance` · blocked by #24
 - [#29](https://github.com/asmacdo/mechababs/issues/29) — Make templateflow + FS-license bind-mounts portable · `automation` `pipeline:fmriprep` `provenance` · cf #6
-- [#30](https://github.com/asmacdo/mechababs/issues/30) — june-1-shakeout: produce real fmriprep data across datasets (decided config) · `automation` `pipeline:fmriprep` · closeable soon
+- [#30](https://github.com/asmacdo/mechababs/issues/30) — june-1-shakeout: produce real fmriprep data across datasets (decided config) · `automation` `pipeline:fmriprep` · ✅ CLOSED (outputs produced + verified; all failures triaged into #41–#45/#5)
 - [#41](https://github.com/asmacdo/mechababs/issues/41) — minimal fmriprep: dataset-root inherited BIDS sidecars dropped from per-job sparse-checkout · `babs-upstream` `pipeline:fmriprep` `automation` `dataset` · fixed by PennLINC/babs#376 (epic #38); affects ds001894/ds002843/ds003097/ds004636/ds004169/ds004884
 - [#31](https://github.com/asmacdo/mechababs/issues/31) — Fast/cheap test pipeline to iterate mechababs · `automation`
-- [#32](https://github.com/asmacdo/mechababs/issues/32) — Post-shakeout error report (auto-compile failures for triage) · `automation` · cf #30
+- [#32](https://github.com/asmacdo/mechababs/issues/32) — Post-shakeout error report (auto-compile failures for triage) · `automation` · ✅ CLOSED (8-fail-report.sh, commit 2aab8e4; usage/resource half → #3)
 - [#36](https://github.com/asmacdo/mechababs/issues/36) — BIDS-validate derivatives in finalize (deno validator) · `automation` · cf PennLINC/babs#365
 - [#33](https://github.com/asmacdo/mechababs/issues/33) — Get mechababs running on the Unity cluster · `automation` · cf #34
 - [#34](https://github.com/asmacdo/mechababs/issues/34) — SLURM allocation is the throughput bottleneck — get more on Discovery · `automation` · cf #3 #33
@@ -48,7 +48,7 @@ the operational ledger — not a milestone.
 ## M4-E2E-Automation
 
 - [#39](https://github.com/asmacdo/mechababs/issues/39) — **Epic:** upstream babs dependencies (M4) · `epic` `babs-upstream` · checklist of the M4 `PennLINC/babs#N` deps
-- [#3](https://github.com/asmacdo/mechababs/issues/3) — automate resource estimation (right-size from dataset properties) · `automation`
+- [#3](https://github.com/asmacdo/mechababs/issues/3) — automate resource estimation (right-size from dataset properties) · `automation` · first step = gather actuals (usage report from `duct_<sub>_info.json`, was 9-usage-report); cf #44 #34
 - [#10](https://github.com/asmacdo/mechababs/issues/10) — preflight.py pipeline-blind + false-passes on git auth/network · `automation` · verified still valid 2026-06-03
 - [#12](https://github.com/asmacdo/mechababs/issues/12) — `babs status --done` machine-readable completion gate · `babs-upstream` `upstream-NOT-FILED`
 - [#13](https://github.com/asmacdo/mechababs/issues/13) — Recording finished-job state — how is "done" stored? · `automation` `fuzzy/slop`
