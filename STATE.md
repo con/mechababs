@@ -39,11 +39,11 @@ the operational ledger — not a milestone.
 - [#11](https://github.com/asmacdo/mechababs/issues/11) — select-eligible-sub-ses.py: aggregate per (sub,ses) before filtering · `automation` · sibling of #14
 - [#14](https://github.com/asmacdo/mechababs/issues/14) — ds000113 (StudyForrest) session-level `babs init` fails on structurally mixed dataset · `babs-upstream` `upstream-NOT-FILED`
 - [#19](https://github.com/asmacdo/mechababs/issues/19) — Handling ~1k-subject datasets (subdataset-per-subject) · `decision`
-- [#21](https://github.com/asmacdo/mechababs/issues/21) — Procedure for datasets that won't process · `decision` `fmriprepDerivatives` `upstream` `upstream-NOT-FILED`
+- [#21](https://github.com/asmacdo/mechababs/issues/21) — Procedure for datasets that won't process · `decision` · ✅ CLOSED (resolved by c02d1c9 — procedure encoded in CLAUDE.md)
 - [#42](https://github.com/asmacdo/mechababs/issues/42) — ds002785: minimal `babs init` PermissionError stat-ing embedded FreeSurfer derivatives · `dataset` `pipeline:fmriprep` · likely transient dartfs ACL; TODO rerun before digging in
 - [#43](https://github.com/asmacdo/mechababs/issues/43) — ds006623: annex content not retrievable — never mirrored to `s3-PUBLIC` (only copy on internal `OpenNeuro` remote) · `dataset` `upstream` · tracked upstream by openneuroorg/openneuro#3875 (Yarik)
 - [#44](https://github.com/asmacdo/mechababs/issues/44) — ds004078: ~60 BOLD runs in one subject-level job exceeds walltime (no sessions to split on) · `dataset` `pipeline:fmriprep` · timed out at 24h; cf #19 #3
-- [#45](https://github.com/asmacdo/mechababs/issues/45) — ds006688: not indexed in OpenNeuroStudies (no `study-ds006688` repo) → selection skips it · `dataset` `upstream` `upstream-NOT-FILED` · sibling to #43
+- [#45](https://github.com/asmacdo/mechababs/issues/45) — ds006688 superseded by ds007116 — swap the stale ID in the curated list + re-run · `dataset` `upstream` · upstream resolved (OpenNeuroStudies/OpenNeuroStudies#5); csv swapped, re-run pending
 
 ## M4-E2E-Automation
 
