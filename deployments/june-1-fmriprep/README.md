@@ -29,8 +29,53 @@ bash deployments/june-1-fmriprep/2-merge.sh
 # 3. Deploy minimal for the anat_ok studies. --batch N as above.
 bash deployments/june-1-fmriprep/3-minimal.sh --batch 5
 
-#    ... wait, then merge/unzip the minimal outputs (separate phase) ...
+#    ... wait for the minimal jobs to finish (poll by hand) ...
+
+# 4. Merge finished minimal. Same [c]ontinue/[s]kip/[a]bort prompt as step 2;
+#    sets minimal_ok + minimal_ria_url in the ledger.
+bash deployments/june-1-fmriprep/4-merge.sh
 ```
+
+## Retrieve + extract on typhon (steps 5–7)
+
+Steps 0–4 run on ndoli. Steps 5–7 run on **typhon**, which reaches ndoli's
+RIA stores over SSH — set up `kinit` first so it's passwordless. Run them in
+`tmux`; each takes `--dry-run` and `--batch N`.
+
+```bash
+# 5. Clone each merged anat/minimal output RIA from ndoli (metadata only, no
+#    content). Re-fetches ndoli's ledger first.
+bash deployments/june-1-fmriprep/5-clone.sh
+# 6. Fetch content (the per-subject zip + duct logs) for each clone.
+bash deployments/june-1-fmriprep/6-get.sh
+# 7. Extract the zips in place, as a tracked `datalad run` (add-archive-content).
+bash deployments/june-1-fmriprep/7-unzip.sh
+```
+
+Outputs land in `/data/asmacdo/openneuro-pipe-2026-06-01/<ds>-fmriprep-<stage>`.
+ndoli host/repo and the destination are env-overridable in `lib.sh`.
+
+## Re-running to sweep up new completions
+
+The whole sequence is idempotent. As more jobs finish: on ndoli run `4-merge`
+(picks up newly-finished minimals), then on typhon `5-clone` → `6-get` →
+`7-unzip` (each only touches studies not already done). The ledger is
+authoritative on ndoli; steps 5–7 re-fetch it and never write it.
+
+## Triage failures (step 8, on ndoli, after the run)
+
+Compile a per-failure report to triage everything at once:
+
+```bash
+bash deployments/june-1-fmriprep/8-fail-report.sh   # --batch N / --tail N / --dry-run
+```
+
+It reads the ledger and, per failed stage, writes
+`reports/<EXP>/<ds>-<stage>-FAIL.txt` — tailing the SLURM job logs for job
+failures and the duct wrapper logs for submit errors. Run on ndoli (the failure
+logs live there). Then file a `dataset` issue per failure — see the
+dataset-failure procedure in the repo-root `CLAUDE.md`. (See `CONTEXT.md` for the
+failure taxonomy this surfaced + lessons.)
 
 ## State
 
