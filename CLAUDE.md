@@ -25,6 +25,31 @@ OpenNeuroDerivatives. `studies.tsv` (maintained by Yarik) is the
 authoritative index — columns include `study_id`, `raw_version`,
 `derivative_count`, `derivative_ids`.
 
+The platform itself lives at **`openneuroorg/openneuro`** (web app,
+validation, the S3 content buckets). Dataset-level *data* problems are
+tracked there, and dataset state is visible on the dashboard:
+<https://openneuroorg.github.io/dashboard/>.
+
+**Reporting a dataset's data problem upstream.** When a dataset fails for
+a *data* reason — content not pushed to the bucket (annex content
+unavailable), missing/invalid files, not yet propagated — report it to
+the platform, not just here (per Chris Markiewicz):
+
+1. Check the dataset on the dashboard above.
+2. Search the **dataset ID across all** `openneuroorg/openneuro` issues —
+   `gh search issues --repo openneuroorg/openneuro "dsXXXXXX"`. Do **not**
+   filter to `label:Tracking`: real reports often land under other labels
+   (e.g. ds006623 is covered by `openneuroorg/openneuro#3875`, labeled
+   `bug`). The `Tracking` label
+   (<https://github.com/openneuroorg/openneuro/issues?q=is%3Aissue+state%3Aopen+label%3ATracking>)
+   is a useful browse bucket, not a complete filter.
+3. If one already covers it, add a comment naming the dataset (if not
+   already listed); otherwise open a new issue.
+
+Then link the upstream issue from our `dataset`/`upstream` issue and drop
+`upstream-NOT-FILED`. (Tool/config failures — e.g. a pipeline that can't
+read a valid file — are *our* issues, not this.)
+
 ## Conventions
 
 - **Three-axis composition.** Every run = `dataset × pipeline × cluster`.
@@ -45,6 +70,18 @@ authoritative index — columns include `study_id`, `raw_version`,
   human-edited list of datasets we care about. Don't synthesize a parallel
   source; add columns here if a per-dataset fact needs to be tracked.
 - Never reference untracked local files in upstream-facing stuff (tracked files, issues, etc)
+- **Dataset failures → always a mechababs issue, `dataset`-labeled.** Every
+  dataset that fails (data fault / won't process) gets a mechababs issue with
+  the `dataset` label, so failures are milestone-tracked and a `dataset`-label
+  scan after a shakeout surfaces them all. Put the dataset ID in the title for
+  single-/few-dataset issues; for one root cause hitting many datasets, keep the
+  IDs in a body checklist (don't cram them into the title) — the `dataset` label
+  is what makes it scannable, so a multi-dataset root-cause issue carries
+  `dataset` even when the cause is ours/upstream. If the cause is upstream,
+  **also file upstream and link it** (see the OpenNeuro reporting workflow
+  above), don't just point at it; default for data problems is alert-upstream,
+  not self-fix (case-by-case). Per-dataset shakeout *status* still lives in the
+  operational ledger — issues are the failures/causes, not a card per dataset.
 
 ## Principles
 

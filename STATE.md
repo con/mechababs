@@ -24,6 +24,7 @@ the operational ledger — not a milestone.
 - [#25](https://github.com/asmacdo/mechababs/issues/25) — bids-study dataset: produce a `dataset_description.json` · `automation` `blocked` `provenance` · blocked by #24
 - [#29](https://github.com/asmacdo/mechababs/issues/29) — Make templateflow + FS-license bind-mounts portable · `automation` `pipeline:fmriprep` `provenance` · cf #6
 - [#30](https://github.com/asmacdo/mechababs/issues/30) — june-1-shakeout: produce real fmriprep data across datasets (decided config) · `automation` `pipeline:fmriprep` · closeable soon
+- [#41](https://github.com/asmacdo/mechababs/issues/41) — minimal fmriprep: dataset-root inherited BIDS sidecars dropped from per-job sparse-checkout · `babs-upstream` `pipeline:fmriprep` `automation` `dataset` · fixed by PennLINC/babs#376 (epic #38); affects ds001894/ds002843/ds003097/ds004636/ds004169/ds004884
 - [#31](https://github.com/asmacdo/mechababs/issues/31) — Fast/cheap test pipeline to iterate mechababs · `automation`
 - [#32](https://github.com/asmacdo/mechababs/issues/32) — Post-shakeout error report (auto-compile failures for triage) · `automation` · cf #30
 - [#36](https://github.com/asmacdo/mechababs/issues/36) — BIDS-validate derivatives in finalize (deno validator) · `automation` · cf PennLINC/babs#365
@@ -39,6 +40,10 @@ the operational ledger — not a milestone.
 - [#14](https://github.com/asmacdo/mechababs/issues/14) — ds000113 (StudyForrest) session-level `babs init` fails on structurally mixed dataset · `babs-upstream` `upstream-NOT-FILED`
 - [#19](https://github.com/asmacdo/mechababs/issues/19) — Handling ~1k-subject datasets (subdataset-per-subject) · `decision`
 - [#21](https://github.com/asmacdo/mechababs/issues/21) — Procedure for datasets that won't process · `decision` `fmriprepDerivatives` `upstream` `upstream-NOT-FILED`
+- [#42](https://github.com/asmacdo/mechababs/issues/42) — ds002785: minimal `babs init` PermissionError stat-ing embedded FreeSurfer derivatives · `dataset` `pipeline:fmriprep` · likely transient dartfs ACL; TODO rerun before digging in
+- [#43](https://github.com/asmacdo/mechababs/issues/43) — ds006623: annex content not retrievable — never mirrored to `s3-PUBLIC` (only copy on internal `OpenNeuro` remote) · `dataset` `upstream` · tracked upstream by openneuroorg/openneuro#3875 (Yarik)
+- [#44](https://github.com/asmacdo/mechababs/issues/44) — ds004078: ~60 BOLD runs in one subject-level job exceeds walltime (no sessions to split on) · `dataset` `pipeline:fmriprep` · timed out at 24h; cf #19 #3
+- [#45](https://github.com/asmacdo/mechababs/issues/45) — ds006688: not indexed in OpenNeuroStudies (no `study-ds006688` repo) → selection skips it · `dataset` `upstream` `upstream-NOT-FILED` · sibling to #43
 
 ## M4-E2E-Automation
 
