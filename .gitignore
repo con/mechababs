@@ -6,7 +6,3 @@ __pycache__/
 processing/
 local-notes/
 repronim-containers/
-
-# Living session-handoff file; never committed
-SPOKE_CONTEXT.md
-.hubstate
