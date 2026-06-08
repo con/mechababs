@@ -2,11 +2,10 @@
 
 Automation glue for running BIDS apps across many datasets on HPC
 clusters using BABS. **User-facing usage and per-dataset workflow:
-see [README.md](README.md). Current-state of the fmriprep pipeline work:
-see [SPOKE_CONTEXT.md](SPOKE_CONTEXT.md).**
+see [README.md](README.md).**
 
 This file holds project conventions, terminology, and pointers a
-contributor (or fresh Claude session) needs that don't fit in either.
+contributor (or fresh Claude session) needs that don't fit in the README.
 
 ## OpenNeuro ecosystem
 
@@ -50,6 +49,33 @@ Then link the upstream issue from our `dataset`/`upstream` issue and drop
 `upstream-NOT-FILED`. (Tool/config failures — e.g. a pipeline that can't
 read a valid file — are *our* issues, not this.)
 
+## Pipeline
+
+mechababs is automation to run **one pipeline** right now — staged fmriprep
+with MRIQC as a gate — architected to generalize later but not abstracted
+ahead of need. The pipeline *is* the app.
+
+Stages (each a separate BABS run, composed via the three-axis YAMLs):
+
+1. **MRIQC** — quality gate; must pass first.
+2. **`fmriprep --anat-only`** — FreeSurfer + anat scaffold + xfms to output spaces.
+3. **`fmriprep --level minimal`** — BOLD-side transforms (HMC, coreg, SDC).
+4. **`fmriprep --level resampling`** — currently equivalent to minimal in
+   fmriprep; kept as a no-op hook for the planned confounds-at-resampling
+   change (#17).
+5. **`fmriprep --level full`** — resampled BOLD in template spaces + CIFTI +
+   confounds; ~45× minimal.
+
+**Fan-out, not chain.** Stages 3–5 each take anat-only's output as a
+`sourcedata/` input; they do *not* chain off each other (BABS is single-input
+per derivative). A true linear chain needs upstream BABS work — tracked in
+#27. Accepted as fan-out for now.
+
+**Don't restate flags or rationale here — they drift.** Exact flags live in
+`pipelines/fmriprep-*.yaml` (ground truth); the *why* behind each choice
+(version pin, me-output-echos hedge, syn-sdc, slice-timing) lives in the
+`OpenNeuroDerivatives/fmriprepDerivatives` opinions repo.
+
 ## Conventions
 
 - **Three-axis composition.** Every run = `dataset × pipeline × cluster`.
@@ -69,7 +95,10 @@ read a valid file — are *our* issues, not this.)
 - **Curated facts live in `priority-openneuro-datasets.csv`.** It's the
   human-edited list of datasets we care about. Don't synthesize a parallel
   source; add columns here if a per-dataset fact needs to be tracked.
-- Never reference untracked local files in upstream-facing stuff (tracked files, issues, etc)
+- **No untracked-local paths in upstream-facing stuff** (issues, tracked
+  docs). A gitignored path means nothing to a reader on GitHub — **strip
+  the path, keep the intent** (e.g. "the resample question in our fmriprep
+  meeting notes is stale", not the path); remove it at filing time.
 - **Dataset failures → always a mechababs issue, `dataset`-labeled.** Every
   dataset that fails (data fault / won't process) gets a mechababs issue with
   the `dataset` label, so failures are milestone-tracked and a `dataset`-label
@@ -82,6 +111,71 @@ read a valid file — are *our* issues, not this.)
   above), don't just point at it; default for data problems is alert-upstream,
   not self-fix (case-by-case). Per-dataset shakeout *status* still lives in the
   operational ledger — issues are the failures/causes, not a card per dataset.
+
+## Planning & issue tracking
+
+Issue discipline: few, closeable issues; fuzzy ideas stay out of the
+milestone plan (label `fuzzy/slop`, no milestone) rather than being
+drafted privately and re-done; we iterate in public.
+
+### Milestones
+
+Capability-focused, not date-based. Referred to by full name
+(`M4-E2E-Automation`), never bare `M4`. "All OpenNeuro processed" is the
+**north star** these enable — tracked by the operational ledger, not a
+milestone.
+
+- **M1-Shakeout** — *done.* mechababs can run the 1-subject sweep across
+  the priority list. The ongoing sweep is an activity (the ledger), not a
+  bucket.
+- **M2-Correct-Publishable** — successful datasets produce **publishable**
+  output. Litmus: *any issue that, if unfixed, would force a passing
+  dataset to be redone* (provenance, license, BIDS validity,
+  `dataset_description`, defacing, zip-breaks-provenance). Datasets may
+  fail here — that's fine; the ones that succeed are publishable. Retries
+  are M4. Provenance must be **re-executable**: the `singularity run`
+  command lands in git *and* must re-run on other systems — abspaths in
+  the run record break this.
+- **M3-Hard-Datasets** — dataset-specific handling that **doesn't affect
+  output correctness** (giant ~1k-subject → subdataset-per-subject; odd
+  structures needing special handling to run at all). Same output,
+  different handling.
+- **M4-E2E-Automation** — a launched chunk runs init→submit→merge→record
+  end-to-end, with **retries** + machine-readable done-detection.
+  Launching stays manual / in chunks, by design.
+
+**Milestones attach only to mechababs-tracked issues.** A pure-upstream
+issue (filed only in `PennLINC/babs`) gets no milestone; to track upstream
+work in a milestone, file a mechababs issue that references the upstream
+`#N` (label `babs-upstream`). The upstream issue does the fixing; the
+mechababs issue tracks it. Per-milestone **epics** aggregate the upstream
+deps as a checklist (#38 = M2, #39 = M4).
+
+### Labels
+
+- `dataset` — a specific-dataset failure/quirk.
+- `pipeline:fmriprep`, `pipeline:mriqc` — which pipeline.
+- `automation` — the deployment glue (deploy pattern, ledger, scripts).
+- `decision` — a science/policy call (e.g. defacing gate, subject-vs-session).
+- `epic` — a parent tracking issue (checklist); used for the per-milestone
+  upstream-deps epics above.
+- `blocked` — waiting on something (say what, in-issue).
+- `fuzzy/slop` — an exploratory / not-fully-baked idea we still want in the
+  tracker so it isn't lost, but that hasn't earned a milestone. Files to
+  mechababs, no milestone. Promote (drop the label, add a milestone) when it
+  sharpens.
+
+**Upstream-tracking labels** — fixes that land in a repo we don't own;
+repo-pointer + status:
+
+- `babs-upstream` — fix lands in `PennLINC/babs`; carry the upstream `#N`.
+- `upstream` — generic pointer for a **non-babs** upstream (con/duct,
+  fmriprep, datalad, OpenNeuro, …); pair with a more specific label where
+  one exists.
+- `upstream-NOT-FILED` — the upstream issue hasn't been filed yet.
+- `duct` — touches `con/duct`.
+- `fmriprepDerivatives` — belongs in `OpenNeuroDerivatives/fmriprepDerivatives`
+  (the opinions repo).
 
 ## Principles
 
@@ -127,9 +221,8 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 
 For overall project usage: **`README.md`**.
 
-For the current fmriprep pipeline work: **`SPOKE_CONTEXT.md`** — it has
-the staged-pipeline shape, decided config, single-subject test outputs,
-open/in-flight items, and the right pointers into `local-notes/OpenNeuro/`
-for meeting transcripts and curriculum.
+For the pipeline: the **`## Pipeline`** section above (shape), the
+`pipelines/*.yaml` (flags, ground truth), and the
+`OpenNeuroDerivatives/fmriprepDerivatives` opinions repo (rationale).
 
-For mechababs's own gaps and upstream BABS issues: `local-notes/babs_automation_gaps.md`.
+For current work + open issues: the GitHub tracker (`asmacdo/mechababs`).

@@ -209,11 +209,8 @@ To add a new cluster: copy `clusters/dartmouth.yaml`, adjust SLURM resources + `
 
 ## Docs
 
-- [CLAUDE.md](CLAUDE.md) — project conventions, venv rules, working agreement.
-- [SPOKE_CONTEXT.md](SPOKE_CONTEXT.md) — current state of the fmriprep pipeline work; what a fresh Claude session should pick up.
-- [babs_automation_gaps.md](babs_automation_gaps.md) — log of upstream BABS limits.
-- [design/](design/) — architecture proposals (incl. `PIPELINE-SPEC.md` for the pipeline-as-unit babs proposal).
-- [local-notes/OpenNeuro/](local-notes/OpenNeuro/) — meeting transcripts, curriculum, per-run scratch (gitignored).
+- [CLAUDE.md](CLAUDE.md) — project conventions, the pipeline, venv rules, working agreement.
+- [design/](design/) — architecture proposals.
 
 ## Upstream
 
