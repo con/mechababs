@@ -13,6 +13,9 @@ dependencies = [
     "datalad-container",
 ]
 
+[project.scripts]
+mechababs = "mechababs.cli:main"
+
 # Only the mechababs package is installed; the root bootstrap scripts
 # (init-campaign.py, cluster-setup.py) are run directly, not packaged.
 [tool.setuptools]
