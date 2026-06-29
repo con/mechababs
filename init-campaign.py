@@ -100,6 +100,13 @@ def main():
     # 1. The campaign: a standalone datalad dataset (text2git per project convention).
     run("datalad", "create", "-c", "text2git", campaign)
 
+    # 1b. Ignore the runtime venv that cluster-setup.py builds at .venv/ — it's
+    #     ephemeral compute (rebuildable from the vendored code), not tracked state.
+    gitignore = campaign / ".gitignore"
+    gitignore.write_text(".venv/\n")
+    run("datalad", "save", "--dataset", campaign, "--message",
+        "Ignore the runtime venv (.venv/)", gitignore)
+
     # 2. Vendor babs + mechababs as pinned subdatasets under code/.
     vendor(campaign, "babs", babs_url, babs_ref)
     vendor(campaign, "mechababs", mecha_url, mecha_ref)
