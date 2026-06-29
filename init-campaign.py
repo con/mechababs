@@ -12,17 +12,26 @@ Usage:
   ./init-campaign.py <path> \\
       --babs       <url@ref> \\
       --mechababs  <url@ref> \\
-      --pipelines  mriqc[,fmriprep-anat,...]
+      --pipelines  mriqc-24.0.2.yaml[,fmriprep-anat-25.2.5.yaml,...] \\
+      --cluster    dartmouth.yaml
 
 All arguments are required (no defaults). <ref> is a branch or tag name (not a
 raw commit) that must already be pushed to <url> — we clone the URL, never a
 local path, so the campaign is reproducible elsewhere.
+
+--pipelines and --cluster name config files under the vendored mechababs
+(pipelines/ and clusters/). Each pipeline file must declare a unique `short_name`
+(the ledger's per-pipeline column prefix); init resolves the map into the
+campaign's campaign.yaml (alongside the cluster). TODO: someday accept
+pipeline/cluster files that don't live under mechababs.
 """
 
 import argparse
 import subprocess
 import sys
 from pathlib import Path
+
+import yaml
 
 # A campaign is its own standalone datalad dataset (no experiments superdataset).
 # DATASETS_STATE.tsv is wide: dataset/identity columns up front (incl. the
@@ -36,6 +45,10 @@ from pathlib import Path
 # header writer, so the two lists must stay in sync.)
 IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
 PIPELINE_COLUMNS = ["init", "state", "ria_url", "babs-complete", "n_failed", "babs-merged"]
+
+# The vendored mechababs subtree within the campaign; pipeline/cluster configs
+# resolve under it for now. TODO: someday accept config files outside mechababs.
+MECHABABS = "code/mechababs"
 
 
 def run(*cmd, cwd=None):
@@ -75,12 +88,33 @@ def vendor(campaign, name, url, ref):
         f"Vendor {name} at {ref} ({head})", dest)
 
 
-def state_header(pipelines):
+def state_header(short_names):
     """The DATASETS_STATE.tsv header: identity columns + a group per pipeline."""
     cols = list(IDENTITY_COLUMNS)
-    for p in pipelines:
-        cols += [f"{p}_{c}" for c in PIPELINE_COLUMNS]
+    for short in short_names:
+        cols += [f"{short}_{c}" for c in PIPELINE_COLUMNS]
     return "\t".join(cols) + "\n"
+
+
+def resolve_pipelines(campaign, pipeline_files):
+    """Map each pipeline file's `short_name` -> its campaign-relative path.
+
+    Reads short_name from the vendored mechababs pipeline configs; rejects a
+    missing short_name or a duplicate (a collision would merge column groups).
+    """
+    mapping = {}
+    for fname in pipeline_files:
+        rel = f"{MECHABABS}/pipelines/{fname}"
+        path = campaign / rel
+        if not path.is_file():
+            sys.exit(f"pipeline config not found: {rel}")
+        short = (yaml.safe_load(path.read_text()) or {}).get("short_name")
+        if not short:
+            sys.exit(f"pipeline {fname} declares no short_name")
+        if short in mapping:
+            sys.exit(f"duplicate short_name {short!r} — pipeline short_names must be unique")
+        mapping[short] = rel
+    return mapping
 
 
 def main():
@@ -92,12 +126,14 @@ def main():
     ap.add_argument("--babs", required=True, metavar="URL@REF")
     ap.add_argument("--mechababs", required=True, metavar="URL@REF")
     ap.add_argument("--pipelines", required=True,
-                    help="comma-separated pipeline names, e.g. mriqc")
+                    help="comma-separated pipeline config files under mechababs/pipelines/")
+    ap.add_argument("--cluster", required=True,
+                    help="cluster config file under mechababs/clusters/")
     args = ap.parse_args()
 
-    pipelines = [p.strip() for p in args.pipelines.split(",") if p.strip()]
-    if not pipelines:
-        sys.exit("--pipelines must list at least one pipeline")
+    pipeline_files = [p.strip() for p in args.pipelines.split(",") if p.strip()]
+    if not pipeline_files:
+        sys.exit("--pipelines must list at least one pipeline config file")
     babs_url, babs_ref = split_url_ref(args.babs)
     mecha_url, mecha_ref = split_url_ref(args.mechababs)
     campaign = args.path
@@ -116,9 +152,24 @@ def main():
     vendor(campaign, "babs", babs_url, babs_ref)
     vendor(campaign, "mechababs", mecha_url, mecha_ref)
 
-    # 3. Write the empty state ledger (header only) and record it.
+    # 3. Resolve the config now that the mechababs configs are vendored:
+    #    each pipeline's short_name -> file, and the cluster file. campaign.yaml
+    #    is the campaign config (cluster is fixed; pipelines may grow later); the
+    #    short_names become the ledger's per-pipeline column prefixes.
+    pipelines = resolve_pipelines(campaign, pipeline_files)
+    cluster_rel = f"{MECHABABS}/clusters/{args.cluster}"
+    if not (campaign / cluster_rel).is_file():
+        sys.exit(f"cluster config not found: {cluster_rel}")
+
+    config = campaign / "campaign.yaml"
+    config.write_text(yaml.safe_dump(
+        {"cluster": cluster_rel, "pipelines": pipelines}, sort_keys=False))
+    run("datalad", "save", "--dataset", campaign, "--message",
+        "Write campaign.yaml (cluster + pipelines)", config)
+
+    # 4. Write the empty state ledger (header only) and record it.
     state = campaign / "DATASETS_STATE.tsv"
-    state.write_text(state_header(pipelines))
+    state.write_text(state_header(pipelines.keys()))
     run("datalad", "save", "--dataset", campaign, "--message",
         f"Initialize DATASETS_STATE.tsv for pipelines {', '.join(pipelines)}", state)
 

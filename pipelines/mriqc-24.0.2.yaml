@@ -1,3 +1,6 @@
+# short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per campaign).
+short_name: mriqc
+
 container:
   # pre-built SIF in a datalad dataset
   repo: repronim-containers
