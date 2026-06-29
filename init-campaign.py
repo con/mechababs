@@ -115,7 +115,7 @@ def main():
     state = campaign / "DATASETS_STATE.tsv"
     state.write_text(state_header(pipelines))
     run("datalad", "save", "--dataset", campaign, "--message",
-        "Initialize DATASETS_STATE.tsv", state)
+        f"Initialize DATASETS_STATE.tsv for pipelines {', '.join(pipelines)}", state)
 
     print(f"\nCampaign ready at {campaign}", file=sys.stderr)
     print("Next: ./cluster-setup.py  (venv + install babs/mechababs + duct)",
