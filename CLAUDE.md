@@ -83,6 +83,13 @@ per derivative). A true linear chain needs upstream BABS work — tracked in
   YAMLs (`clusters/`) hold SLURM resources + script preamble. Never
   bake cluster details into a pipeline YAML or vice versa. `merge_config.py`
   composes them.
+- **Dev exercises prod's paths.** Dev/test and production run the **same code
+  paths and data structures**; the only differences are *config and content* —
+  which sibling, which subset of subjects, which code pin — never a dev-only
+  branch, status value, or field. A divergence means dev stops validating prod.
+  Corollary: **one tool, two modes**, not two tools. (Express gates in data prod
+  also exercises — e.g. inclusion-file *validity*, which prod checks and always
+  passes — not in dev-only state.)
 - **Inclusion files are canonical.** Don't rely on `babs submit --count`
   to pick subjects. Produce an inclusion CSV (auto via
   `select-eligible-sub-ses.py`, or hand-written one-row for smoke
