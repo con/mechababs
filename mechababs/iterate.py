@@ -39,8 +39,15 @@ def run(cmd, *, dry_run, cwd=None):
 
 
 def warn_if_no_tmux():
-    """Prompt before a long login-node run that a disconnect would kill (cf lib.sh)."""
+    """Prompt before a long login-node run that a disconnect would kill (cf lib.sh).
+
+    Only meaningful interactively; a non-tty caller (CI / containers / pipes) can't
+    answer, so skip the prompt there rather than block on EOF.
+    """
     if os.environ.get("TMUX") or os.environ.get("STY"):
+        return
+    if not sys.stdin.isatty():
+        print("Note: not inside tmux/screen (non-interactive — continuing).", file=sys.stderr)
         return
     ans = input("Not inside tmux/screen — a disconnect will kill this run. Continue anyway? [y/N] ")
     if not ans.lower().startswith("y"):
