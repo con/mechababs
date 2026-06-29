@@ -1,10 +1,15 @@
 """state.py — the campaign's DATASETS_STATE.tsv ledger accessor.
 
-A wide TSV: identity columns (``url``, ``processing_level``) then a six-column
-group per pipeline (``<p>_status``/``_note``/``_ok``/``_ria_url``/``_n_subjects``
-/``_n_sessions``). The schema is **read from the file's header**, not hardcoded —
-init-campaign.py chooses the pipelines per campaign, so the accessor discovers
-them from the columns present.
+A wide TSV: dataset/identity columns (``url``, ``processing_level``,
+``n_subjects``, ``n_sessions``) then a column-group per pipeline
+(``<p>_init``/``_state``/``_ria_url``/``_babs-complete``/``_n_failed``
+/``_babs-merged``). There is no status enum — a pipeline's state is derived from
+which columns are populated (``init`` -> started; ``ria_url`` -> some jobs done;
+``babs-complete`` -> all ended; ``babs-merged`` -> finished). The per-pipeline
+inclusion size is not stored here — it lives in the pinned inclusion.csv. The
+schema is **read from the file's header**, not hardcoded — init-campaign.py
+chooses the pipelines per campaign, so the accessor discovers them from the
+columns present.
 
 The ledger is a re-derivable cache; mutators hold a campaign-level flock so there
 is a single writer (add-dataset and iterate). Generalizes the June-1 ledger.py.
@@ -19,8 +24,9 @@ from pathlib import Path
 STATE_FILENAME = "DATASETS_STATE.tsv"
 LOCK_FILENAME = STATE_FILENAME + ".lock"
 
-IDENTITY_COLUMNS = ["url", "processing_level"]
-PIPELINE_COLUMNS = ["status", "note", "ok", "ria_url", "n_subjects", "n_sessions"]
+# Authoritative header writer is init-campaign.py; keep this copy in sync.
+IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
+PIPELINE_COLUMNS = ["init", "state", "ria_url", "babs-complete", "n_failed", "babs-merged"]
 
 
 def state_path(campaign):
@@ -34,8 +40,8 @@ def header(campaign):
 
 
 def pipelines(campaign):
-    """Pipeline names parsed from the ``<pipeline>_status`` header columns."""
-    suffix = "_status"
+    """Pipeline names parsed from the ``<pipeline>_init`` header columns."""
+    suffix = "_init"
     return [c[: -len(suffix)] for c in header(campaign) if c.endswith(suffix)]
 
 

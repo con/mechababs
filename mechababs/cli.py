@@ -16,9 +16,9 @@ from mechababs import state
 def cmd_add_dataset(args):
     """Register a dataset by URL: append one ledger row (dataset-axis only).
 
-    Records identity (url) + processing_level and sets every pipeline's status to
-    ``pending``. Does NOT clone sourcedata or generate an inclusion — selection is
-    pipeline-axis, deferred to deploy.
+    Records identity (url) + processing_level; all pipeline columns start empty
+    (empty ``init`` = not started). Does NOT clone sourcedata or generate an
+    inclusion — selection is pipeline-axis, deferred to deploy.
     """
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
@@ -32,8 +32,6 @@ def cmd_add_dataset(args):
         row = {c: "" for c in cols}
         row["url"] = args.url
         row["processing_level"] = args.processing_level
-        for pipeline in state.pipelines(campaign):
-            row[f"{pipeline}_status"] = "pending"
         rows.append(row)
         state.write_rows(campaign, cols, rows)
         state.save(campaign, f"add-dataset {args.url} ({args.processing_level})")

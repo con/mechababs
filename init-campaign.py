@@ -25,12 +25,17 @@ import sys
 from pathlib import Path
 
 # A campaign is its own standalone datalad dataset (no experiments superdataset).
-# DATASETS_STATE.tsv is wide: identity columns up front, then one column-group per
-# pipeline. mechababs owns _status (what it deployed) + _note; _ok is a derived
-# success verdict; _ria_url links the babs-project output; the counts summarize the
-# (deploy-time) inclusion. See the State model section of the design doc.
-IDENTITY_COLUMNS = ["url", "processing_level"]
-PIPELINE_COLUMNS = ["status", "note", "ok", "ria_url", "n_subjects", "n_sessions"]
+# DATASETS_STATE.tsv is wide: dataset/identity columns up front (incl. the
+# dataset's n_subjects/n_sessions metadata), then one column-group per pipeline.
+# There is NO status enum — a pipeline's state is DERIVED from which of its columns
+# are populated: init (babs-project path) -> initialized; ria_url -> at least some
+# jobs done; babs-complete -> all jobs ended; babs-merged -> finished. n_failed
+# counts failed jobs. The per-pipeline inclusion size is NOT here — it lives in the
+# pinned analysis/code/inclusion.csv. See the State model section of the design doc.
+# (state.py keeps the matching copy; this standalone script is the authoritative
+# header writer, so the two lists must stay in sync.)
+IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
+PIPELINE_COLUMNS = ["init", "state", "ria_url", "babs-complete", "n_failed", "babs-merged"]
 
 
 def run(*cmd, cwd=None):
