@@ -1,14 +1,20 @@
-"""iterate.py — the campaign reconciler tick (scaffold transition).
+"""iterate.py — the campaign reconciler tick.
 
-One interactive `iterate` advances each (dataset, pipeline) whose `init` column is
-empty by ONE transition: the SCAFFOLD. It reads campaign.yaml for the cluster +
-the short_name->pipeline-file map, then for each pending pipeline: generate the
-inclusion (or reuse a curated/pre-placed one), compose the babs config,
-`babs init` (NO submit), pin the inclusion, and record `init` + `state`.
+One `iterate` advances each (dataset, pipeline) cell by AT MOST ONE transition,
+routing on which ledger columns are filled:
+  - `_babs` empty            -> SCAFFOLD: generate the inclusion (or reuse a
+                                curated/pre-placed one), compose the babs config,
+                                `babs init` (NO submit), pin the inclusion, record
+                                `_babs` (the project-root path).
+  - `_babs` set, not merged  -> ACTIVE: show `babs status`, operator picks the next
+                                step ([d]eploy more / [s]kip / [m]erge).
+  - `_babs-merged` set       -> done, skipped (no babs query).
 
-Decomposes execute-dataset.sh steps 1-2b; submit / merge / finalize are later
-ticks. mechababs shells out to babs / select-eligible-sub-ses.py / merge_config.py.
-`--dry-run` prints the planned commands and changes nothing.
+The ACTIVE prompt is the manual stand-in for the eventual count-driven decision
+(`babs status --json`, #12); the transitions and ledger writes are the real thing.
+mechababs shells out to babs / select-eligible-sub-ses.py / merge_config.py.
+`--dry-run` runs read-only steps (e.g. `babs status`) for real and prints the
+mutating commands without running them.
 """
 
 import os
@@ -94,6 +100,12 @@ def next_attempt(campaign, ds_id, short):
     return max(used, default=0) + 1
 
 
+def babs_project(campaign, row, short):
+    """The babs-project root for a cell — the campaign-relative path in `_babs`,
+    which `babs status|submit|merge` take positionally."""
+    return campaign / row[f"{short}_babs"]
+
+
 def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
 
@@ -166,11 +178,64 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     return {f"{short}_babs": str(project_root.relative_to(campaign))}
 
 
-def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
-    """One tick: scaffold each (dataset, pipeline) whose `init` is empty.
+# --- ACTIVE-cell transitions: (campaign, cfg, row, short, *, dry_run) -> updates ---
 
-    inclusion_file, if given, is used as the inclusion for every pair scaffolded
-    this tick — intended for single-pair smoke tests (`--batch 1`), not real
+def submit(campaign, cfg, row, short, *, dry_run):
+    """[d] deploy more jobs. Writes no column — submit-state is babs's, re-read from
+    `babs status` next tick."""
+    run(["babs", "submit", babs_project(campaign, row, short)], dry_run=dry_run)
+    return {}
+
+
+def merge(campaign, cfg, row, short, *, dry_run):
+    """[m] all jobs ended -> babs merge -> pipeline finished. (babs merge runs its
+    own [c]ontinue/[s]kip/[a]bort prompt.)"""
+    run(["babs", "merge", babs_project(campaign, row, short)], dry_run=dry_run)
+    return {f"{short}_babs-merged": "true"}
+
+
+def handle_active(campaign, cfg, row, short, *, dry_run):
+    """A scaffolded-but-unmerged cell: show `babs status`, let the operator choose
+    the next transition.
+
+    The menu documents the rule the count-driven decision will follow (off the
+    `babs status` counts):
+      [d] deploy more  — not all jobs submitted yet          -> babs submit
+      [s] skip         — all submitted, not all ended (rest)  -> no-op
+      [m] merge        — all submitted & ended (done)         -> babs merge
+    This prompt IS the decide() seam — #12 (`babs status --json`) replaces the
+    human with the count check, same three outcomes, same transitions.
+
+    TODO(manual step): the next-step decision is operator-driven until #12 lands a
+    machine-readable `babs status`; then this reads counts instead of asking.
+    """
+    ds = dataset_id(row["url"])
+    proj = babs_project(campaign, row, short)
+    print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
+    subprocess.run(["babs", "status", str(proj)], check=True)  # read-only; run even in dry-run
+    while True:
+        ans = input(f"  {ds}/{short}: [d]eploy (not all submitted) / [s]kip (running) / "
+                    f"[m]erge (all done) / [a]bort > ").strip().lower()
+        if ans in ("d", "s", "m", "a"):
+            break
+        print("  choose one of d/s/m/a")
+    if ans == "a":
+        sys.exit("Aborting.")
+    if ans == "s":
+        return None
+    return (submit if ans == "d" else merge)(campaign, cfg, row, short, dry_run=dry_run)
+
+
+def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
+    """One tick: advance each (dataset, pipeline) cell by at most one transition.
+
+    Routes on the cell's ledger columns: empty `_babs` -> scaffold; `_babs` set and
+    not `_babs-merged` -> the interactive active handler; merged -> skip. The lock
+    is held across the whole batch (single writer), and each advanced cell is saved
+    as it lands so a long or interrupted tick still records progress.
+
+    inclusion_file, if given, is used as the inclusion for every cell scaffolded
+    this tick — intended for single-cell smoke tests (`--batch 1`), not real
     multi-dataset runs (there select generates a per-dataset inclusion).
     """
     cfg = read_config(campaign)
@@ -178,25 +243,38 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
     with state.locked(campaign):
         cols = state.header(campaign)
         rows = state.read_rows(campaign)
-        # TODO: DAG gate — mriqc gates fmriprep; fmriprep-anat gates the
-        #   minimal/full fan-out. The MVP scaffolds any empty-init pipeline.
-        work = [(row, short) for row in rows for short in pipelines
-                if not row.get(f"{short}_babs")]
+
+        # Route each cell by which columns are filled. `babs status` (in
+        # handle_active) is reached only for set-but-unmerged cells — a merged cell
+        # is skipped here, before any babs query.
+        # TODO: when a second pipeline exists, a downstream cell's scaffold case
+        #   gains an inline upstream-column read (e.g. require mriqc_babs-merged).
+        work = []
+        for row in rows:
+            for short in pipelines:
+                if not row.get(f"{short}_babs"):
+                    work.append((row, short, "scaffold"))
+                elif not row.get(f"{short}_babs-merged"):
+                    work.append((row, short, "active"))
         if batch is not None:
             work = work[:batch]
         if not work:
-            print("iterate: nothing to scaffold (every pipeline is initialized).", file=sys.stderr)
+            print("iterate: nothing to do (every pipeline is merged).", file=sys.stderr)
             return
 
-        for row, short in work:
-            updates = scaffold(campaign, cfg, row, short,
-                               inclusion_file=inclusion_file, dry_run=dry_run)
-            if not dry_run:
+        for row, short, kind in work:
+            if kind == "scaffold":
+                updates = scaffold(campaign, cfg, row, short,
+                                   inclusion_file=inclusion_file, dry_run=dry_run)
+            else:
+                updates = handle_active(campaign, cfg, row, short, dry_run=dry_run)
+            if updates and not dry_run:
                 row.update(updates)
+                state.write_rows(campaign, cols, rows)
+                state.save(campaign,
+                           f"iterate: {dataset_id(row['url'])}/{short} -> {','.join(updates)}")
 
         if dry_run:
-            print(f"\nDRY-RUN: would scaffold {len(work)} (dataset, pipeline) pair(s).", file=sys.stderr)
-            return
-        state.write_rows(campaign, cols, rows)
-        state.save(campaign, f"iterate: scaffold {len(work)} pipeline(s)")
-        print(f"\nScaffolded {len(work)} pipeline(s).", file=sys.stderr)
+            print(f"\nDRY-RUN: would advance {len(work)} cell(s).", file=sys.stderr)
+        else:
+            print(f"\niterate: processed {len(work)} cell(s).", file=sys.stderr)
