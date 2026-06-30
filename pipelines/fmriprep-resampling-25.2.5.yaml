@@ -1,5 +1,7 @@
 container:
-  repo: repronim-containers
+  source: https://github.com/ReproNim/containers.git
+  ref: master
+  dir: repronim-containers
   name: bids-fmriprep
 
 # fmriprep --level resampling, chained on anat-only output.

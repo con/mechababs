@@ -38,6 +38,7 @@ def run(cmd, *, dry_run, cwd=None):
     subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
 
 
+# TODO move to util
 def warn_if_no_tmux():
     """Prompt before a long login-node run that a disconnect would kill (cf lib.sh).
 
@@ -54,6 +55,7 @@ def warn_if_no_tmux():
         sys.exit("Aborting.")
 
 
+# TODO move to util
 def read_config(campaign):
     """campaign.yaml -> {cluster, pipelines: {short_name: file}} (campaign-relative paths)."""
     return yaml.safe_load((campaign / "campaign.yaml").read_text())
@@ -63,6 +65,23 @@ def dataset_id(url):
     """ds000001 from .../ds000001.git or .../ds000001."""
     name = Path(url).name
     return name[:-4] if name.endswith(".git") else name
+
+
+def is_url(source):
+    """A clonable URL (vendored at init) vs a local path (used as-is)."""
+    return "://" in source or source.startswith("git@")
+
+
+def resolve_container_ds(campaign, container):
+    """The --container-ds for babs init.
+
+    A URL source was vendored by init-campaign into code/<dir>; a local-path
+    source is used as-is (option B passthrough). TODO(revisit): option A would
+    vendor local sources too, so dev exercises prod's container-vendoring path.
+    Deferred — see issues/pipeline-instance.md.
+    """
+    source = container["source"]
+    return campaign / "code" / container["dir"] if is_url(source) else Path(source)
 
 
 def next_attempt(campaign, ds_id, short):
@@ -130,7 +149,8 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 
         # 3. babs init — scaffold only, NO submit.
         run(["babs", "init", project_root,
-             "--container-ds", container["repo"], "--container-name", container["name"],
+             "--container-ds", resolve_container_ds(campaign, container),
+             "--container-name", container["name"],
              "--container-config", babs_config,
              "--processing-level", processing_level, "--queue", "slurm"], dry_run=dry_run)
 

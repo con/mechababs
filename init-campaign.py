@@ -117,6 +117,30 @@ def resolve_pipelines(campaign, pipeline_files):
     return mapping
 
 
+def resolve_containers(campaign, pipeline_rels):
+    """Unique container datasets to vendor: {dir: (source, ref)}.
+
+    Reads each pipeline's `container` block. A URL source is vendored into
+    code/<dir>, shared across pipelines that name the same dir and fetched on
+    demand at run time (#37). A local-path source is used as-is at run time
+    (option B) and is not vendored here. Rejects a dir mapped to conflicting
+    (source, ref).
+    """
+    containers = {}
+    for rel in pipeline_rels:
+        c = (yaml.safe_load((campaign / rel).read_text()) or {}).get("container") or {}
+        source = c.get("source")
+        if not source:
+            continue
+        if "://" not in source and not source.startswith("git@"):
+            continue  # local-path source — used as-is, not vendored (option B)
+        dir_, ref = c["dir"], c["ref"]
+        if dir_ in containers and containers[dir_] != (source, ref):
+            sys.exit(f"container dir {dir_!r} maps to conflicting (source, ref)")
+        containers[dir_] = (source, ref)
+    return containers
+
+
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__.split("\n\n")[0],
@@ -160,6 +184,11 @@ def main():
     cluster_rel = f"{MECHABABS}/clusters/{args.cluster}"
     if not (campaign / cluster_rel).is_file():
         sys.exit(f"cluster config not found: {cluster_rel}")
+
+    # 3b. Vendor each pipeline's container dataset (URL sources) into code/<dir>,
+    #     once per unique dir. Local-path container sources are used as-is (B).
+    for dir_, (source, ref) in resolve_containers(campaign, pipelines.values()).items():
+        vendor(campaign, dir_, source, ref)
 
     config = campaign / "campaign.yaml"
     config.write_text(yaml.safe_dump(

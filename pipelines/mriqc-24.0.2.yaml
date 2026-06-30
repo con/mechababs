@@ -3,7 +3,9 @@ short_name: mriqc
 
 container:
   # pre-built SIF in a datalad dataset
-  repo: repronim-containers
+  source: https://github.com/ReproNim/containers.git
+  ref: master
+  dir: repronim-containers
   name: bids-mriqc
   # alternative: build from docker URI (not implemented yet)
   # build: docker://nipreps/mriqc:24.0.2
