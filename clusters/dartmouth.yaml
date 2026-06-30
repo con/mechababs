@@ -1,5 +1,9 @@
 script_preamble: |
-  source /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin/activate
+  # EASY-FOR-NOW (open problem, see issue): activate the campaign venv inherited
+  # from the submit-time environment. Assumes SLURM propagates VIRTUAL_ENV
+  # (--export=ALL default). Final answer is likely templating the campaign venv
+  # abspath at init/cluster-setup time.
+  source "${VIRTUAL_ENV:?campaign venv must be active at submit time}/bin/activate"
   export JOB_TMP="/scratch/${USER}/sjob-tmp/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
   mkdir -p "${JOB_TMP}"
   trap 'rm -rf "${JOB_TMP}"' EXIT
