@@ -144,7 +144,7 @@ def main():
     # 1b. Ignore the runtime venv that cluster-setup.py builds at .venv/ — it's
     #     ephemeral compute (rebuildable from the vendored code), not tracked state.
     gitignore = campaign / ".gitignore"
-    gitignore.write_text(".venv/\nDATASETS_STATE.tsv.lock\n")
+    gitignore.write_text(".venv/\n.DATASETS_STATE.tsv.lock\n")
     run("datalad", "save", "--dataset", campaign, "--message",
         "Ignore the runtime venv (.venv/)", gitignore)
 

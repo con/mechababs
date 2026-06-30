@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 STATE_FILENAME = "DATASETS_STATE.tsv"
-LOCK_FILENAME = STATE_FILENAME + ".lock"
+LOCK_FILENAME = "." + STATE_FILENAME + ".lock"
 
 # Authoritative header writer is init-campaign.py; keep this copy in sync.
 IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
