@@ -44,9 +44,12 @@ for NAME in "${NAMES[@]}"; do
     SIF_REL=$(datalad -C "$REPRONIM" containers-list | awk -v n="$NAME" '$1==n {print $3}')
     [ -n "$SIF_REL" ] || { echo "no container '$NAME' in ReproNim containers-list" >&2; exit 1; }
     datalad -C "$REPRONIM" get "$SIF_REL"
+    # --url with a BARE local path: datalad copies the file in (a file:// URL
+    # routes through `git annex addurl`, which annex.security.allowed-url-schemes
+    # blocks by default).
     datalad containers-add -d "$REPRONIM" "$NAME" --update \
         -i ".datalad/environments/$NAME/image" \
-        --url "file://$REPRONIM/$SIF_REL" \
+        --url "$REPRONIM/$SIF_REL" \
         --call-fmt 'singularity exec --cleanenv {img} {cmd}'
 done
 
