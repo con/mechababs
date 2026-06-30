@@ -176,6 +176,13 @@ def main():
     vendor(campaign, "babs", babs_url, babs_ref)
     vendor(campaign, "mechababs", mecha_url, mecha_ref)
 
+    # 2b. Expose the vendored cluster-setup.py at the campaign root so the
+    #     operator runs the pinned copy from inside the campaign (no manual copy).
+    link = campaign / "cluster-setup.py"
+    link.symlink_to(Path("code") / "mechababs" / "cluster-setup.py")
+    run("datalad", "save", "--dataset", campaign, "--message",
+        "Link cluster-setup.py at the campaign root", link)
+
     # 3. Resolve the config now that the mechababs configs are vendored:
     #    each pipeline's short_name -> file, and the cluster file. campaign.yaml
     #    is the campaign config (cluster is fixed; pipelines may grow later); the
