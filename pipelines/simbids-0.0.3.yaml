@@ -9,9 +9,8 @@ short_name: simbids
 container:
   # A local datalad dataset wrapping the simbids .sif. The container test harness
   # builds it (datalad containers-add of the image bundled at
-  # /singularity_images/simbids_*.sif) at this fixed in-container path. A
-  # local-path source is used as-is (option B passthrough), not vendored into
-  # code/; revisit (option A) tracked in the issue.
+  # /singularity_images/simbids_*.sif) at this fixed in-container path; init
+  # vendors it into code/ like any container.
   source: /test-temp/simbids-container
   name: simbids-0-0-3
 

@@ -67,21 +67,19 @@ def dataset_id(url):
     return name[:-4] if name.endswith(".git") else name
 
 
-def is_url(source):
-    """A clonable URL (vendored at init) vs a local path (used as-is)."""
-    return "://" in source or source.startswith("git@")
+def container_dir(source):
+    """The code/<dir> a container source is vendored into: its basename."""
+    name = Path(source).name
+    return name[:-4] if name.endswith(".git") else name
 
 
 def resolve_container_ds(campaign, container):
-    """The --container-ds for babs init.
-
-    A URL source was vendored by init-campaign into code/<dir>; a local-path
-    source is used as-is (option B passthrough). TODO(revisit): option A would
-    vendor local sources too, so dev exercises prod's container-vendoring path.
-    Deferred — see issues/pipeline-instance.md.
+    """The --container-ds for babs init: the container vendored at code/<dir>,
+    where <dir> is the source's basename. init-campaign vendors every container
+    there regardless of source (a URL, or a local dataset like a hand-built
+    shim), so iterate needn't know how it was built.
     """
-    source = container["source"]
-    return campaign / "code" / container["dir"] if is_url(source) else Path(source)
+    return campaign / "code" / container_dir(container["source"])
 
 
 def next_attempt(campaign, ds_id, short):

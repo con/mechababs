@@ -117,28 +117,55 @@ def resolve_pipelines(campaign, pipeline_files):
     return mapping
 
 
-def resolve_containers(campaign, pipeline_rels):
-    """Unique container datasets to vendor: {dir: (source, ref)}.
+def container_dir(source):
+    """The code/<dir> a container source is vendored into: its basename."""
+    name = Path(source).name
+    return name[:-4] if name.endswith(".git") else name
 
-    Reads each pipeline's `container` block. A URL source is vendored into
-    code/<dir>, shared across pipelines that name the same dir and fetched on
-    demand at run time (#37). A local-path source is used as-is at run time
-    (option B) and is not vendored here. Rejects a dir mapped to conflicting
+
+def resolve_containers(campaign, pipeline_rels):
+    """Unique container datasets to vendor: {dir: (source, ref)}, dir = source's
+    basename.
+
+    Every pipeline's container is vendored into code/<dir> (deduped across
+    pipelines that share a source), so downstream code just finds it there and
+    needn't know how it was built. `ref` pins a URL source; it's None for a
+    local source (e.g. a hand-built shim). Rejects a dir mapped to conflicting
     (source, ref).
     """
     containers = {}
     for rel in pipeline_rels:
         c = (yaml.safe_load((campaign / rel).read_text()) or {}).get("container") or {}
-        source = c.get("source")
-        if not source:
+        if not c:
             continue
-        if "://" not in source and not source.startswith("git@"):
-            continue  # local-path source — used as-is, not vendored (option B)
-        dir_, ref = c["dir"], c["ref"]
+        source, ref = c["source"], c.get("ref")
+        dir_ = container_dir(source)
         if dir_ in containers and containers[dir_] != (source, ref):
             sys.exit(f"container dir {dir_!r} maps to conflicting (source, ref)")
         containers[dir_] = (source, ref)
     return containers
+
+
+def vendor_container(campaign, dir_, source, ref):
+    """Vendor a container dataset into code/<dir> and pin it as a subdataset.
+
+    A URL source is `git clone --branch <ref>`'d then datalad-saved (pinned like
+    the code subdatasets — datalad clone can't pin on a ref). A local source (a
+    path, e.g. the sibling `../shim`; a relative path resolves against the
+    campaign root) is `datalad clone -d`'d, which clones and registers in the
+    superdataset in one step.
+    """
+    dest = campaign / "code" / dir_
+    if "://" in source or source.startswith("git@"):
+        run("git", "clone", "--branch", ref, source, dest)
+        head = capture("git", "-C", dest, "rev-parse", "--short", "HEAD")
+        run("datalad", "save", "--dataset", campaign, "--message",
+            f"Vendor container {dir_} ({head})", dest)
+    else:
+        src = Path(source)
+        if not src.is_absolute():
+            src = (campaign / src).resolve()
+        run("datalad", "clone", "-d", campaign, src, dest)
 
 
 def main():
@@ -192,10 +219,10 @@ def main():
     if not (campaign / cluster_rel).is_file():
         sys.exit(f"cluster config not found: {cluster_rel}")
 
-    # 3b. Vendor each pipeline's container dataset (URL sources) into code/<dir>,
-    #     once per unique dir. Local-path container sources are used as-is (B).
+    # 3b. Vendor each pipeline's container dataset into code/<dir>, once per
+    #     unique dir, so downstream code just finds it there (URL or local source).
     for dir_, (source, ref) in resolve_containers(campaign, pipelines.values()).items():
-        vendor(campaign, dir_, source, ref)
+        vendor_container(campaign, dir_, source, ref)
 
     config = campaign / "campaign.yaml"
     config.write_text(yaml.safe_dump(
