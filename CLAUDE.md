@@ -87,9 +87,7 @@ per derivative). A true linear chain needs upstream BABS work — tracked in
   paths and data structures**; the only differences are *config and content* —
   which sibling, which subset of subjects, which code pin — never a dev-only
   branch, status value, or field. A divergence means dev stops validating prod.
-  Corollary: **one tool, two modes**, not two tools. (Express gates in data prod
-  also exercises — e.g. inclusion-file *validity*, which prod checks and always
-  passes — not in dev-only state.)
+  Corollary: **one tool, two modes**, not two tools.
 - **Inclusion files are canonical.** Don't rely on `babs submit --count`
   to pick subjects. Produce an inclusion CSV (auto via
   `select-eligible-sub-ses.py`, or hand-written one-row for smoke
@@ -193,19 +191,11 @@ the research object more **S**elf-contained, **T**racked, **A**ctionable,
 
 ## Babs source
 
-We develop against `~/devel/babs/.worktrees/mechababs-working-branch`
-(Austin's working branch on the babs fork), not upstream `main`. Install
-into the venv with:
-
-```bash
-source .venv/bin/activate
-pip install -e ~/devel/babs/.worktrees/mechababs-working-branch
-```
-
-Other active worktrees under `~/devel/babs/.worktrees/`:
-`add-containers-run-v2` (current container-handling branch the pipeline
-YAMLs target), `optional-zipping`, `babs-config-composition`,
-`pipeline-of-one`, etc.
+We target **vanilla babs `main`** (`PennLINC/babs`, or a PR branch under
+test) — mechababs is an e2e harness for vanilla babs and its PRs. A campaign
+**vendors** babs into `code/babs` at a chosen ref, and `cluster-setup.py`
+editable-installs that vendored copy into the campaign venv, so the babs that
+runs is the provenance-pinned one recorded in the campaign.
 
 ## Reference repos
 
