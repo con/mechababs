@@ -2,10 +2,9 @@
 
 A wide TSV: dataset/identity columns (``url``, ``processing_level``,
 ``n_subjects``, ``n_sessions``) then a column-group per pipeline
-(``<p>_init``/``_state``/``_ria_url``/``_babs-complete``/``_n_failed``
-/``_babs-merged``). There is no status enum — a pipeline's state is derived from
-which columns are populated (``init`` -> started; ``ria_url`` -> some jobs done;
-``babs-complete`` -> all ended; ``babs-merged`` -> finished). The per-pipeline
+(``<p>_babs``/``_babs-merged``). There is no status enum — a pipeline's state is
+derived from which columns are populated (``babs`` -> the babs-project path, set
+once scaffolded; ``babs-merged`` -> finished). The per-pipeline
 inclusion size is not stored here — it lives in the pinned inclusion.csv. The
 schema is **read from the file's header**, not hardcoded — init-campaign.py
 chooses the pipelines per campaign, so the accessor discovers them from the
@@ -26,7 +25,7 @@ LOCK_FILENAME = "." + STATE_FILENAME + ".lock"
 
 # Authoritative header writer is init-campaign.py; keep this copy in sync.
 IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
-PIPELINE_COLUMNS = ["init", "state", "ria_url", "babs-complete", "n_failed", "babs-merged"]
+PIPELINE_COLUMNS = ["babs", "babs-merged"]
 
 
 def state_path(campaign):
@@ -40,8 +39,12 @@ def header(campaign):
 
 
 def pipelines(campaign):
-    """Pipeline names parsed from the ``<pipeline>_init`` header columns."""
-    suffix = "_init"
+    """Pipeline names parsed from the ``<pipeline>_babs`` header columns.
+
+    ``_babs`` (the path column) is the per-pipeline anchor; ``_babs-merged`` does
+    not end in ``_babs``, so the suffix match picks out exactly one column each.
+    """
+    suffix = "_babs"
     return [c[: -len(suffix)] for c in header(campaign) if c.endswith(suffix)]
 
 

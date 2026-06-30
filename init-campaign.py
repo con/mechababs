@@ -37,14 +37,13 @@ import yaml
 # DATASETS_STATE.tsv is wide: dataset/identity columns up front (incl. the
 # dataset's n_subjects/n_sessions metadata), then one column-group per pipeline.
 # There is NO status enum — a pipeline's state is DERIVED from which of its columns
-# are populated: init (babs-project path) -> initialized; ria_url -> at least some
-# jobs done; babs-complete -> all jobs ended; babs-merged -> finished. n_failed
-# counts failed jobs. The per-pipeline inclusion size is NOT here — it lives in the
-# pinned analysis/code/inclusion.csv. See the State model section of the design doc.
+# are populated: babs (the babs-project path) -> scaffolded; babs-merged -> finished.
+# The per-pipeline inclusion size is NOT here — it lives in the pinned
+# analysis/code/inclusion.csv. See the State model section of the design doc.
 # (state.py keeps the matching copy; this standalone script is the authoritative
 # header writer, so the two lists must stay in sync.)
 IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
-PIPELINE_COLUMNS = ["init", "state", "ria_url", "babs-complete", "n_failed", "babs-merged"]
+PIPELINE_COLUMNS = ["babs", "babs-merged"]
 
 # The vendored mechababs subtree within the campaign; pipeline/cluster configs
 # resolve under it for now. TODO: someday accept config files outside mechababs.

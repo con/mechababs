@@ -97,8 +97,8 @@ def next_attempt(campaign, ds_id, short):
 def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
 
-    Returns the ledger updates ({<short>_init, <short>_state}); the caller applies
-    them only on a real (non-dry) run. Intermediates (the generated inclusion + the
+    Returns the ledger update ({<short>_babs: project-root path}); the caller applies
+    it only on a real (non-dry) run. Intermediates (the generated inclusion + the
     merged babs config) are transient — babs consumes them — so they live in a
     tempdir; the inclusion is then pinned into the project as the durable record.
     """
@@ -158,15 +158,12 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
              "--output", "code/inclusion.csv", "--", "cp", inclusion, "code/inclusion.csv"],
             dry_run=dry_run, cwd=analysis)
 
-    # 5. Ledger: init = the analysis dir (the handle the next tick drives babs
-    #    against); state = babs's per-job status csv. Both campaign-relative.
-    # TODO(manual step): done-detection — no machine-readable `babs status --done`
-    #   (#12); the operator polls `babs status <init>` and advances via the
-    #   interactive merge prompt. Replace this with #12 when it lands.
-    return {
-        f"{short}_init": str(analysis.relative_to(campaign)),
-        f"{short}_state": str((analysis / "code" / "job_status.csv").relative_to(campaign)),
-    }
+    # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
+    #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
+    #    answers both "scaffolded?" and "where?". (Today babs reads/writes under
+    #    <root>/analysis; the analysis dir is derived locally where needed, not
+    #    stored, until PennLINC/babs#369 lets the project root be the result dir.)
+    return {f"{short}_babs": str(project_root.relative_to(campaign))}
 
 
 def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
@@ -184,7 +181,7 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
         # TODO: DAG gate — mriqc gates fmriprep; fmriprep-anat gates the
         #   minimal/full fan-out. The MVP scaffolds any empty-init pipeline.
         work = [(row, short) for row in rows for short in pipelines
-                if not row.get(f"{short}_init")]
+                if not row.get(f"{short}_babs")]
         if batch is not None:
             work = work[:batch]
         if not work:
