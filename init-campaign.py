@@ -191,12 +191,12 @@ def main():
     # 1. The campaign: a standalone datalad dataset (text2git per project convention).
     run("datalad", "create", "-c", "text2git", campaign)
 
-    # 1b. Ignore the runtime venv that cluster-setup.py builds at .venv/ — it's
-    #     ephemeral compute (rebuildable from the vendored code), not tracked state.
+    # 1b. Ignore the ledger lock. (The runtime venv at .venv/ is gitignored by
+    #     cluster-setup.py, which creates it — it owns that line.)
     gitignore = campaign / ".gitignore"
-    gitignore.write_text(".venv/\n.DATASETS_STATE.tsv.lock\n")
+    gitignore.write_text(".DATASETS_STATE.tsv.lock\n")
     run("datalad", "save", "--dataset", campaign, "--message",
-        "Ignore the runtime venv (.venv/)", gitignore)
+        "Ignore the ledger lock", gitignore)
 
     # 2. Vendor babs + mechababs as pinned subdatasets under code/.
     vendor(campaign, "babs", babs_url, babs_ref)
@@ -236,7 +236,9 @@ def main():
         f"Initialize DATASETS_STATE.tsv for pipelines {', '.join(pipelines)}", state)
 
     print(f"\nCampaign ready at {campaign}", file=sys.stderr)
-    print("Next: ./cluster-setup.py  (venv + install babs/mechababs + duct)",
+    print("Next, on the cluster: datalad run -m 'cluster setup' ./cluster-setup.py",
+          file=sys.stderr)
+    print("  (builds the venv, installs babs/mechababs/duct, records venv path in campaign.yaml)",
           file=sys.stderr)
 
 

@@ -122,6 +122,11 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
     container = pipeline_cfg["container"]
 
+    venv_rel = cfg.get("venv")
+    if not venv_rel:
+        sys.exit("campaign.yaml has no 'venv' — run cluster-setup.py first")
+    campaign_venv = str(campaign / venv_rel)
+
     n = next_attempt(campaign, ds_id, short)
     project_root = campaign / "derivatives" / f"{ds_id}_{short}_attempt-{n}"
     analysis = project_root / "analysis"
@@ -146,16 +151,19 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
             run(["python3", SELECT_SCRIPT, "--openneuro-id", ds_id,
                  "--pipeline", short, "--count", "1", "--output", inclusion], dry_run=dry_run)
 
-        # 2. Compose the babs container-config (pipeline x cluster x dataset-url).
+        # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
+        #    resolving the venv placeholder in the preamble with the campaign venv.
         if dry_run:
             run(["python3", MERGE_CONFIG_SCRIPT, "--pipeline", pipeline_path,
-                 "--cluster", cluster_path, "--dataset-url", url, ">", babs_config],
+                 "--cluster", cluster_path, "--dataset-url", url,
+                 "--campaign-venv", campaign_venv, ">", babs_config],
                 dry_run=True)
         else:
             with open(babs_config, "w") as f:
                 subprocess.run(["python3", str(MERGE_CONFIG_SCRIPT),
                                 "--pipeline", str(pipeline_path), "--cluster", str(cluster_path),
-                                "--dataset-url", url], check=True, stdout=f)
+                                "--dataset-url", url, "--campaign-venv", campaign_venv],
+                               check=True, stdout=f)
 
         # 3. babs init — scaffold only, NO submit.
         run(["babs", "init", project_root,
