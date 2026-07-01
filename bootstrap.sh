@@ -36,6 +36,18 @@ run() {
     "$@"
 }
 
+save_pin() {
+    # Register code/<name> as a pinned subdataset in its own provenance commit,
+    # the message recording the ref + resolved head (like init-campaign's vendor).
+    # -d "$CAMPAIGN" is load-bearing: without it datalad resolves the dataset
+    # FROM the nested clone's own path and saves inside it (a no-op), instead of
+    # registering it as a subdataset of the campaign.
+    local name="$1" ref="$2" head
+    head="$(git -C "code/$name" rev-parse --short HEAD)"
+    run "$VENV_DATALAD" save -d "$CAMPAIGN" \
+        -m "Vendor $name at $ref ($head)" "code/$name"
+}
+
 require_url_ref() {
     # Abort unless "$1" is URL@REF. The split itself is inline: ${spec%@*} /
     # ${spec##*@} cut on the LAST '@' (ssh URLs like git@host:... contain one).
@@ -109,8 +121,10 @@ printf '%s\n' '.venv/' '.DATASETS_STATE.tsv.lock' > .gitignore
 run "$VENV_DATALAD" create --force -c text2git .
 
 # --- 5. register the code clones as pinned subdatasets -----------------------
-run "$VENV_DATALAD" save -m "campaign skeleton: vendor code pins + gitignore" \
-    code/mechababs code/babs .gitignore
+# One save per pin so each code subdataset carries its own provenance commit.
+run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Ignore .venv and the ledger lock" .gitignore
+save_pin mechababs "$MECHA_REF"
+save_pin babs "$BABS_REF"
 
 # --- 6. editable-install the pinned code into the campaign venv --------------
 run uv pip install --python "$VENV_PY" -e code/babs -e code/mechababs
