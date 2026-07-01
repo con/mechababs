@@ -130,7 +130,8 @@ def generate_inclusion(openneuro_id, pipeline, output, *, limit=None):
         if key not in seen:
             seen.add(key)
             deduped.append(row)
-    eligible = deduped
+    # Sort before capping so "first N" is reproducible, not TSV-order-dependent.
+    eligible = sorted(deduped, key=keyof)
 
     if limit is not None:
         eligible = eligible[:limit]

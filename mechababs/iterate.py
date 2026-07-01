@@ -149,12 +149,13 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
             # TODO: the eligibility rule belongs in the pipeline config (a Next
             #   item). For now short_name doubles as select's pipeline rule —
             #   which only works while it matches select's mriqc/fmriprep choices.
-            # TODO(step 3): limit from campaign.yaml; TODO(step 4): pass processing_level.
+            # TODO(step 4): pass processing_level from the ledger row.
+            limit = cfg.get("limit")
             if dry_run:
-                print(f"DRY-RUN  select.generate_inclusion({ds_id}, {short}, limit=1) "
+                print(f"DRY-RUN  select.generate_inclusion({ds_id}, {short}, limit={limit}) "
                       f"-> {inclusion}", file=sys.stderr)
             else:
-                select.generate_inclusion(ds_id, short, inclusion, limit=1)
+                select.generate_inclusion(ds_id, short, inclusion, limit=limit)
 
         # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
         #    resolving the venv placeholder in the preamble with the campaign venv.

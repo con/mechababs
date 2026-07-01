@@ -111,12 +111,13 @@ def vendor_container(campaign, dir_, source, ref):
         run(DATALAD, "clone", "-d", campaign, src, dest)
 
 
-def build(campaign, pipeline_files, cluster, venv_rel):
+def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
     """Construct the campaign: vendor containers, write campaign.yaml + ledger.
 
     ``campaign`` is a Path to the (already bootstrapped) campaign dataset;
     ``venv_rel`` is the venv's campaign-relative path (recorded for the job
-    preamble). Returns the resolved ``{short_name: pipeline_file}`` map.
+    preamble); ``limit`` is the campaign-wide cap on each dataset's inclusion
+    (None → all). Returns the resolved ``{short_name: pipeline_file}`` map.
     """
     pipelines = resolve_pipelines(campaign, pipeline_files)
     cluster_rel = f"{MECHABABS}/clusters/{cluster}"
@@ -128,7 +129,7 @@ def build(campaign, pipeline_files, cluster, venv_rel):
 
     config = campaign / "campaign.yaml"
     config.write_text(yaml.safe_dump(
-        {"cluster": cluster_rel, "pipelines": pipelines, "venv": venv_rel},
+        {"cluster": cluster_rel, "pipelines": pipelines, "venv": venv_rel, "limit": limit},
         sort_keys=False))
     run(DATALAD, "save", "--dataset", campaign, "--message",
         "Write campaign.yaml (cluster + pipelines + venv)", config)

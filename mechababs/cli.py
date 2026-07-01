@@ -54,7 +54,7 @@ def cmd_configure(args):
         sys.exit("--pipelines must list at least one pipeline config file")
 
     pipelines = construct.build(campaign, pipeline_files, args.cluster,
-                                str(venv.relative_to(campaign)))
+                                str(venv.relative_to(campaign)), limit=args.limit)
     print(f"campaign constructed: pipelines {', '.join(pipelines)}", file=sys.stderr)
     print("Next: mechababs add-dataset <url>; mechababs iterate", file=sys.stderr)
     return 0
@@ -114,6 +114,9 @@ def main():
                     help="comma-separated pipeline config files under mechababs/pipelines/ (ordered)")
     pc.add_argument("--cluster", required=True,
                     help="cluster config file under mechababs/clusters/")
+    pc.add_argument("--limit", type=int, default=None,
+                    help="cap each dataset's inclusion to the first N eligible subjects "
+                         "(default: all)")
     pc.set_defaults(func=cmd_configure)
 
     pa = sub.add_parser("add-dataset", help="register a dataset by URL (append a ledger row)")
