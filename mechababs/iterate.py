@@ -12,7 +12,7 @@ routing on which ledger columns are filled:
 
 The ACTIVE prompt is the manual stand-in for the eventual count-driven decision
 (`babs status --json`, #12); the transitions and ledger writes are the real thing.
-mechababs shells out to babs / select-eligible-sub-ses.py / merge_config.py.
+mechababs shells out to babs / merge_config.py and imports the select module.
 `--dry-run` runs read-only steps (e.g. `babs status`) for real and prints the
 mutating commands without running them.
 """
@@ -25,12 +25,12 @@ from pathlib import Path
 
 import yaml
 
+from mechababs import select
 from mechababs import state
 
 # Repo root of the vendored mechababs — holds the top-level helper scripts iterate
-# shells out to (the operate-CLI shells out to babs / these, per the design).
+# still shells out to (merge_config); selection is now the in-package select module.
 MECHABABS_ROOT = Path(__file__).resolve().parent.parent
-SELECT_SCRIPT = MECHABABS_ROOT / "select-eligible-sub-ses.py"
 MERGE_CONFIG_SCRIPT = MECHABABS_ROOT / "merge_config.py"
 
 
@@ -139,17 +139,22 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
         babs_config = Path(tmp) / "babs-config.yaml"
 
         # 1. Inclusion: an explicit --inclusion-file (smoke tests / a curated list)
-        #    wins; otherwise generate one from OpenNeuroStudies metadata.
+        #    wins; otherwise generate one from OpenNeuroStudies metadata via the
+        #    in-package select module (read-only: HTTP + a tempdir write).
         if inclusion_file is not None:
             inclusion = Path(inclusion_file).resolve()
             print(f"  using provided inclusion {inclusion}", file=sys.stderr)
         else:
-            inclusion = Path(tmp) / "inclusion.csv"
+            inclusion = Path(tmp) / "mechababs_inclusion.csv"
             # TODO: the eligibility rule belongs in the pipeline config (a Next
-            #   item). For now short_name doubles as select's --pipeline rule —
+            #   item). For now short_name doubles as select's pipeline rule —
             #   which only works while it matches select's mriqc/fmriprep choices.
-            run(["python3", SELECT_SCRIPT, "--openneuro-id", ds_id,
-                 "--pipeline", short, "--count", "1", "--output", inclusion], dry_run=dry_run)
+            # TODO(step 3): limit from campaign.yaml; TODO(step 4): pass processing_level.
+            if dry_run:
+                print(f"DRY-RUN  select.generate_inclusion({ds_id}, {short}, limit=1) "
+                      f"-> {inclusion}", file=sys.stderr)
+            else:
+                select.generate_inclusion(ds_id, short, inclusion, limit=1)
 
         # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
         #    resolving the venv placeholder in the preamble with the campaign venv.
@@ -173,9 +178,14 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
              "--processing-level", processing_level, "--queue", "slurm"], dry_run=dry_run)
 
         # 4. Pin the inclusion into the project (datalad run records the cp in git,
-        #    so the scheduled subjects are provenance-tracked).
+        #    so the scheduled subjects are provenance-tracked). Named
+        #    mechababs_inclusion.csv to disambiguate from babs's own
+        #    processing_inclusion.csv. TODO(remove-redundancy): once step 1 wires
+        #    `babs init --list-sub-file`, babs records processing_inclusion.csv and
+        #    this committed copy becomes redundant — drop it, generate as transient.
         run(["datalad", "run", "-m", "Pin run inclusion list",
-             "--output", "code/inclusion.csv", "--", "cp", inclusion, "code/inclusion.csv"],
+             "--output", "code/mechababs_inclusion.csv",
+             "--", "cp", inclusion, "code/mechababs_inclusion.csv"],
             dry_run=dry_run, cwd=analysis)
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
