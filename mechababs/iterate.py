@@ -170,19 +170,21 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
                                 "--dataset-url", url, "--campaign-venv", campaign_venv],
                                check=True, stdout=f)
 
-        # 3. babs init — scaffold only, NO submit.
+        # 3. babs init — scaffold only, NO submit. --list-sub-file defines the job
+        #    universe; babs INTERSECTS it with the subjects actually present in the
+        #    input dataset (inner join) and records that as code/processing_inclusion.csv.
         run(["babs", "init", project_root,
              "--container-ds", resolve_container_ds(campaign, container),
              "--container-name", container["name"],
              "--container-config", babs_config,
+             "--list-sub-file", inclusion,
              "--processing-level", processing_level, "--queue", "slurm"], dry_run=dry_run)
 
-        # 4. Pin the inclusion into the project (datalad run records the cp in git,
-        #    so the scheduled subjects are provenance-tracked). Named
-        #    mechababs_inclusion.csv to disambiguate from babs's own
-        #    processing_inclusion.csv. TODO(remove-redundancy): once step 1 wires
-        #    `babs init --list-sub-file`, babs records processing_inclusion.csv and
-        #    this committed copy becomes redundant — drop it, generate as transient.
+        # 4. Pin our inclusion into the project (datalad run records the cp in git).
+        #    Kept as mechababs_inclusion.csv alongside babs's processing_inclusion.csv:
+        #    ours = what we REQUESTED, babs's = requested ∩ present-in-data, so the
+        #    diff is diagnostic (a selected subject the data doesn't have). Not merely
+        #    redundant — it's the record of intent.
         run(["datalad", "run", "-m", "Pin run inclusion list",
              "--output", "code/mechababs_inclusion.csv",
              "--", "cp", inclusion, "code/mechababs_inclusion.csv"],
