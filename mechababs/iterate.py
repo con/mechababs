@@ -81,9 +81,9 @@ def container_dir(source):
 
 def resolve_container_ds(campaign, container):
     """The --container-ds for babs init: the container vendored at code/<dir>,
-    where <dir> is the source's basename. init-campaign vendors every container
-    there regardless of source (a URL, or a local dataset like a hand-built
-    shim), so iterate needn't know how it was built.
+    where <dir> is the source's basename. `mechababs configure` vendors every
+    container there regardless of source (a URL, or a local dataset like a
+    hand-built shim), so iterate needn't know how it was built.
     """
     return campaign / "code" / container_dir(container["source"])
 
@@ -124,7 +124,7 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 
     venv_rel = cfg.get("venv")
     if not venv_rel:
-        sys.exit("campaign.yaml has no 'venv' — run cluster-setup.py first")
+        sys.exit("campaign.yaml has no 'venv' — run `mechababs configure` first")
     campaign_venv = str(campaign / venv_rel)
 
     n = next_attempt(campaign, ds_id, short)

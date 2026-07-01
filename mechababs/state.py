@@ -6,9 +6,9 @@ A wide TSV: dataset/identity columns (``url``, ``processing_level``,
 derived from which columns are populated (``babs`` -> the babs-project path, set
 once scaffolded; ``babs-merged`` -> finished). The per-pipeline
 inclusion size is not stored here — it lives in the pinned inclusion.csv. The
-schema is **read from the file's header**, not hardcoded — init-campaign.py
-chooses the pipelines per campaign, so the accessor discovers them from the
-columns present.
+schema is **read from the file's header**, not hardcoded — ``mechababs
+configure`` chooses the pipelines per campaign (writing the header via
+``initial_header``), so the accessor discovers them from the columns present.
 
 The ledger is a re-derivable cache; mutators hold a campaign-level flock so there
 is a single writer (add-dataset and iterate). Generalizes the June-1 ledger.py.
@@ -23,13 +23,24 @@ from pathlib import Path
 STATE_FILENAME = "DATASETS_STATE.tsv"
 LOCK_FILENAME = "." + STATE_FILENAME + ".lock"
 
-# Authoritative header writer is init-campaign.py; keep this copy in sync.
 IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
 PIPELINE_COLUMNS = ["babs", "babs-merged"]
 
 
 def state_path(campaign):
     return Path(campaign) / STATE_FILENAME
+
+
+def initial_header(short_names):
+    """The header line for a fresh ledger: identity columns + a group per pipeline.
+
+    Written once at construction (``mechababs configure``); thereafter the schema
+    is read back from the file (see ``header``).
+    """
+    cols = list(IDENTITY_COLUMNS)
+    for short in short_names:
+        cols += [f"{short}_{c}" for c in PIPELINE_COLUMNS]
+    return "\t".join(cols) + "\n"
 
 
 def header(campaign):

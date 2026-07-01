@@ -193,7 +193,7 @@ the research object more **S**elf-contained, **T**racked, **A**ctionable,
 
 We target **vanilla babs `main`** (`PennLINC/babs`, or a PR branch under
 test) — mechababs is an e2e harness for vanilla babs and its PRs. A campaign
-**vendors** babs into `code/babs` at a chosen ref, and `cluster-setup.py`
+**vendors** babs into `code/babs` at a chosen ref, and `bootstrap.sh`
 editable-installs that vendored copy into the campaign venv, so the babs that
 runs is the provenance-pinned one recorded in the campaign.
 

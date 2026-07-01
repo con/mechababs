@@ -1,34 +1,34 @@
-"""mechababs — the operate-side CLI (add-dataset / iterate / …).
+"""mechababs — the operate-side CLI (configure / add-dataset / iterate / …).
 
-Runs inside a campaign's venv (built by cluster-setup.py). Subcommands mutate or
-advance the campaign's DATASETS_STATE.tsv ledger. The bootstrap of the campaign
-itself lives in the standalone root scripts (init-campaign.py, cluster-setup.py),
-not here. See issues/pipeline-instance.md.
+Runs inside a campaign's venv (built by bootstrap.sh). ``configure`` binds an
+ordered pipeline-set to a cluster (campaign.yaml + the ledger) from inside that
+venv; the other subcommands mutate or advance the DATASETS_STATE.tsv ledger. The
+environment half of the bootstrap — datalad dataset, vendored code pins, venv —
+is bootstrap.sh's job.
 """
 
 import argparse
 import sys
 from pathlib import Path
 
+from mechababs import construct
 from mechababs import iterate as iterate_mod
 from mechababs import state
 
 
-def cmd_init(args):
-    """Finish campaign construction from inside the campaign venv (STUB).
+def cmd_configure(args):
+    """Configure the campaign: bind an ordered pipeline-set to a cluster.
 
-    install.sh established the preconditions this checks: the path is a datalad
-    dataset with code/mechababs + code/babs registered, and THIS process runs
-    from the campaign's own .venv — which is how we know the pinned code (not
-    some ambient install) is executing. This is the guard that kills the
-    wrong-babs bug.
-
-    STUB (step A): validate + print intent only. Step B moves init-campaign.py's
-    body in (vendor containers, write campaign.yaml + DATASETS_STATE.tsv).
+    Runs from inside the campaign venv. bootstrap.sh established the
+    preconditions this checks: the path is a datalad dataset with code/mechababs
+    + code/babs registered, and THIS process runs from the campaign's own .venv —
+    which is how we know the pinned code (not some ambient install) is executing.
+    This is the guard that kills the wrong-babs bug. Then construct.build vendors
+    the pipelines' containers and writes campaign.yaml + the ledger.
     """
     campaign = args.campaign_path.resolve()
 
-    # Look like a campaign skeleton install.sh built?
+    # Look like a campaign skeleton bootstrap.sh built?
     if not (campaign / ".datalad").is_dir():
         sys.exit(f"not a datalad dataset: {campaign}")
     for sub in ("code/mechababs", "code/babs"):
@@ -44,17 +44,19 @@ def cmd_init(args):
         sys.exit(f"must run from the campaign venv ({venv}), but sys.prefix is {prefix}\n"
                  f"invoke as: {venv}/bin/mechababs init …")
 
-    # State guard: never clobber add-dataset rows. Reset = delete the tsv first.
+    # State guard: never clobber add-dataset rows. Reset = delete the ledger first.
     if state.state_path(campaign).is_file():
         sys.exit(f"{state.STATE_FILENAME} already exists — refusing to overwrite.\n"
-                 f"To reset, delete it first, then re-run: mechababs init …")
+                 f"To reset, delete it first, then re-run: mechababs configure …")
 
     pipeline_files = [p.strip() for p in args.pipelines.split(",") if p.strip()]
-    print("init STUB — validated campaign skeleton + venv guard. Step B will:", file=sys.stderr)
-    print(f"  - resolve pipelines {pipeline_files} -> short_name map", file=sys.stderr)
-    print(f"  - vendor each pipeline's container into code/<dir> (skip if present)", file=sys.stderr)
-    print(f"  - write campaign.yaml (cluster {args.cluster} + pipelines + venv={venv.name})", file=sys.stderr)
-    print(f"  - write {state.STATE_FILENAME} header", file=sys.stderr)
+    if not pipeline_files:
+        sys.exit("--pipelines must list at least one pipeline config file")
+
+    pipelines = construct.build(campaign, pipeline_files, args.cluster,
+                                str(venv.relative_to(campaign)))
+    print(f"campaign constructed: pipelines {', '.join(pipelines)}", file=sys.stderr)
+    print("Next: mechababs add-dataset <url>; mechababs iterate", file=sys.stderr)
     return 0
 
 
@@ -104,14 +106,15 @@ def main():
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    pn = sub.add_parser("init", help="finish campaign construction (run from the campaign venv)")
-    pn.add_argument("--campaign-path", type=Path, default=Path("."),
+    pc = sub.add_parser("configure",
+                        help="bind an ordered pipeline-set to a cluster (run from the campaign venv)")
+    pc.add_argument("--campaign-path", type=Path, default=Path("."),
                     help="the campaign dataset (default: current directory)")
-    pn.add_argument("--pipelines", required=True,
-                    help="comma-separated pipeline config files under mechababs/pipelines/")
-    pn.add_argument("--cluster", required=True,
+    pc.add_argument("--pipelines", required=True,
+                    help="comma-separated pipeline config files under mechababs/pipelines/ (ordered)")
+    pc.add_argument("--cluster", required=True,
                     help="cluster config file under mechababs/clusters/")
-    pn.set_defaults(func=cmd_init)
+    pc.set_defaults(func=cmd_configure)
 
     pa = sub.add_parser("add-dataset", help="register a dataset by URL (append a ledger row)")
     pa.add_argument("url", help="the dataset's upstream URL (its identity)")

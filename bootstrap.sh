@@ -39,7 +39,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --babs) BABS_SPEC="$2"; shift 2 ;;
         --mechababs) MECHABABS_SPEC="$2"; shift 2 ;;
-        -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
         -*) echo "unknown option: $1" >&2; exit 1 ;;
         *)
             [ -n "$CAMPAIGN" ] && { echo "unexpected extra argument: $1" >&2; exit 1; }
@@ -92,6 +92,6 @@ fi
 
 echo >&2
 echo "Environment ready at $CAMPAIGN" >&2
-echo "Next, from the campaign venv, finish construction:" >&2
+echo "Next, from the campaign venv, configure the campaign:" >&2
 echo "  source .venv/bin/activate" >&2
-echo "  mechababs init --pipelines <a.yaml,...> --cluster <c.yaml>" >&2
+echo "  mechababs configure --pipelines <a.yaml,...> --cluster <c.yaml>" >&2
