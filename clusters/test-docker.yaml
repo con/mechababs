@@ -1,0 +1,10 @@
+# TEST cluster profile for the pennlinc/slurm-docker-ci container (issue #31).
+# Mirrors the defaults babs's own tests use so jobs run inside the CI container
+# with no real cluster. NOT a real cluster — paired with pipelines/simbids-*.yaml.
+cluster_resources:
+  interpreting_shell: "/bin/bash"
+
+script_preamble: |
+  PATH=/opt/conda/envs/babs/bin:$PATH
+
+job_compute_space: "/tmp"

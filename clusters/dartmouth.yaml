@@ -1,5 +1,6 @@
 script_preamble: |
-  source /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/.venv/bin/activate
+  # campaign venv (abspath substituted at compose time by merge_config)
+  source "{{MECHABABS_VENV}}/bin/activate"
   export JOB_TMP="/scratch/${USER}/sjob-tmp/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
   mkdir -p "${JOB_TMP}"
   trap 'rm -rf "${JOB_TMP}"' EXIT

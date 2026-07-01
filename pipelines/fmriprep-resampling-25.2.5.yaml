@@ -1,5 +1,7 @@
 container:
-  repo: repronim-containers
+  # TODO: swap source to the ReproNim github link (+ ref) once PennLINC/babs#383
+  # lands — then the shim is unnecessary.
+  source: ../repronim-containers-shim
   name: bids-fmriprep
 
 # fmriprep --level resampling, chained on anat-only output.

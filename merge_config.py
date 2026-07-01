@@ -21,7 +21,8 @@ import sys
 import yaml
 
 
-def merge_babs_config(pipeline_config, cluster_config, dataset_url, anat_ria=None):
+def merge_babs_config(pipeline_config, cluster_config, dataset_url, anat_ria=None,
+                      campaign_venv=None):
     """Merge pipeline and cluster configs with dataset URL into a babs config dict."""
     # Pipeline config (bids_app_args, singularity_args, zip_foldernames, etc.)
     # Exclude 'container' — that's metadata for babs init args, not babs config
@@ -30,6 +31,12 @@ def merge_babs_config(pipeline_config, cluster_config, dataset_url, anat_ria=Non
     # Cluster config (cluster_resources, script_preamble, job_compute_space)
     for k, v in cluster_config.items():
         merged[k] = v
+
+    # Resolve the venv placeholder in the preamble with the campaign venv abspath
+    # (campaign.yaml keeps it relative; the caller resolves against the campaign root).
+    if campaign_venv and "script_preamble" in merged:
+        merged["script_preamble"] = merged["script_preamble"].replace(
+            "{{MECHABABS_VENV}}", campaign_venv)
 
     # Preserve any input_datasets already declared in the pipeline YAML
     # (e.g. chained-pipeline anat-input for fmriprep-full). Always add
@@ -70,6 +77,8 @@ def main():
     parser.add_argument("--dataset-url", required=True, help="URL or path to input BIDS dataset")
     parser.add_argument("--anat-ria", default=None,
                         help="RIA URL for the chained anat-only output; sets fmriprep_anat.origin_url")
+    parser.add_argument("--campaign-venv", default=None,
+                        help="abspath of the campaign venv; substitutes {{MECHABABS_VENV}} in the preamble")
     args = parser.parse_args()
 
     with open(args.pipeline) as f:
@@ -77,7 +86,8 @@ def main():
     with open(args.cluster) as f:
         cluster_config = yaml.safe_load(f)
 
-    merged = merge_babs_config(pipeline_config, cluster_config, args.dataset_url, args.anat_ria)
+    merged = merge_babs_config(pipeline_config, cluster_config, args.dataset_url, args.anat_ria,
+                               campaign_venv=args.campaign_venv)
     yaml.dump(merged, sys.stdout, default_flow_style=False, sort_keys=False)
 
 

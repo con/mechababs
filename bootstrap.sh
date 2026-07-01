@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+#
+# bootstrap.sh — build a mechababs campaign's environment: 
+#  - build .venv
+#  - clone the pinned babs + mechababs
+#  - make the campaign a datalad dataset, register subdatasets
+#
+# Usage: ./bootstrap.sh <path> [--babs URL@REF] [--mechababs URL@REF]
+set -euo pipefail
+
+BABS_DEFAULT="https://github.com/PennLINC/babs.git@main"
+MECHABABS_DEFAULT="git@github.com:asmacdo/mechababs.git@main"
+
+run() {
+    printf '+ %s\n' "$*" >&2
+    "$@"
+}
+
+save_pin() {
+    # -d "$CAMPAIGN" is load-bearing: without it datalad saves inside the nested
+    # clone (a no-op) instead of registering it as a campaign subdataset.
+    local name="$1" ref="$2" head
+    head="$(git -C "code/$name" rev-parse --short HEAD)"
+    run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Vendor $name at $ref ($head)" "code/$name"
+}
+
+require_url_ref() {
+    case "$1" in
+        *@*) : ;;
+        *) echo "expected URL@REF, got: $1" >&2; exit 1 ;;
+    esac
+}
+
+CAMPAIGN=""
+BABS_SPEC="$BABS_DEFAULT"
+MECHABABS_SPEC="$MECHABABS_DEFAULT"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --babs) BABS_SPEC="$2"; shift 2 ;;
+        --mechababs) MECHABABS_SPEC="$2"; shift 2 ;;
+        -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+        -*) echo "unknown option: $1" >&2; exit 1 ;;
+        *)
+            [ -n "$CAMPAIGN" ] && { echo "unexpected extra argument: $1" >&2; exit 1; }
+            CAMPAIGN="$1"; shift ;;
+    esac
+done
+
+[ -n "$CAMPAIGN" ] || { echo "missing <path> for the campaign" >&2; exit 1; }
+require_url_ref "$BABS_SPEC"
+BABS_URL="${BABS_SPEC%@*}";       BABS_REF="${BABS_SPEC##*@}"
+require_url_ref "$MECHABABS_SPEC"
+MECHA_URL="${MECHABABS_SPEC%@*}"; MECHA_REF="${MECHABABS_SPEC##*@}"
+
+for tool in git uv; do
+    command -v "$tool" >/dev/null 2>&1 || { echo "required tool not on PATH: $tool" >&2; exit 1; }
+done
+[ -e "$CAMPAIGN" ] && { echo "path already exists (fresh campaign only): $CAMPAIGN" >&2; exit 1; }
+
+run mkdir -p "$CAMPAIGN"
+CAMPAIGN="$(cd "$CAMPAIGN" && pwd)"
+cd "$CAMPAIGN"
+
+VENV="$CAMPAIGN/.venv"
+VENV_PY="$VENV/bin/python"
+VENV_DATALAD="$VENV/bin/datalad"
+
+run git clone --branch "$MECHA_REF" "$MECHA_URL" code/mechababs
+run git clone --branch "$BABS_REF"  "$BABS_URL"  code/babs
+
+# venv + the mechababs pin, whose deps bring datalad (needed for `datalad create`
+# below). babs is installed after registration — it is not a dep of mechababs,
+# just a CLI it shells out to, and the campaign pins its version independently.
+run uv venv "$VENV"
+run uv pip install --python "$VENV_PY" -e code/mechababs
+
+# gitignore before create/save so .venv/ + lock are never captured
+printf '%s\n' '.venv/' '.DATASETS_STATE.tsv.lock' > .gitignore
+
+# make the campaign a datalad dataset over the populated dir, then register pins
+run "$VENV_DATALAD" create --force -c text2git .
+run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Ignore .venv and the ledger lock" .gitignore
+save_pin mechababs "$MECHA_REF"
+save_pin babs "$BABS_REF"
+
+# editable-install the pinned babs + the campaign extras into the venv
+run uv pip install --python "$VENV_PY" -e code/babs
+if [ -f code/mechababs/requirements-campaign.txt ]; then
+    run uv pip install --python "$VENV_PY" -r code/mechababs/requirements-campaign.txt
+fi
+
+echo >&2
+echo "Environment ready at $CAMPAIGN" >&2
+echo "Next, from the campaign venv, configure the campaign:" >&2
+echo "  source .venv/bin/activate" >&2
+echo "  mechababs configure --pipelines <a.yaml,...> --cluster <c.yaml>" >&2

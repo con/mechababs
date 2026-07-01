@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mechababs"
+dynamic = ["version"]
+description = "Automation glue for running BIDS apps across many datasets on HPC clusters using BABS."
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml",
+    "datalad",
+    "datalad-container",
+]
+
+[project.scripts]
+mechababs = "mechababs.cli:main"
+
+# Only the mechababs package is installed; the root bootstrap.sh is run directly.
+[tool.setuptools]
+packages = ["mechababs"]
+
+[tool.setuptools.dynamic]
+version = { attr = "mechababs.__version__" }

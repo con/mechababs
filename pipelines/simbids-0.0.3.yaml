@@ -1,0 +1,30 @@
+# Fast/cheap TEST pipeline (issue #31). The simbids BIDS app stands in for a
+# real app (fmriprep/mriqc) so `iterate` -> `babs init` (and later submit) can be
+# exercised inside the pennlinc/slurm-docker-ci container with NO real cluster.
+# NOT for real data — paired with clusters/test-docker.yaml.
+
+# short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per campaign).
+short_name: simbids
+
+container:
+  # A local datalad dataset wrapping the simbids .sif. The container test harness
+  # builds it (datalad containers-add of the image bundled at
+  # /singularity_images/simbids_*.sif) at this fixed in-container path; init
+  # vendors it into code/ like any container.
+  source: /test-temp/simbids-container
+  name: simbids-0-0-3
+
+bids_app_args:
+  --bids-app: "fmriprep"
+  $SUBJECT_SELECTION_FLAG: "--participant-label"
+  --stop-on-first-crash: ""
+  -vv: ""
+  --anat-only: ""
+
+singularity_args:
+  - --containall
+  - --writable-tmpfs
+
+all_results_in_one_zip: true
+zip_foldernames:
+  fmriprep_anat: "24-1-1"
