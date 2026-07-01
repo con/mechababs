@@ -9,8 +9,7 @@
 set -euo pipefail
 
 BABS_DEFAULT="https://github.com/PennLINC/babs.git@main"
-# TODO(before-merge): flip the mechababs default ref campaign -> main once this merges.
-MECHABABS_DEFAULT="git@github.com:asmacdo/mechababs.git@campaign"
+MECHABABS_DEFAULT="git@github.com:asmacdo/mechababs.git@main"
 
 run() {
     printf '+ %s\n' "$*" >&2

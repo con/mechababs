@@ -18,6 +18,7 @@ mutating commands without running them.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -65,6 +66,22 @@ def warn_if_no_tmux():
 def read_config(campaign):
     """campaign.yaml -> {cluster, pipelines: {short_name: file}} (campaign-relative paths)."""
     return yaml.safe_load((campaign / "campaign.yaml").read_text())
+
+
+def assert_venv_tools(campaign, cfg):
+    """Guard: babs/mechababs/duct on PATH must resolve inside the campaign venv.
+
+    A stray active venv silently substitutes a different, unrecorded babs while
+    outputs stay attributed to the pinned commit (the attempt-3 wrong-babs trap);
+    per-campaign vendoring only means anything if the *pinned* tools run.
+    """
+    venv = (campaign / cfg["venv"]).resolve()
+    for tool in ("babs", "mechababs", "duct"):
+        found = shutil.which(tool)
+        if not (found and Path(found).resolve().is_relative_to(venv)):
+            sys.exit(f"{tool} resolves to {found or 'nothing'}, not under the campaign venv "
+                     f"{venv} — activate the campaign venv (a stray venv would run an "
+                     f"unpinned {tool}: the attempt-3 wrong-babs trap)")
 
 
 def dataset_id(url):
@@ -266,6 +283,8 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
     multi-dataset runs (there select generates a per-dataset inclusion).
     """
     cfg = read_config(campaign)
+    if not dry_run and cfg.get("venv"):
+        assert_venv_tools(campaign, cfg)
     pipelines = cfg["pipelines"]
     with state.locked(campaign):
         cols = state.header(campaign)
