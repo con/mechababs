@@ -116,7 +116,10 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     """
     url = row["url"]
     ds_id = dataset_id(url)
-    processing_level = row.get("processing_level") or "subject"
+    processing_level = row.get("processing_level")
+    if not processing_level:
+        sys.exit(f"processing_level not set for {url} — set it in the ledger "
+                 f"(add-dataset derives it; a blank means the metadata fetch failed)")
     pipeline_path = campaign / cfg["pipelines"][short]
     cluster_path = campaign / cfg["cluster"]
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
@@ -149,13 +152,16 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
             # TODO: the eligibility rule belongs in the pipeline config (a Next
             #   item). For now short_name doubles as select's pipeline rule —
             #   which only works while it matches select's mriqc/fmriprep choices.
-            # TODO(step 4): pass processing_level from the ledger row.
+            # processing_level (from the ledger) formats the inclusion to match the
+            # level babs runs at, so the two never disagree (the attempt-3 bug).
             limit = cfg.get("limit")
             if dry_run:
-                print(f"DRY-RUN  select.generate_inclusion({ds_id}, {short}, limit={limit}) "
-                      f"-> {inclusion}", file=sys.stderr)
+                print(f"DRY-RUN  select.generate_inclusion({ds_id}, {short}, "
+                      f"processing_level={processing_level}, limit={limit}) -> {inclusion}",
+                      file=sys.stderr)
             else:
-                select.generate_inclusion(ds_id, short, inclusion, limit=limit)
+                select.generate_inclusion(ds_id, short, inclusion,
+                                          processing_level=processing_level, limit=limit)
 
         # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
         #    resolving the venv placeholder in the preamble with the campaign venv.

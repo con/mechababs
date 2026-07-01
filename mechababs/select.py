@@ -13,12 +13,11 @@ first:
   - our campaign ledger ``DATASETS_STATE.tsv``;
   - babs's in-project ``processing_inclusion.csv`` / ``job_status.csv``.
 
-Library entry: ``generate_inclusion(...)``, called by ``iterate``;
-``fetch_openneuro_study_metadata(...)`` is also reused by ``add-dataset`` for
-dataset facts. Also runnable standalone: ``python -m mechababs.select …``.
+Library module: ``generate_inclusion(...)`` is called by ``iterate``;
+``fetch_openneuro_study_metadata(...)`` is reused by ``add-dataset`` for dataset
+facts.
 """
 
-import argparse
 import csv
 import io
 import sys
@@ -89,20 +88,28 @@ FILTERS = {
 }
 
 
-def generate_inclusion(openneuro_id, pipeline, output, *, limit=None):
+def generate_inclusion(openneuro_id, pipeline, output, *, processing_level=None, limit=None):
     """Write an inclusion CSV of eligible subjects for ``pipeline``; return the
-    dataset's processing_level.
+    processing_level used.
 
     Fetches the OpenNeuroStudies per-study metadata, applies the pipeline's
-    eligibility rule, dedups by ``(sub[, ses])``, optionally caps to the first
-    ``limit``, and writes ``output`` in the format matching the processing_level
-    (``sub_id`` or ``sub_id,ses_id``). Raises RuntimeError on a fetch/parse
-    failure or if nothing is eligible.
+    eligibility rule, then formats the output at ``processing_level`` — the level
+    the CALLER will run babs at (from the ledger), not necessarily the TSV's own.
+    Passing ``subject`` on a session-level dataset aggregates ``(sub, ses)`` rows
+    down to unique subjects (``sub_id``); ``None`` falls back to the TSV's level.
+    Dedups, sorts (so a ``limit`` cap is reproducible), optionally caps, writes
+    ``output``. Raises RuntimeError on a fetch/parse failure, if session-level is
+    asked of a subjects-only dataset, or if nothing is eligible.
     """
     try:
-        text, processing_level = fetch_openneuro_study_metadata(openneuro_id)
+        text, tsv_level = fetch_openneuro_study_metadata(openneuro_id)
     except Exception as e:
         raise RuntimeError(f"fetching OpenNeuro study metadata for {openneuro_id}: {e}")
+
+    level = processing_level or tsv_level
+    if level == "session" and tsv_level == "subject":
+        raise RuntimeError(
+            f"{openneuro_id}: session-level requested but its metadata is subjects-only")
 
     is_eligible = FILTERS[pipeline]
     eligible, total = [], 0
@@ -115,9 +122,9 @@ def generate_inclusion(openneuro_id, pipeline, output, *, limit=None):
         raise RuntimeError(f"parsing metadata / applying {pipeline} filter: {e}")
 
     print(f"{openneuro_id}: {total} rows, {len(eligible)} eligible for {pipeline} "
-          f"(processing-level: {processing_level})", file=sys.stderr)
+          f"(processing-level: {level})", file=sys.stderr)
 
-    if processing_level == "session":
+    if level == "session":
         def keyof(r):
             return (r["subject_id"], r["session_id"])
     else:
@@ -139,7 +146,7 @@ def generate_inclusion(openneuro_id, pipeline, output, *, limit=None):
     if not eligible:
         raise RuntimeError(f"no eligible subjects for {pipeline} in {openneuro_id}")
 
-    if processing_level == "session":
+    if level == "session":
         fieldnames = ["sub_id", "ses_id"]
         out_rows = [{"sub_id": r["subject_id"], "ses_id": r["session_id"]} for r in eligible]
     else:
@@ -153,31 +160,4 @@ def generate_inclusion(openneuro_id, pipeline, output, *, limit=None):
         writer.writeheader()
         writer.writerows(out_rows)
     print(f"Wrote {len(out_rows)} rows to {output}", file=sys.stderr)
-    return processing_level
-
-
-def main():
-    ap = argparse.ArgumentParser(
-        description=__doc__.split("\n\n")[0],
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    ap.add_argument("--openneuro-id", required=True, help="e.g. ds004636")
-    ap.add_argument("--pipeline", required=True, choices=sorted(FILTERS),
-                    help="which pipeline's filter rule to apply")
-    ap.add_argument("--limit", type=int, default=None,
-                    help="cap to first N eligible rows; default: all")
-    ap.add_argument("--output", required=True, type=Path, help="path to write inclusion CSV")
-    args = ap.parse_args()
-
-    try:
-        processing_level = generate_inclusion(
-            args.openneuro_id, args.pipeline, args.output, limit=args.limit)
-    except RuntimeError as e:
-        print(f"error: {e}", file=sys.stderr)
-        return 1
-    print(processing_level)  # stdout: signal processing-level to a caller
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    return level

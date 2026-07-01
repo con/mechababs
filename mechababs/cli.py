@@ -13,6 +13,7 @@ from pathlib import Path
 
 from mechababs import construct
 from mechababs import iterate as iterate_mod
+from mechababs import select
 from mechababs import state
 
 
@@ -63,13 +64,24 @@ def cmd_configure(args):
 def cmd_add_dataset(args):
     """Register a dataset by URL: append one ledger row (dataset-axis only).
 
-    Records identity (url) + processing_level; all pipeline columns start empty
-    (empty ``init`` = not started). Does NOT clone sourcedata or generate an
-    inclusion — selection is pipeline-axis, deferred to deploy.
+    Derives ``processing_level`` from the dataset's OpenNeuroStudies metadata
+    (has-sessions → session) and records it as an INPUT column — iterate reads it,
+    never overwrites it, and it is hand-editable. On a metadata-fetch failure it
+    is left blank (set it by hand, or re-add once the dataset is in
+    OpenNeuroStudies). All pipeline columns start empty; does NOT clone sourcedata
+    or generate an inclusion (selection is pipeline-axis, deferred to deploy).
     """
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
         sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+
+    ds_id = iterate_mod.dataset_id(args.url)
+    try:
+        _, processing_level = select.fetch_openneuro_study_metadata(ds_id)
+    except Exception as e:
+        processing_level = ""
+        print(f"warning: could not derive processing_level for {ds_id} ({e}); "
+              f"left blank — set it in the ledger before iterate", file=sys.stderr)
 
     with state.locked(campaign):
         cols = state.header(campaign)
@@ -78,12 +90,13 @@ def cmd_add_dataset(args):
             sys.exit(f"already registered: {args.url}")
         row = {c: "" for c in cols}
         row["url"] = args.url
-        row["processing_level"] = args.processing_level
+        row["processing_level"] = processing_level
         rows.append(row)
         state.write_rows(campaign, cols, rows)
-        state.save(campaign, f"add-dataset {args.url} ({args.processing_level})")
+        state.save(campaign, f"add-dataset {args.url} ({processing_level or 'level TBD'})")
 
-    print(f"registered {args.url} ({args.processing_level})", file=sys.stderr)
+    print(f"registered {args.url} (processing_level: {processing_level or 'blank'})",
+          file=sys.stderr)
     return 0
 
 
@@ -123,8 +136,6 @@ def main():
     pa.add_argument("url", help="the dataset's upstream URL (its identity)")
     pa.add_argument("--campaign-path", type=Path, default=Path("."),
                     help="the campaign dataset (default: current directory)")
-    pa.add_argument("--processing-level", choices=["subject", "session"],
-                    default="subject", help="babs processing level (default: subject)")
     pa.set_defaults(func=cmd_add_dataset)
 
     pi = sub.add_parser("iterate", help="advance pending pipelines one scaffold transition")
