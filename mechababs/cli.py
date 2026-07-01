@@ -14,6 +14,50 @@ from mechababs import iterate as iterate_mod
 from mechababs import state
 
 
+def cmd_init(args):
+    """Finish campaign construction from inside the campaign venv (STUB).
+
+    install.sh established the preconditions this checks: the path is a datalad
+    dataset with code/mechababs + code/babs registered, and THIS process runs
+    from the campaign's own .venv — which is how we know the pinned code (not
+    some ambient install) is executing. This is the guard that kills the
+    wrong-babs bug.
+
+    STUB (step A): validate + print intent only. Step B moves init-campaign.py's
+    body in (vendor containers, write campaign.yaml + DATASETS_STATE.tsv).
+    """
+    campaign = args.campaign_path.resolve()
+
+    # Look like a campaign skeleton install.sh built?
+    if not (campaign / ".datalad").is_dir():
+        sys.exit(f"not a datalad dataset: {campaign}")
+    for sub in ("code/mechababs", "code/babs"):
+        if not (campaign / sub).is_dir():
+            sys.exit(f"not a campaign skeleton (missing {sub}): {campaign}")
+
+    # The PATH guard, the whole point: are we the campaign venv's python? Its
+    # sys.prefix is <campaign>/.venv. If not, an ambient mechababs is running and
+    # would scaffold with the wrong (unpinned) babs — refuse.
+    venv = (campaign / ".venv").resolve()
+    prefix = Path(sys.prefix).resolve()
+    if prefix != venv:
+        sys.exit(f"must run from the campaign venv ({venv}), but sys.prefix is {prefix}\n"
+                 f"invoke as: {venv}/bin/mechababs init …")
+
+    # State guard: never clobber add-dataset rows. Reset = delete the tsv first.
+    if state.state_path(campaign).is_file():
+        sys.exit(f"{state.STATE_FILENAME} already exists — refusing to overwrite.\n"
+                 f"To reset, delete it first, then re-run: mechababs init …")
+
+    pipeline_files = [p.strip() for p in args.pipelines.split(",") if p.strip()]
+    print("init STUB — validated campaign skeleton + venv guard. Step B will:", file=sys.stderr)
+    print(f"  - resolve pipelines {pipeline_files} -> short_name map", file=sys.stderr)
+    print(f"  - vendor each pipeline's container into code/<dir> (skip if present)", file=sys.stderr)
+    print(f"  - write campaign.yaml (cluster {args.cluster} + pipelines + venv={venv.name})", file=sys.stderr)
+    print(f"  - write {state.STATE_FILENAME} header", file=sys.stderr)
+    return 0
+
+
 def cmd_add_dataset(args):
     """Register a dataset by URL: append one ledger row (dataset-axis only).
 
@@ -59,6 +103,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    pn = sub.add_parser("init", help="finish campaign construction (run from the campaign venv)")
+    pn.add_argument("--campaign-path", type=Path, default=Path("."),
+                    help="the campaign dataset (default: current directory)")
+    pn.add_argument("--pipelines", required=True,
+                    help="comma-separated pipeline config files under mechababs/pipelines/")
+    pn.add_argument("--cluster", required=True,
+                    help="cluster config file under mechababs/clusters/")
+    pn.set_defaults(func=cmd_init)
 
     pa = sub.add_parser("add-dataset", help="register a dataset by URL (append a ledger row)")
     pa.add_argument("url", help="the dataset's upstream URL (its identity)")
