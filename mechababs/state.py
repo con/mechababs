@@ -11,7 +11,7 @@ configure`` chooses the pipelines per campaign (writing the header via
 ``initial_header``), so the accessor discovers them from the columns present.
 
 The ledger is a re-derivable cache; mutators hold a campaign-level flock so there
-is a single writer (add-dataset and iterate). Generalizes the June-1 ledger.py.
+is a single writer (add-dataset and iterate).
 """
 
 import csv

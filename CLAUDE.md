@@ -89,14 +89,19 @@ per derivative). A true linear chain needs upstream BABS work — tracked in
   branch, status value, or field. A divergence means dev stops validating prod.
   Corollary: **one tool, two modes**, not two tools.
 - **Inclusion files are canonical.** Don't rely on `babs submit --count`
-  to pick subjects. Produce an inclusion CSV (auto via
-  `select-eligible-sub-ses.py`, or hand-written one-row for smoke
-  tests), pass via `--inclusion-file`. `execute-dataset.sh` pins it
-  into `analysis/code/inclusion.csv` via `datalad run` so what was
-  scheduled is recorded in git.
-- **Wrap runs in duct.** Any `execute-dataset.sh` invocation goes
-  through `duct -p logs/...` so we get usage/resource logs alongside
-  the outputs. `spawn-all.sh` also wraps the per-tmux invocations.
+  to pick subjects — `--count` is reserved for the future in-flight
+  throttle (the governor). `mechababs/select.py` generates the inclusion
+  (`mechababs_inclusion.csv`) from OpenNeuroStudies metadata, capped by
+  `configure --limit`; `iterate` passes it to `babs init --list-sub-file`
+  (defining the job universe) and pins it into the babs project's
+  `code/mechababs_inclusion.csv` via `datalad run`, so what was scheduled
+  is recorded in git. For a smoke test, hand-write a one-row CSV and pass
+  `iterate --inclusion-file`.
+- **Wrap runs in duct.** Every run should carry con/duct usage/resource
+  logs alongside its outputs — con/duct is a first-class campaign tool
+  (installed into the venv, PATH-checked by `iterate`). The campaign
+  wiring is tracked, not yet built: duct-wrapping each `iterate` step is
+  #53, and duct inside the babs jobs is #16 (tracks `PennLINC/babs#356`).
 - **Curated facts live in `priority-openneuro-datasets.csv`.** It's the
   human-edited list of datasets we care about. Don't synthesize a parallel
   source; add columns here if a per-dataset fact needs to be tracked.
