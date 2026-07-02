@@ -1,10 +1,11 @@
-# mechababs
+# mechababs — contributor conventions
 
-Automation glue for running BIDS apps across many datasets on HPC
-clusters using BABS. **User-facing usage and per-dataset workflow:
-see [README.md](README.md).**
+The project overview, the campaign model, and the per-dataset workflow live in
+the README, included here:
 
-This file holds project conventions, terminology, and pointers a
+@README.md
+
+The rest of this file holds project conventions, terminology, and pointers a
 contributor (or fresh Claude session) needs that don't fit in the README.
 
 ## OpenNeuro ecosystem
@@ -78,25 +79,9 @@ per derivative). A true linear chain needs upstream BABS work — tracked in
 
 ## Conventions
 
-- **Three-axis composition.** Every run = `dataset × pipeline × cluster`.
-  Pipeline YAMLs (`pipelines/`) hold BIDS-app flags + container; cluster
-  YAMLs (`clusters/`) hold SLURM resources + script preamble. Never
-  bake cluster details into a pipeline YAML or vice versa. `merge_config.py`
-  composes them.
-- **Dev exercises prod's paths.** Dev/test and production run the **same code
-  paths and data structures**; the only differences are *config and content* —
-  which sibling, which subset of subjects, which code pin — never a dev-only
-  branch, status value, or field. A divergence means dev stops validating prod.
-  Corollary: **one tool, two modes**, not two tools.
-- **Inclusion files are canonical.** Don't rely on `babs submit --count`
-  to pick subjects — `--count` is reserved for the future in-flight
-  throttle (the governor). `mechababs/select.py` generates the inclusion
-  (`mechababs_inclusion.csv`) from OpenNeuroStudies metadata, capped by
-  `configure --limit`; `iterate` passes it to `babs init --list-sub-file`
-  (defining the job universe) and pins it into the babs project's
-  `code/mechababs_inclusion.csv` via `datalad run`, so what was scheduled
-  is recorded in git. For a smoke test, hand-write a one-row CSV and pass
-  `iterate --inclusion-file`.
+The README covers three-axis composition, one-tool-two-modes / dev-exercises-prod,
+and the canonical inclusion-file flow. These are the conventions it doesn't:
+
 - **Wrap runs in duct.** Every run should carry con/duct usage/resource
   logs alongside its outputs — con/duct is a first-class campaign tool
   (installed into the venv, PATH-checked by `iterate`). The campaign
@@ -197,10 +182,8 @@ the research object more **S**elf-contained, **T**racked, **A**ctionable,
 ## Babs source
 
 We target **vanilla babs `main`** (`PennLINC/babs`, or a PR branch under
-test) — mechababs is an e2e harness for vanilla babs and its PRs. A campaign
-**vendors** babs into `code/babs` at a chosen ref, and `bootstrap.sh`
-editable-installs that vendored copy into the campaign venv, so the babs that
-runs is the provenance-pinned one recorded in the campaign.
+test) — mechababs is an e2e harness for vanilla babs and its PRs, never a
+fork. (How a campaign vendors + pins the chosen ref: README, "The campaign".)
 
 ## Reference repos
 
@@ -220,8 +203,6 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 | `ds001761-fmriprep/`, `ds005374-fmriprep/` | OpenNeuroDerivatives mirrors | Joe's published fmriprep runs (2022 + 2025) — reference for output shape |
 
 ## Where to read in
-
-For overall project usage: **`README.md`**.
 
 For the pipeline: the **`## Pipeline`** section above (shape), the
 `pipelines/*.yaml` (flags, ground truth), and the
