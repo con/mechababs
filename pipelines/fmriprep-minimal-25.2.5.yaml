@@ -46,8 +46,8 @@ singularity_args:
   - --env TEMPLATEFLOW_HOME=/templateflow
 
 # Chained input: the anat-only stage's output_ria. origin_url is
-# injected per run via `--anat-ria` (execute-dataset.sh -> merge_config.py
-# sets fmriprep_anat.origin_url). Intentionally omitted here — it's a
+# injected per run via `merge_config.py --anat-ria` (which sets
+# fmriprep_anat.origin_url). Intentionally omitted here — it's a
 # per-run absolute RIA path, not a config constant.
 input_datasets:
   fmriprep_anat:

@@ -1,222 +1,221 @@
 # mechababs
 
-Automation glue for running BIDS apps across many datasets on HPC
+Automation glue for running BIDS apps across many OpenNeuro datasets on HPC
 clusters using [BABS](https://github.com/PennLINC/babs).
+
+mechababs is an end-to-end harness for **vanilla** BABS (`PennLINC/babs` main,
+or a PR branch under test) — it does not require a babs fork. The unit of work
+is a **campaign**: a self-contained datalad dataset that holds its inputs, its
+outputs, its config, its state ledger, and the exact `babs` + `mechababs` code
+that produced everything.
 
 ## Concept
 
-An mechababs run is the composition of three things:
+Every run is the composition of three axes:
 
-- **A dataset** — typically an OpenNeuro raw BIDS study (`OpenNeuroDatasets/dsXXXXXX`).
-- **A pipeline** — one of `pipelines/*.yaml` (mriqc, fmriprep-anat/minimal/resampling/full, etc.).
-- **A cluster** — one of `clusters/*.yaml` (currently `dartmouth.yaml`).
+- **A dataset** — an OpenNeuro raw BIDS study (`OpenNeuroDatasets/dsXXXXXX`),
+  registered by URL (the URL is its identity).
+- **A pipeline** — one of `pipelines/*.yaml` (mriqc, fmriprep-anat / minimal /
+  resampling / full, simbids). Holds the container reference + BIDS-app flags.
+- **A cluster** — one of `clusters/*.yaml` (`dartmouth.yaml`, `test-docker.yaml`).
+  Holds SLURM resources + the job script preamble.
 
-`merge_config.py` combines pipeline + cluster + per-run args into a
-single `babs-config.yaml`. `execute-dataset.sh` drives a single dataset
-end-to-end; `spawn-all.sh` fans the same workflow across many datasets
-in parallel via tmux.
+`merge_config.py` composes pipeline × cluster × dataset-URL into the single
+`babs-config.yaml` that `babs init` consumes. Never bake cluster details into a
+pipeline YAML or vice versa.
 
-## Quick start
+## The campaign
 
-> **Before any long run on Kerberos/NFS clusters (Dartmouth):**
->
-> 1. Start a tmux session — `tmux new -s mecha` — so the run survives
->    ssh disconnects. Reattach with `tmux attach -t mecha`.
-> 2. Inside tmux, run `krenew -b` to keep your Kerberos ticket alive.
->    Long runs (>10h) can outlive the ticket, causing stale NFS file
->    handles and crashes.
+A campaign is its **own standalone datalad dataset** — the boundary that makes a
+processing run self-contained and reproducible. Its heavy parts (source data,
+derivatives, and the vendored code) are subdatasets inside it:
+
+```
+my-campaign/                             # a campaign = a datalad dataset (datalad create)
+  campaign.yaml                          # cluster file + {short_name: pipeline_file} + venv + limit
+  DATASETS_STATE.tsv                     # the state ledger (one row per dataset)
+  .venv/                                 # campaign venv (gitignored, rebuildable)
+  code/
+    mechababs/                           # subdataset, pinned at a chosen ref
+    babs/                                # subdataset, pinned at a chosen ref
+    repronim-containers-shim/            # vendored container dataset(s)
+  sourcedata/  dsXXXXXX/  …              # subdatasets -> OpenNeuroDatasets
+  derivatives/
+    dsXXXXXX_mriqc_attempt-1/            # a babs project; attempt-N allocated at creation
+    dsXXXXXX_fmriprep-anat_attempt-1/
+```
+
+Why this shape:
+
+- **Code is vendored and pinned per campaign.** `code/babs` and `code/mechababs`
+  are git submodules; the submodule commit *is* the pin. The campaign venv
+  editable-installs them, so the `babs` / `mechababs` that run are the
+  provenance-pinned ones recorded in the campaign — not whatever happens to be on
+  PATH. A different babs commit (e.g. to test a PR) is just a different pin.
+- **State is a re-derivable cache, not the source of truth.** `DATASETS_STATE.tsv`
+  is reconciled from ground truth (babs / the output RIA) each tick, so a crashed
+  run, a hand-edited file, or a changed inclusion self-heals on the next
+  `iterate`. To change an outcome, change ground truth (the inclusion, or reset).
+- **Outputs are produced and pushed outward** (to OpenNeuroDerivatives /
+  OpenNeuroStudies); the campaign is where they're made and tracked, not where
+  they permanently live.
+
+**One tool, two modes.** Dev (a scratch sibling, small inclusions, a branch of
+babs under test) and production (OpenNeuro siblings, all subjects, released code)
+are the *same* tool — every difference is config and content, never a dev-only
+branch, field, or code path. Dev exercises prod's exact paths, so dev validates
+prod.
+
+## CLI — two layers
+
+Bootstrapping has a chicken-and-egg problem: the operate-side CLI is installed
+*from the mechababs code vendored into the campaign*, so it can't be what creates
+the campaign. The split is bootstrap-vs-operate:
+
+### 1. `bootstrap.sh` — build the environment (repo root, run once per campaign)
 
 ```bash
-# One-time setup: creates venv, installs babs + datalad, clones containers
-bash setup-dev.sh
+./bootstrap.sh my-campaign \
+    [--babs URL@REF]        # default: https://github.com/PennLINC/babs.git@main
+    [--mechababs URL@REF]   # default: git@github.com:asmacdo/mechababs.git@main
+```
+
+Clones the two code pins into `code/`, builds `.venv` with `uv`, makes the
+directory a datalad dataset (`datalad create --force` over the populated tree),
+registers the code clones as subdatasets, and editable-installs the pinned
+`babs` + `mechababs` + campaign extras (`requirements-campaign.txt`) into the
+venv. Afterwards the pinned tools run *by construction*.
+
+`REF` must be a branch or tag name (not a bare commit sha) — `git clone --branch`
+is how the pin is set.
+
+### 2. `mechababs {configure,add-dataset,iterate}` — operate (run from the campaign venv)
+
+```bash
+cd my-campaign
 source .venv/bin/activate
+
+# bind an ordered pipeline-set to a cluster: vendor containers, write
+# campaign.yaml + the empty ledger. Guards that THIS process is the campaign
+# venv's python (the check that prevents the wrong, unpinned babs from running).
+mechababs configure \
+    --pipelines mriqc-24.0.2.yaml \
+    --cluster dartmouth.yaml \
+    [--limit N]              # cap each dataset's inclusion to the first N eligible subjects
+
+# register a dataset by URL (append a ledger row). Derives processing_level
+# from OpenNeuroStudies metadata (has-sessions -> session).
+mechababs add-dataset https://github.com/OpenNeuroDatasets/ds005896
+
+# advance the campaign one reconciler tick (see below)
+mechababs iterate [--batch N] [--dry-run] [--inclusion-file <csv>]
 ```
 
-## Per-dataset workflow
+`configure` refuses to overwrite an existing ledger — resetting a campaign is
+"delete `DATASETS_STATE.tsv`, re-run `configure`" (containers already vendored
+are reused).
 
-### 1. Sniff the dataset
+## The reconciler tick (`iterate`)
 
-```bash
-./sniff.sh https://github.com/OpenNeuroDatasets/<DATASET_ID>
-```
+`iterate` is one **tick** of a reconciler. It reads the desired state (the ledger
+rows) and advances each `(dataset, pipeline)` cell by **at most one transition**,
+routing on which ledger columns are populated:
 
-Reports subjects, sessions, scan counts, and sizes per subject. Use
-the output to choose a processing level (next step).
+| Cell state | Columns | Transition |
+|---|---|---|
+| not started | `<short>_babs` empty | **scaffold**: generate the inclusion → compose the babs config → `babs init` (no submit) → pin the inclusion → record `<short>_babs` (the project path) |
+| in progress | `<short>_babs` set, `<short>_babs-merged` empty | **active**: show `babs status`, operator picks `[d]eploy more / [s]kip / [m]erge` |
+| done | `<short>_babs-merged` set | skip (no babs query) |
 
-### 2. Pick a processing level
+The interactive `[d/s/m]` prompt is the **manual stand-in** for the eventual
+count-driven decision (a machine-readable `babs status`, upstream
+`PennLINC/babs#387`); the transitions and ledger writes are the real thing. A
+single writer is enforced by a campaign flock, and each advanced cell is saved as
+it lands, so a long or interrupted tick still records progress. `--dry-run` runs
+the read-only steps for real and prints the mutating commands without running
+them.
 
-| Dataset shape | Processing level |
-|---|---|
-| No sessions | `subject` (default) |
-| Few sessions (1-4) with light scans | `subject` |
-| Many sessions (10+) or heavy scans per subject | `session` |
+There is **no status enum** — a pipeline's state is entirely derived from which
+columns are filled. Identity columns (`url`, `processing_level`, `n_subjects`,
+`n_sessions`) are *inputs* iterate reads and never overwrites; the
+`<short>_babs*` columns are *derived* and reconciled each tick.
 
-For datasets with many sessions per subject, check how many sessions
-the first subject actually has — it may differ from the dataset
-average. `select-eligible-sub-ses.py` (used by `spawn-all.sh`) picks
-the appropriate level automatically based on what TSV
-OpenNeuroStudies exposes.
+`babs init` runs **on the cluster** (via `iterate`), because babs bakes absolute
+RIA-store paths into the project at init that can't be relocated. Cheap steps
+(`add-dataset`) can run anywhere; the git-tracked ledger syncs by push/pull while
+the heavy RIA stores stay cluster-side.
 
-### 3. Run
+## Selection & inclusion
 
-```bash
-DATASET_ID=ds000113
-duct -p logs/${DATASET_ID}-mriqc/ \
-  bash execute-dataset.sh \
-    --dataset-url https://github.com/OpenNeuroDatasets/${DATASET_ID} \
-    --pipeline pipelines/mriqc-24.0.2.yaml \
-    --cluster clusters/dartmouth.yaml \
-    --working-dir processing/${DATASET_ID}-mriqc \
-    --output derivative-datasets/${DATASET_ID}-mriqc \
-    [--processing-level session] \
-    [--inclusion-file <path>] \
-    [--submit-only]
-```
-
-`execute-dataset.sh` does, in order:
-
-1. **Merge configs** (`merge_config.py`) → `babs-config.yaml`
-2. **`babs init`** — creates the babs project, clones dataset + container dataset
-3. **Pin inclusion** (if `--inclusion-file` given) — `datalad run` copies the CSV into `analysis/code/inclusion.csv` so the actually-scheduled subjects are recorded in git history
-4. **Pull container image** (datalad get the SIF)
-5. **`babs submit`** — submits SLURM jobs (with `--inclusion-file` if provided)
-6. **`babs status --wait`** — polls until jobs finish
-7. **`finalize.sh`** — `babs merge`, clone from output RIA, datalad-get archives and duct logs, extract zips
-
-`--submit-only` stops after step 5: jobs are submitted, then the script exits without steps 6–7 (no `babs status --wait`, no finalize). Used by staged deployments that poll + merge by hand (e.g. `deployments/june-1-fmriprep/`).
-
-A sentinel file is written at `<working-dir>/.status` on exit:
-
-```
-exit_code=<int>
-completed_at=<ISO-8601 UTC>
-dataset_url=<...>
-pipeline=<...>
-```
-
-Use this to scan many runs without attaching to each tmux pane.
-
-### 4. Recover from interruption
-
-If jobs finished but the run was killed before finalize, rerun just
-finalize:
-
-```bash
-bash finalize.sh \
-  --working-dir processing/${DATASET_ID}-mriqc \
-  --output derivative-datasets/${DATASET_ID}-mriqc
-```
-
-### 5. Troubleshooting
-
-- **Job failed?** Check `babs status <working-dir>/babs-project`, then look at the SLURM log inside the output RIA.
-- **HTML reports?** Serve via `python -m http.server` from the derivative dir. Don't `datalad unlock` annexed figures.
-- **`add-archive-content` failed in finalize?** Re-run manually:
-  ```bash
-  cd derivative-datasets/<run>
-  bash -c 'for f in *.zip; do
-    datalad add-archive-content -D --allow-dirty --no-commit \
-      --existing overwrite --strip-leading-dirs --leading-dirs-depth 1 \
-      --annex-options="--no-check-gitignore" "$f"
-  done'
-  datalad save -m "Extract archives"
-  ```
-- **mriqc INT64 crash?** Known issue on some datasets (e.g. ds002685); record and skip.
-- **Container not found?** Re-run `setup-dev.sh` to refresh `repronim-containers/`.
-
-## Parallel runs
-
-`spawn-all.sh` fans a pipeline across every row in the candidates CSV
-— one detached tmux session per dataset, each running
-`execute-dataset.sh` end-to-end.
-
-```bash
-bash spawn-all.sh \
-    --pipeline pipelines/mriqc-24.0.2.yaml \
-    --cluster clusters/dartmouth.yaml \
-    --experiment parallel-exp1 \
-    [--candidates priority-openneuro-datasets.csv] \
-    [--per-dataset-count N] \
-    [--dry-run]
-```
-
-For each dataset, `spawn-all.sh`:
-
-1. Runs `select-eligible-sub-ses.py` to produce
-   `processing/<experiment>/<ds>-<pipeline>/inclusion.csv`
-   (and prints the matching `--processing-level`).
-2. Skips the dataset if 0 rows are eligible.
-3. Spawns `tmux new -d -s mecha-<ds>-<pipeline> 'execute-dataset.sh ...'`
-   with `--inclusion-file` pointing at the CSV.
-4. Sleeps **600s** between spawns to avoid datalad/git-annex/NFS
-   contention during babs init (5 min was insufficient on 2026-05-05).
-
-`--dry-run` writes inclusion CSVs and prints would-spawn commands
-without launching tmux.
-
-### Per-experiment layout
-
-```
-processing/<experiment>/<ds>-<pipeline>/
-    babs-config.yaml
-    inclusion.csv                  # staging copy from select-eligible
-    babs-project/analysis/code/
-        inclusion.csv              # pinned via datalad run (= what babs submit consumed)
-    .status                        # sentinel: exit code on completion
-
-derivative-datasets/<experiment>/<ds>-<pipeline>/
-    sub-*.zip / extracted contents
-    logs/duct_*                    # duct logs of the per-subject jobs
-
-logs/<experiment>/<ds>-<pipeline>/  # duct log of the spawn-all wrapper
-```
-
-The `<experiment>` namespace lets multiple passes coexist
-(`parallel-exp1/`, `parallel-exp2/`, …).
-
-### Eligibility selection
-
-`select-eligible-sub-ses.py` fetches per-study metadata from
-OpenNeuroStudies (`sourcedata+subjects+sessions.tsv` or, on 404, the
-subject-level TSV) and filters rows by pipeline:
+Selection lives on the **pipeline axis**, generated per `(dataset, pipeline)` at
+deploy time — the only point where both axes (and, for downstream stages,
+upstream passers) are known. `mechababs/select.py` fetches the OpenNeuroStudies
+per-study TSV (which carries per-subject `datatypes` / `t1w_num` / `bold_num`, so
+no clone or annex content is needed) and applies the pipeline's eligibility rule:
 
 | Pipeline | Rule |
 |---|---|
 | `mriqc` | `'anat' in datatypes` AND `t1w_num > 0` |
-| `fmriprep` | `'anat' in datatypes` AND `'func' in datatypes` AND `t1w_num > 0` AND `bold_num > 0` |
+| `fmriprep` | anat + func present AND `t1w_num > 0` AND `bold_num > 0` |
 
-Output CSV has columns `sub_id` and (optionally) `ses_id`, matching
-what `babs submit --inclusion-file` expects. The processing level
-(`subject` or `session`) is printed to stdout.
+The eligible list is sorted and truncated to `--limit N` (a reproducible
+"first N"), formatted to match the ledger's `processing_level` (`sub_id` vs
+`sub_id,ses_id`), and passed to `babs init --list-sub-file`, which defines the
+job *universe*. babs inner-joins it with the subjects actually present in the
+data and records that as its own `processing_inclusion.csv`; mechababs also pins
+`code/mechababs_inclusion.csv` (what we *requested*) as a diagnostic record of
+intent — the diff catches a selected subject the data doesn't have.
 
-For ad-hoc single-subject smoke tests, hand-write a one-row CSV
-instead:
+For a smoke test, hand-write a one-row CSV and pass `--inclusion-file` (skips
+`select`):
 
 ```bash
-printf "sub_id\nsub-s003\n" > inclusion.csv
-bash execute-dataset.sh ... --inclusion-file inclusion.csv
+printf "sub_id\nsub-CSI1\n" > /tmp/inc.csv
+mechababs iterate --batch 1 --inclusion-file /tmp/inc.csv
 ```
+
+## Manual shims (temporary, automated later)
+
+Steps done by hand for now, each with a matching `TODO(manual step):` comment at
+the code location that needs it (grep `TODO(manual step)`):
+
+- **Container shim.** Vanilla babs locates a container image at babs's hardcoded
+  default path; the ReproNim/containers layout is only resolved by a babs fork
+  branch. So `tmp-repronim-container-shim.sh` builds a persistent,
+  out-of-campaign shim dataset once (a sibling of your campaigns); pipelines
+  reference it relatively (`container.source: ../repronim-containers-shim`) and
+  `configure` vendors it into `code/`. Drop the shim and swap `container.source`
+  to the ReproNim GitHub link when `PennLINC/babs#383` lands.
+- **Done-detection.** No machine-readable `babs status` yet (`PennLINC/babs#387`),
+  so the operator polls `babs status` and drives the `[d/s/m]` prompt by hand.
 
 ## Configuration
 
-- **Pipeline YAMLs** (`pipelines/`) hold container info + BIDS-app flags + zip foldernames.
-- **Cluster YAMLs** (`clusters/`) hold SLURM resource templates + script preamble (per-job `/tmp` bind, etc.).
-- `merge_config.py` merges the two plus `--dataset-url` into a single `babs-config.yaml` that `babs init` consumes. It preserves YAML-declared `input_datasets` (e.g. for chained-anat fmriprep stages).
+- **Pipeline YAMLs** (`pipelines/`) hold `short_name` (the ledger column prefix,
+  unique per campaign), the `container` block, BIDS-app flags, and zip
+  foldernames. Flags are the ground truth for what runs — the *why* behind each
+  choice lives in the `OpenNeuroDerivatives/fmriprepDerivatives` opinions repo.
+- **Cluster YAMLs** (`clusters/`) hold SLURM resource templates + the
+  `script_preamble` (per-job `/tmp` bind, venv activation via the
+  `{{MECHABABS_VENV}}` placeholder that `merge_config.py` substitutes at compose
+  time).
 
-To add a new pipeline: copy an existing `pipelines/*.yaml`, change container + flags + zip foldername, run it.
-
-To add a new cluster: copy `clusters/dartmouth.yaml`, adjust SLURM resources + `script_preamble`, run a smoke test on it.
+To add a pipeline: copy an existing `pipelines/*.yaml`, set a unique
+`short_name`, change container + flags. To add a cluster: copy
+`clusters/dartmouth.yaml`, adjust resources + preamble, smoke-test it.
 
 ## Docs
 
-- [CLAUDE.md](CLAUDE.md) — project conventions, the pipeline, venv rules, working agreement.
-- [design/](design/) — architecture proposals.
+- [CLAUDE.md](CLAUDE.md) — project conventions, the pipeline, terminology,
+  milestones, and the working agreement.
+- [design/](design/) — architecture proposals and diagrams.
+- Open work + milestones live in the GitHub tracker (`asmacdo/mechababs`).
 
 ## Upstream
 
-- [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies) — superdataset
-- [OpenNeuroDerivatives](https://github.com/OpenNeuroDerivatives/OpenNeuroDerivatives) — derivative mirrors
-- [BABS](https://github.com/PennLINC/babs) — execution engine
+- [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies) — the superdataset mechababs feeds
+- [OpenNeuroDerivatives](https://github.com/OpenNeuroDerivatives/OpenNeuroDerivatives) — derivative mirrors + the fmriprep opinions repo
+- [BABS](https://github.com/PennLINC/babs) — the execution engine
 - [ReproNim/containers](https://github.com/ReproNim/containers) — container datasets
-- [FAIRly Big processing workflow](https://github.com/psychoinformatics-de/fairly-big-processing-workflow) — the pattern
-- [STAMPED principles](https://github.com/myyoda/principles-paper) — guiding principles
+- [FAIRly Big processing workflow](https://github.com/psychoinformatics-de/fairly-big-processing-workflow) — the pattern BABS implements
+- [STAMPED principles](https://github.com/myyoda/principles-paper) — the guiding principles
