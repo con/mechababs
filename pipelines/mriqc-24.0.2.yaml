@@ -20,7 +20,15 @@ bids_app_args:
 
 singularity_args:
   - --containall
-  - --writable-tmpfs
+  # Bind container /tmp to real scratch disk. Without this, --containall leaves
+  # /tmp, $HOME, matplotlib config, and the TemplateFlow cache falling through to
+  # apptainer's small RAM overlay (~16-64 MB), which overflows -> ENOSPC while
+  # /scratch sits idle. $JOB_TMP is created + trap-cleaned by the cluster preamble.
+  - -B $JOB_TMP:/tmp
+  # mriqc pulls MNI152NLin2009cAsym for its anatomical IQM workflow; bind the
+  # pre-populated cache so it needs no writable download target.
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
+  - --env TEMPLATEFLOW_HOME=/templateflow
 
 # TODO: partition/nodes/ntasks should come from cluster config, not here.
 # Resource allocation is more complex: cluster sets limits, pipeline sets

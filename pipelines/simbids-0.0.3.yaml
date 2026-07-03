@@ -23,7 +23,11 @@ bids_app_args:
 
 singularity_args:
   - --containall
-  - --writable-tmpfs
+  # Bind container /tmp to real disk (the cluster axis supplies $JOB_TMP), the
+  # same mechanism the mriqc/fmriprep pipelines use. simbids' outputs are tiny
+  # and never overflow the RAM overlay, so this is for uniformity, not a fix:
+  # the docker-CI smoke test now exercises prod's exact /tmp bind path.
+  - -B $JOB_TMP:/tmp
 
 all_results_in_one_zip: true
 zip_foldernames:
