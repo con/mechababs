@@ -23,7 +23,12 @@ bids_app_args:
 
 singularity_args:
   - --containall
-  - --writable-tmpfs
+  # Match the real pipelines' container setup so the docker-CI smoke test
+  # exercises prod's exact paths: --pwd pins CWD to the bound ds clone (else
+  # --containall drops it to a tmpfs $HOME and a relative -w overflows), and the
+  # $JOB_TMP:/tmp bind (cluster axis supplies $JOB_TMP) routes /tmp to disk.
+  - --pwd "${PWD}"
+  - -B $JOB_TMP:/tmp
 
 all_results_in_one_zip: true
 zip_foldernames:

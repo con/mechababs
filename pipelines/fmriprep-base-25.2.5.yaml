@@ -19,6 +19,10 @@ bids_app_args:
 
 singularity_args:
   - --containall
+  # --pwd pins CWD to the bound ds clone; without it --containall drops CWD to a
+  # tmpfs $HOME and the relative -w (.git/tmp/wkdir) overflows it -> ENOSPC. babs
+  # main doesn't emit --pwd (the old containers-run branch did). See #55.
+  - --pwd "${PWD}"
   - -B $JOB_TMP:/tmp
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt

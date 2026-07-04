@@ -20,7 +20,20 @@ bids_app_args:
 
 singularity_args:
   - --containall
-  - --writable-tmpfs
+  # --pwd is load-bearing: under --containall, apptainer drops the working dir to
+  # a tmpfs $HOME instead of the bound ds clone. nipype's -w (.git/tmp/wkdir) is
+  # RELATIVE, so without --pwd the work dir resolves onto that tiny tmpfs and
+  # overflows -> ENOSPC while /scratch sits idle. Pin CWD to the on-scratch clone.
+  # (babs main's run template does not emit --pwd; the old containers-run branch
+  # baked it into .datalad/config, which is why fmriprep worked there. #55.)
+  - --pwd "${PWD}"
+  # Route container /tmp to real scratch disk too ($JOB_TMP is created +
+  # trap-cleaned by the cluster preamble).
+  - -B $JOB_TMP:/tmp
+  # mriqc pulls MNI152NLin2009cAsym for its anatomical IQM workflow; bind the
+  # pre-populated cache so it needs no writable download target.
+  - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
+  - --env TEMPLATEFLOW_HOME=/templateflow
 
 # TODO: partition/nodes/ntasks should come from cluster config, not here.
 # Resource allocation is more complex: cluster sets limits, pipeline sets
