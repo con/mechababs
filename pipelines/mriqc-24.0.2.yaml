@@ -20,10 +20,15 @@ bids_app_args:
 
 singularity_args:
   - --containall
-  # Bind container /tmp to real scratch disk. Without this, --containall leaves
-  # /tmp, $HOME, matplotlib config, and the TemplateFlow cache falling through to
-  # apptainer's small RAM overlay (~16-64 MB), which overflows -> ENOSPC while
-  # /scratch sits idle. $JOB_TMP is created + trap-cleaned by the cluster preamble.
+  # --pwd is load-bearing: under --containall, apptainer drops the working dir to
+  # a tmpfs $HOME instead of the bound ds clone. nipype's -w (.git/tmp/wkdir) is
+  # RELATIVE, so without --pwd the work dir resolves onto that tiny tmpfs and
+  # overflows -> ENOSPC while /scratch sits idle. Pin CWD to the on-scratch clone.
+  # (babs main's run template does not emit --pwd; the old containers-run branch
+  # baked it into .datalad/config, which is why fmriprep worked there. #55.)
+  - --pwd "${PWD}"
+  # Route container /tmp to real scratch disk too ($JOB_TMP is created +
+  # trap-cleaned by the cluster preamble).
   - -B $JOB_TMP:/tmp
   # mriqc pulls MNI152NLin2009cAsym for its anatomical IQM workflow; bind the
   # pre-populated cache so it needs no writable download target.
