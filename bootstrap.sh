@@ -1,15 +1,31 @@
 #!/usr/bin/env bash
 #
-# bootstrap.sh — build a mechababs campaign's environment: 
-#  - build .venv
-#  - clone the pinned babs + mechababs
-#  - make the campaign a datalad dataset, register subdatasets
-#
-# Usage: ./bootstrap.sh <path> [--babs URL@REF] [--mechababs URL@REF]
+# bootstrap.sh — build a mechababs campaign's environment (venv + vendored
+# babs/mechababs pins + datalad dataset). See usage() for options.
 set -euo pipefail
 
 BABS_DEFAULT="https://github.com/PennLINC/babs.git@main"
 MECHABABS_DEFAULT="git@github.com:asmacdo/mechababs.git@main"
+
+usage() {
+    cat <<'EOF'
+Usage: ./bootstrap.sh <path> [--babs URL@REF] [--mechababs URL@REF]
+                             [--system-site-packages]
+
+Build a mechababs campaign's environment:
+  - build .venv (optionally reusing the system site-packages)
+  - clone the pinned babs + mechababs
+  - make the campaign a datalad dataset, register subdatasets
+
+  --babs URL@REF          babs pin (default: PennLINC/babs main)
+  --mechababs URL@REF     mechababs pin (default: asmacdo/mechababs main)
+  --system-site-packages  build the venv with access to the ambient Python's
+                          installed packages, reusing a pre-built heavy stack
+                          instead of rebuilding it (the e2e fixture uses this on
+                          the slurm-docker-ci container, whose 2015-era compiler
+                          can't build the newest wheels from source).
+EOF
+}
 
 run() {
     printf '+ %s\n' "$*" >&2
@@ -34,11 +50,13 @@ require_url_ref() {
 CAMPAIGN=""
 BABS_SPEC="$BABS_DEFAULT"
 MECHABABS_SPEC="$MECHABABS_DEFAULT"
+SSP=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --babs) BABS_SPEC="$2"; shift 2 ;;
         --mechababs) MECHABABS_SPEC="$2"; shift 2 ;;
-        -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+        --system-site-packages) SSP=1; shift ;;
+        -h|--help) usage; exit 0 ;;
         -*) echo "unknown option: $1" >&2; exit 1 ;;
         *)
             [ -n "$CAMPAIGN" ] && { echo "unexpected extra argument: $1" >&2; exit 1; }
@@ -71,7 +89,8 @@ run git clone --branch "$BABS_REF"  "$BABS_URL"  code/babs
 # venv + the mechababs pin, whose deps bring datalad (needed for `datalad create`
 # below). babs is installed after registration — it is not a dep of mechababs,
 # just a CLI it shells out to, and the campaign pins its version independently.
-run uv venv "$VENV"
+# --system-site-packages (opt-in) lets the venv reuse an ambient pre-built stack.
+run uv venv ${SSP:+--system-site-packages} "$VENV"
 run uv pip install --python "$VENV_PY" -e code/mechababs
 
 # gitignore before create/save so .venv/ + lock are never captured
@@ -83,8 +102,13 @@ run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Ignore .venv and the ledger lock" .g
 save_pin mechababs "$MECHA_REF"
 save_pin babs "$BABS_REF"
 
-# editable-install the pinned babs + the campaign extras into the venv
-run uv pip install --python "$VENV_PY" -e code/babs
+# editable-install the pinned babs + the campaign extras into the venv.
+# Under --system-site-packages, install babs WITHOUT its deps: they come from the
+# ambient env (--system-site-packages made them importable), and reinstalling
+# them into the venv would rebuild babs's heavy stack from source — which fails on
+# a host whose compiler can't build the newest wheels (the e2e slurm-docker-ci
+# container). Trusts the ambient env to satisfy babs's deps.
+run uv pip install --python "$VENV_PY" ${SSP:+--no-deps} -e code/babs
 if [ -f code/mechababs/requirements-campaign.txt ]; then
     run uv pip install --python "$VENV_PY" -r code/mechababs/requirements-campaign.txt
 fi

@@ -7,12 +7,13 @@
 short_name: simbids
 
 container:
-  # A local datalad dataset wrapping the simbids .sif. The container test harness
-  # builds it (datalad containers-add of the image bundled at
-  # /singularity_images/simbids_*.sif) at this fixed in-container path; init
-  # vendors it into code/ like any container.
-  source: /test-temp/simbids-container
-  name: simbids-0-0-3
+  # Same repronim-containers-shim the real mriqc/fmriprep pipelines use, so the
+  # e2e exercises prod's real container-fetch path (and the shim itself). simbids
+  # isn't in upstream ReproNim, so tmp-repronim-container-shim.sh builds it from
+  # Docker Hub and registers it as `bids-simbids`. `configure` vendors the shim
+  # into code/; a relative source resolves against the campaign root.
+  source: ../repronim-containers-shim
+  name: bids-simbids
 
 bids_app_args:
   --bids-app: "fmriprep"
@@ -29,6 +30,17 @@ singularity_args:
   # $JOB_TMP:/tmp bind (cluster axis supplies $JOB_TMP) routes /tmp to disk.
   - --pwd "${PWD}"
   - -B $JOB_TMP:/tmp
+
+# SLURM resources live on the pipeline axis (each pipeline states its own needs).
+# simbids is a light simulator, so a minimal single-cpu request + short walltime.
+cluster_resources:
+  interpreting_shell: "/bin/bash"
+  hard_runtime_limit: "00:30:00"
+  customized_text: |
+    #SBATCH --cpus-per-task=1
+    #SBATCH --mem=4G
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1
 
 all_results_in_one_zip: true
 zip_foldernames:

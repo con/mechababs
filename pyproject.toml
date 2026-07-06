@@ -13,8 +13,20 @@ dependencies = [
     "datalad-container",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [project.scripts]
 mechababs = "mechababs.cli:main"
+
+[tool.pytest.ini_options]
+# Live phase markers during the long steps (venv build, babs init, later job
+# deploys) so a run isn't a silent wait. Add `-s` on top to stream the raw
+# subprocess output (the pip build, babs submit, ...) when you need to dig in.
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s  %(message)s"
+log_cli_date_format = "%H:%M:%S"
 
 # Only the mechababs package is installed; the root bootstrap.sh is run directly.
 [tool.setuptools]
