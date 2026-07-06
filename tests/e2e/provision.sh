@@ -5,7 +5,7 @@
 # under test + babs, so the fixture exercises prod's construction path.
 # (Shim setup + fake-BIDS generation are added on top of this next.)
 #
-# Expects (set by run_in_docker.sh / the caller):
+# Expects (set by run_in_podman.sh / the caller):
 #   MECHABABS_SRC   the mechababs repo, mounted read-only (default /mechababs)
 #   MECHABABS_REF   the branch under test (default: the mounted repo's checked-out branch)
 #   BABS_SPEC       babs URL@REF (default: PennLINC/babs main)

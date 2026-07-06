@@ -1,6 +1,6 @@
 """pytest fixtures for the mechababs e2e harness.
 
-Runs INSIDE the pennlinc/slurm-docker-ci container (launched by run_in_docker.sh),
+Runs INSIDE the pennlinc/slurm-docker-ci container (launched by run_in_podman.sh),
 because the scenario drives the campaign CLI, which needs the container's toolchain
 + the campaign venv. The host fixtures (shim + fake BIDS) are built by setup_host.sh
 and bind-mounted in; bootstrapping the campaign env is a session fixture here

@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
 #
-# run_in_docker.sh — run the mechababs e2e scenario inside the slurm-docker-ci
-# container.
+# run_in_podman.sh — run the mechababs e2e scenario inside the slurm-docker-ci
+# container, under ROOTLESS podman.
 #
 # Increment 1 runs everything INSIDE pennlinc/slurm-docker-ci (bootstrap-across-
 # the-boundary is a later fidelity step). This launches the container with the
 # mechababs repo mounted and runs pytest inside. Mirrors babs's tests/e2e_in_docker.sh.
 #
+# Rootless: no root daemon, and container-root maps to the invoking host user via
+# userns — so nothing here runs as real root and any host-touching bytes are
+# user-owned. slurm-docker-ci comes up fully rootless with no --cap-add / --privileged
+# (verified: podman 5.8.2, cgroups v2). SELinux is handled with `label=disable`
+# rather than per-mount `:Z`: one of the mounts is the shared git-common-dir, and
+# `:Z` would relabel it on the host and disturb sibling worktrees — disabling the
+# label for this container relabels nothing.
+#
 # The campaign is built in the container's OWN writable layer (/scratch/campaign),
 # not on a host bind mount. So the container is the ephemeral boundary: with --rm
 # (the default) the campaign — RIA stores, read-only annex objects and all — dies
-# with the container, leaving no host cleanup and no root-owned scratch behind. To
-# inspect a run afterwards, set MECHABABS_E2E_KEEP=1: it drops --rm and names the
-# container so you can `docker cp` the campaign out and `docker rm` it when done.
+# with the container, leaving no host cleanup behind. To inspect a run afterwards,
+# set MECHABABS_E2E_KEEP=1: it drops --rm and names the container so you can
+# `podman cp` the campaign out and `podman rm` it when done.
 #
 # Run setup_host.sh ONCE first to build the host fixtures (shim + fake BIDS). They
 # persist and are bind-mounted in read-only as campaign siblings under /scratch
@@ -21,9 +29,9 @@
 # at the raw data.
 #
 # Usage (extra args pass straight through to pytest):
-#   tests/e2e/run_in_docker.sh
-#   tests/e2e/run_in_docker.sh --cluster-config test-docker.yaml
-#   MECHABABS_E2E_KEEP=1 tests/e2e/run_in_docker.sh   # keep the container to inspect
+#   tests/e2e/run_in_podman.sh
+#   tests/e2e/run_in_podman.sh --cluster-config test-docker.yaml
+#   MECHABABS_E2E_KEEP=1 tests/e2e/run_in_podman.sh   # keep the container to inspect
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"          # the mechababs worktree root
@@ -41,7 +49,7 @@ EXTRA_MOUNT=()
 # /scratch when present. The campaign is built at /scratch/campaign, so the shim
 # lands at the pipeline's `../repronim-containers-shim`; these are clone sources,
 # hence :ro. /scratch itself is the container's writable layer (no host mount);
-# docker creates these child mountpoints under it.
+# podman creates these child mountpoints under it.
 FIXTURES="${MECHABABS_E2E_FIXTURES:-/tmp/mechababs-e2e-fixtures}"
 FIXTURE_MOUNT=()
 [ -d "$FIXTURES/repronim-containers-shim/.datalad" ] && \
@@ -60,16 +68,17 @@ if [ -n "${MECHABABS_E2E_KEEP:-}" ]; then
     RM_FLAG=()
     NAME_FLAG=(--name "$CONTAINER")
     echo "KEEP: container $CONTAINER persists after the run. Inspect with:" >&2
-    echo "    docker cp $CONTAINER:/scratch/campaign ./campaign-inspect" >&2
-    echo "    docker rm $CONTAINER   # when done" >&2
+    echo "    podman cp $CONTAINER:/scratch/campaign ./campaign-inspect" >&2
+    echo "    podman rm $CONTAINER   # when done" >&2
 fi
 
 # Run the e2e scenario: pytest inside the container. Extra args ($*) pass through.
 # pytest reads the repo from a read-only mount, so redirect the bytecode cache off
 # it and skip the on-disk cache (can't write to /mechababs).
-docker run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
+podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     --platform linux/amd64 \
-    -h slurmctl --cap-add sys_admin --privileged \
+    -h slurmctl \
+    --security-opt label=disable \
     -v "$REPO":/mechababs:ro \
     "${EXTRA_MOUNT[@]}" \
     "${FIXTURE_MOUNT[@]}" \
