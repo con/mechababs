@@ -61,9 +61,12 @@ for NAME in "${NAMES[@]}"; do
         if [ ! -e "$REPRONIM/$SIF_REL" ]; then
             # Force an ANONYMOUS pull: apptainer reads ~/.docker/config.json and a
             # stale credential there gets sent as bad auth (Docker Hub answers 401
-            # "incorrect username or password"). An empty DOCKER_CONFIG dir bypasses
-            # it — simbids is public, so no-auth is the correct behavior.
-            DOCKER_CONFIG=$(mktemp -d) "$BUILDER" build "$REPRONIM/$SIF_REL" docker://pennlinc/simbids:0.0.3
+            # "incorrect username or password"). apptainer >=1.5 ignores DOCKER_CONFIG,
+            # so point HOME at a throwaway dir for the build instead — with no
+            # ~/.docker/config.json to find, the pull is anonymous. Only the build
+            # subshell gets the fake HOME; the datalad steps keep the real one (they
+            # need ~/.gitconfig). simbids is public, so no-auth is correct.
+            HOME=$(mktemp -d) "$BUILDER" build "$REPRONIM/$SIF_REL" docker://pennlinc/simbids:0.0.3
             datalad -C "$REPRONIM" save -m "Build simbids SIF (no upstream ReproNim home)" "$SIF_REL"
         fi
     else
