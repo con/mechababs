@@ -66,22 +66,30 @@ def cmd_add_dataset(args):
 
     Derives ``processing_level`` from the dataset's OpenNeuroStudies metadata
     (has-sessions → session) and records it as an INPUT column — iterate reads it,
-    never overwrites it, and it is hand-editable. On a metadata-fetch failure it
-    is left blank (set it by hand, or re-add once the dataset is in
-    OpenNeuroStudies). All pipeline columns start empty; does NOT clone sourcedata
-    or generate an inclusion (selection is pipeline-axis, deferred to deploy).
+    never overwrites it, and it is hand-editable. ``--processing-level`` sets it
+    explicitly, bypassing the derivation — needed for a non-OpenNeuro dataset (e.g.
+    an e2e fixture), which has no OpenNeuroStudies entry to derive from. On a
+    metadata-fetch failure with no override it is left blank (set it by hand, or
+    re-add once the dataset is in OpenNeuroStudies). All pipeline columns start
+    empty; does NOT clone sourcedata or generate an inclusion (selection is
+    pipeline-axis, deferred to deploy).
     """
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
         sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
 
     ds_id = iterate_mod.dataset_id(args.url)
-    try:
-        _, processing_level = select.fetch_openneuro_study_metadata(ds_id)
-    except Exception as e:
-        processing_level = ""
-        print(f"warning: could not derive processing_level for {ds_id} ({e}); "
-              f"left blank — set it in the ledger before iterate", file=sys.stderr)
+    if args.processing_level:
+        processing_level = args.processing_level
+        print(f"using --processing-level {processing_level} for {ds_id} "
+              f"(bypassing OpenNeuroStudies derivation)", file=sys.stderr)
+    else:
+        try:
+            _, processing_level = select.fetch_openneuro_study_metadata(ds_id)
+        except Exception as e:
+            processing_level = ""
+            print(f"warning: could not derive processing_level for {ds_id} ({e}); "
+                  f"left blank — set it in the ledger before iterate", file=sys.stderr)
 
     with state.locked(campaign):
         cols = state.header(campaign)
@@ -136,6 +144,9 @@ def main():
     pa.add_argument("url", help="the dataset's upstream URL (its identity)")
     pa.add_argument("--campaign-path", type=Path, default=Path("."),
                     help="the campaign dataset (default: current directory)")
+    pa.add_argument("--processing-level", choices=["subject", "session"], default=None,
+                    help="set processing_level explicitly, bypassing OpenNeuroStudies "
+                         "derivation (needed for a non-OpenNeuro dataset)")
     pa.set_defaults(func=cmd_add_dataset)
 
     pi = sub.add_parser("iterate", help="advance pending pipelines one scaffold transition")
