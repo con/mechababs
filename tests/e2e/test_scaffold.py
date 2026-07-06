@@ -8,8 +8,11 @@ project. Stops at scaffold — driving through submit/merge needs machine-readab
 """
 
 import csv
+import logging
 import os
 import subprocess
+
+log = logging.getLogger("mechababs.e2e")
 
 
 def _mechababs(campaign, *args):
@@ -17,13 +20,15 @@ def _mechababs(campaign, *args):
 
     The venv-path binary satisfies configure's sys.prefix guard; prepending the
     venv bin makes `babs`/`duct` resolve there too (iterate's assert_venv_tools),
-    mirroring an activated venv.
+    mirroring an activated venv. Output is left uncaptured so it streams under
+    `pytest -s` (and shows on failure otherwise).
     """
     venv_bin = campaign / ".venv" / "bin"
     env = {**os.environ, "PATH": f"{venv_bin}:{os.environ['PATH']}"}
+    log.info("mechababs %s", " ".join(str(a) for a in args))
     return subprocess.run(
         [str(venv_bin / "mechababs"), *args],
-        cwd=campaign, env=env, check=True, text=True, capture_output=True,
+        cwd=campaign, env=env, check=True, text=True,
     )
 
 

@@ -15,6 +15,7 @@ scenario drives the campaign CLI, so the fixtures provide everything it needs:
   real bootstrap.sh construction path.
 """
 
+import logging
 import os
 import shutil
 import subprocess
@@ -23,6 +24,8 @@ import uuid
 from pathlib import Path
 
 import pytest
+
+log = logging.getLogger("mechababs.e2e")
 
 # The simbids-raw-mri config baked into the simbids container (a single-session,
 # subject-level phantom dataset).
@@ -92,6 +95,7 @@ def rawdata(simbids_sif):
 
 
 def _generate_fake_bids(dest, sif):
+    log.info("generating fake BIDS at %s", dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     runner = shutil.which("apptainer") or shutil.which("singularity")
     assert runner, "need apptainer or singularity to generate fake BIDS"
@@ -135,5 +139,6 @@ def campaign(workdir):
         cmd += ["--babs", os.environ["BABS_SPEC"]]
     if os.environ.get("MECHABABS_E2E_SYSTEM_SITE_PACKAGES"):
         cmd.append("--system-site-packages")
+    log.info("bootstrapping campaign at %s", path)
     subprocess.run(cmd, check=True)
     return path
