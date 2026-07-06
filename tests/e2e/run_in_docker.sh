@@ -5,8 +5,14 @@
 #
 # Increment 1 runs everything INSIDE pennlinc/slurm-docker-ci (bootstrap-across-
 # the-boundary is a later fidelity step). This launches the container with the
-# mechababs repo + a scratch dir mounted and runs pytest inside. Mirrors babs's
-# tests/e2e_in_docker.sh.
+# mechababs repo mounted and runs pytest inside. Mirrors babs's tests/e2e_in_docker.sh.
+#
+# The campaign is built in the container's OWN writable layer (/scratch/campaign),
+# not on a host bind mount. So the container is the ephemeral boundary: with --rm
+# (the default) the campaign — RIA stores, read-only annex objects and all — dies
+# with the container, leaving no host cleanup and no root-owned scratch behind. To
+# inspect a run afterwards, set MECHABABS_E2E_KEEP=1: it drops --rm and names the
+# container so you can `docker cp` the campaign out and `docker rm` it when done.
 #
 # Run setup_host.sh ONCE first to build the host fixtures (shim + fake BIDS). They
 # persist and are bind-mounted in read-only as campaign siblings under /scratch
@@ -17,14 +23,11 @@
 # Usage (extra args pass straight through to pytest):
 #   tests/e2e/run_in_docker.sh
 #   tests/e2e/run_in_docker.sh --cluster-config test-docker.yaml
-#   MECHABABS_E2E_SCRATCH=/keep/here tests/e2e/run_in_docker.sh   # reuse a scratch dir
+#   MECHABABS_E2E_KEEP=1 tests/e2e/run_in_docker.sh   # keep the container to inspect
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"          # the mechababs worktree root
-SCRATCH="${MECHABABS_E2E_SCRATCH:-$(mktemp -d /tmp/mechababs-e2e-XXXXXX)}"
-mkdir -p "$SCRATCH"
-echo "REPO=$REPO"       >&2
-echo "SCRATCH=$SCRATCH" >&2
+echo "REPO=$REPO" >&2
 
 # A worktree's .git is a FILE pointing at the main repo's common git dir; a clone
 # from /mechababs (what bootstrap.sh does) needs that dir reachable at the same
@@ -37,7 +40,8 @@ EXTRA_MOUNT=()
 # Host fixtures (setup_host.sh), mounted read-only as campaign siblings under
 # /scratch when present. The campaign is built at /scratch/campaign, so the shim
 # lands at the pipeline's `../repronim-containers-shim`; these are clone sources,
-# hence :ro. Nested under the /scratch mount — docker orders parent-before-child.
+# hence :ro. /scratch itself is the container's writable layer (no host mount);
+# docker creates these child mountpoints under it.
 FIXTURES="${MECHABABS_E2E_FIXTURES:-/tmp/mechababs-e2e-fixtures}"
 FIXTURE_MOUNT=()
 [ -d "$FIXTURES/repronim-containers-shim/.datalad" ] && \
@@ -47,14 +51,26 @@ FIXTURE_MOUNT=()
 [ ${#FIXTURE_MOUNT[@]} -eq 0 ] && \
     echo "note: no host fixtures under $FIXTURES — run setup_host.sh first" >&2
 
+# Ephemerality is the container: --rm (default) drops the whole campaign on exit.
+# MECHABABS_E2E_KEEP=1 keeps the container (drops --rm, names it) for post-mortem.
+RM_FLAG=(--rm)
+NAME_FLAG=()
+if [ -n "${MECHABABS_E2E_KEEP:-}" ]; then
+    CONTAINER="mechababs-e2e-$$"
+    RM_FLAG=()
+    NAME_FLAG=(--name "$CONTAINER")
+    echo "KEEP: container $CONTAINER persists after the run. Inspect with:" >&2
+    echo "    docker cp $CONTAINER:/scratch/campaign ./campaign-inspect" >&2
+    echo "    docker rm $CONTAINER   # when done" >&2
+fi
+
 # Run the e2e scenario: pytest inside the container. Extra args ($*) pass through.
 # pytest reads the repo from a read-only mount, so redirect the bytecode cache off
 # it and skip the on-disk cache (can't write to /mechababs).
-docker run --rm -i \
+docker run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     --platform linux/amd64 \
     -h slurmctl --cap-add sys_admin --privileged \
     -v "$REPO":/mechababs:ro \
-    -v "$SCRATCH":/scratch:rw \
     "${EXTRA_MOUNT[@]}" \
     "${FIXTURE_MOUNT[@]}" \
     -e MECHABABS_SRC=/mechababs \
