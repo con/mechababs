@@ -1,17 +1,15 @@
-"""Phase-1 scenario: drive the campaign CLI to scaffold one subject and assert.
+"""Scaffold scenario: drive the campaign CLI to scaffold one subject and assert.
 
 configure (bind the simbids pipeline to the cluster under test) -> add-dataset
 (register the fake BIDS, non-OpenNeuro so processing_level is explicit) -> iterate
 (scaffold via `babs init`, no submit). Asserts on the ledger + the produced babs
-project. No submit/merge here — that's phase 2 (gated on `babs status --json`).
+project. Stops at scaffold — driving through submit/merge needs machine-readable
+`babs status` (PennLINC/babs#387).
 """
 
 import csv
 import os
 import subprocess
-from pathlib import Path
-
-RAWDATA = Path("/scratch/simbids-raw")  # the fake BIDS fixture, bind-mounted in
 
 
 def _mechababs(campaign, *args):
@@ -29,18 +27,18 @@ def _mechababs(campaign, *args):
     )
 
 
-def _first_subject():
-    subs = sorted(p.name for p in RAWDATA.iterdir() if p.name.startswith("sub-"))
-    assert subs, f"no sub-* under {RAWDATA} — host fixtures not mounted?"
+def _first_subject(rawdata):
+    subs = sorted(p.name for p in rawdata.iterdir() if p.name.startswith("sub-"))
+    assert subs, f"no sub-* under {rawdata} — host fixtures not mounted?"
     return subs[0]
 
 
-def test_scaffold(campaign, cluster_config):
+def test_scaffold(campaign, cluster_config, rawdata):
     _mechababs(campaign, "configure",
                "--pipelines", "simbids-0.0.3.yaml", "--cluster", cluster_config)
-    _mechababs(campaign, "add-dataset", str(RAWDATA), "--processing-level", "subject")
+    _mechababs(campaign, "add-dataset", str(rawdata), "--processing-level", "subject")
 
-    sub = _first_subject()
+    sub = _first_subject(rawdata)
     inc = campaign / "inc.csv"
     inc.write_text(f"sub_id\n{sub}\n")
     _mechababs(campaign, "iterate", "--batch", "1", "--inclusion-file", str(inc))

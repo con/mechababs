@@ -6,3 +6,4 @@ __pycache__/
 processing/
 local-notes/
 repronim-containers/
+tests/e2e/_cache/
