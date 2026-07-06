@@ -7,19 +7,22 @@
 #
 # Expects (set by run_in_docker.sh / the caller):
 #   MECHABABS_SRC   the mechababs repo, mounted read-only (default /mechababs)
-#   MECHABABS_REF   the branch under test (required)
+#   MECHABABS_REF   the branch under test (default: the mounted repo's checked-out branch)
 #   BABS_SPEC       babs URL@REF (default: PennLINC/babs main)
 #   CAMPAIGN        where to build the campaign (default /scratch/campaign)
 set -euo pipefail
 
 MECHABABS_SRC="${MECHABABS_SRC:-/mechababs}"
-MECHABABS_REF="${MECHABABS_REF:?set MECHABABS_REF to the branch under test}"
 BABS_SPEC="${BABS_SPEC:-https://github.com/PennLINC/babs.git@main}"
 CAMPAIGN="${CAMPAIGN:-/scratch/campaign}"
 
 # The mounted repo is host-owned but the container runs as root, so git refuses
-# to operate on it ("dubious ownership") without this.
+# to operate on it ("dubious ownership") without this. Must precede any git use.
 git config --global --add safe.directory '*'
+
+# Default the pin to whatever branch the mounted repo has checked out — the branch
+# under test — so callers (the pytest fixture) needn't thread it through.
+MECHABABS_REF="${MECHABABS_REF:-$(git -C "$MECHABABS_SRC" rev-parse --abbrev-ref HEAD)}"
 
 # bootstrap.sh builds the venv with uv, which the slurm-docker-ci image lacks.
 command -v uv >/dev/null 2>&1 || pip install --quiet uv
