@@ -19,15 +19,18 @@ import os
 import shutil
 import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 
 import pytest
 
-MECHABABS_SRC = os.environ.get("MECHABABS_SRC", "/mechababs")
-
 # The simbids-raw-mri config baked into the simbids container (a single-session,
 # subject-level phantom dataset).
 SIMBIDS_CONFIG = "ds005237_configs.yaml"
+
+# This repo (tests/e2e/conftest.py -> repo root) — the mechababs under test, which
+# bootstrap.sh clones + pins into the campaign. No env var: pytest runs from here.
+REPO = Path(__file__).resolve().parents[2]
 
 
 def pytest_addoption(parser):
@@ -111,16 +114,26 @@ def _generate_fake_bids(dest, sif):
 
 @pytest.fixture(scope="session")
 def campaign(workdir):
-    """A bootstrapped campaign env under workdir (provisioning).
+    """A freshly bootstrapped campaign env (provisioning).
 
-    Session-scoped: the clone + venv build is expensive, so do it once. provision.sh
-    runs the real bootstrap.sh, so the fixture exercises prod's construction path.
+    Calls the real bootstrap.sh — prod's exact construction path — vendoring this
+    repo (at its current branch) as the mechababs under test. A unique name per
+    session keeps bootstrap's refuse-existing-dir guard happy and avoids clobbering
+    a prior run; clean up stale ones with `rm -rf $MECHABABS_E2E_WORKDIR/test-campaign-*`.
+
+    --system-site-packages is opt-in via MECHABABS_E2E_SYSTEM_SITE_PACKAGES (set by
+    run_in_podman.sh for the CentOS7 container, whose 2015 toolchain can't build the
+    newest wheels); a real cluster leaves it unset and builds prod's isolated venv.
     """
-    path = workdir / "campaign"
-    if not (path / ".venv").exists():
-        subprocess.run(
-            ["bash", f"{MECHABABS_SRC}/tests/e2e/provision.sh"],
-            check=True,
-            env={**os.environ, "CAMPAIGN": str(path)},
-        )
+    ref = subprocess.run(
+        ["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"],
+        check=True, text=True, capture_output=True,
+    ).stdout.strip()
+    path = workdir / f"test-campaign-{uuid.uuid4().hex[:8]}"
+    cmd = [f"{REPO}/bootstrap.sh", str(path), "--mechababs", f"{REPO}@{ref}"]
+    if os.environ.get("BABS_SPEC"):
+        cmd += ["--babs", os.environ["BABS_SPEC"]]
+    if os.environ.get("MECHABABS_E2E_SYSTEM_SITE_PACKAGES"):
+        cmd.append("--system-site-packages")
+    subprocess.run(cmd, check=True)
     return path

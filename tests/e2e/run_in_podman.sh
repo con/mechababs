@@ -81,13 +81,11 @@ if [ -n "${MECHABABS_E2E_KEEP:-}" ]; then
     RM_FLAG=()
     NAME_FLAG=(--name "$CONTAINER")
     echo "KEEP: container $CONTAINER persists after the run. Inspect with:" >&2
-    echo "    podman cp $CONTAINER:/scratch/campaign ./campaign-inspect" >&2
+    echo "    podman cp $CONTAINER:/scratch ./scratch-inspect   # campaign is test-campaign-*" >&2
     echo "    podman rm $CONTAINER   # when done" >&2
 fi
 
 # Run the e2e scenario: pytest inside the container. Extra args ($*) pass through.
-# pytest reads the repo from a read-only mount, so redirect the bytecode cache off
-# it and skip the on-disk cache (can't write to /mechababs).
 podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     --platform linux/amd64 \
     -h slurmctl \
@@ -97,6 +95,15 @@ podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     -v "$CACHE_HOST":/mechababs/tests/e2e/_cache:rw \
     "${EXTRA_MOUNT[@]}" \
     "${SHIM_MOUNT[@]}" \
-    -e MECHABABS_SRC=/mechababs \
+    -e MECHABABS_E2E_SYSTEM_SITE_PACKAGES=1 \
     pennlinc/slurm-docker-ci:0.14 \
-    bash -c "PYTHONPYCACHEPREFIX=/tmp/pyc pytest -p no:cacheprovider -x -q /mechababs/tests/e2e/ $*"
+    bash -c "
+        set -e
+        # Container-only prep: the repo is host-owned but git runs as
+        # container-root, and the image lacks uv (bootstrap.sh needs it).
+        git config --global --add safe.directory '*'
+        command -v uv >/dev/null 2>&1 || pip install --quiet uv
+        # pytest reads the repo from a :ro mount, so redirect the bytecode cache off
+        # it and skip the on-disk cache (can't write to /mechababs).
+        PYTHONPYCACHEPREFIX=/tmp/pyc pytest -p no:cacheprovider -x -q /mechababs/tests/e2e/ $*
+    "
