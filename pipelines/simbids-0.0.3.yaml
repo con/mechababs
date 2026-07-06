@@ -7,12 +7,13 @@
 short_name: simbids
 
 container:
-  # A local datalad dataset wrapping the simbids .sif. The container test harness
-  # builds it (datalad containers-add of the image bundled at
-  # /singularity_images/simbids_*.sif) at this fixed in-container path; init
-  # vendors it into code/ like any container.
-  source: /test-temp/simbids-container
-  name: simbids-0-0-3
+  # Same repronim-containers-shim the real mriqc/fmriprep pipelines use, so the
+  # e2e exercises prod's real container-fetch path (and the shim itself). simbids
+  # isn't in upstream ReproNim, so tmp-repronim-container-shim.sh builds it from
+  # Docker Hub and registers it as `bids-simbids`. `configure` vendors the shim
+  # into code/; a relative source resolves against the campaign root.
+  source: ../repronim-containers-shim
+  name: bids-simbids
 
 bids_app_args:
   --bids-app: "fmriprep"
