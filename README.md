@@ -127,14 +127,12 @@ routing on which ledger columns are populated:
 | in progress | `<short>_babs` set, `<short>_babs-merged` empty | **active**: read `babs status --json`, decide `submit / skip / merge / flag-failed` from the counts |
 | done | `<short>_babs-merged` set | skip (no babs query) |
 
-The active step is decided from `babs status --json` counts
-(`PennLINC/babs#387`): not-all-submitted → submit; still in flight → skip; all
-ended with failures → flag (don't merge); all done → merge. The transitions and
-ledger writes are the real thing. A single writer is enforced by a campaign
-flock, and each advanced cell is saved as it lands, so a long or interrupted tick
-still records progress. `--dry-run` runs
-the read-only steps for real and prints the mutating commands without running
-them.
+The active step is decided from `babs status --json` counts: not-all-submitted →
+submit; still in flight → skip; all ended with failures → flag (don't merge); all
+done → merge. A single writer is enforced by a campaign flock, and each advanced
+cell is saved as it lands, so a long or interrupted tick still records progress.
+`--dry-run` runs the read-only steps for real and prints the mutating commands
+without running them.
 
 There is **no status enum** — a pipeline's state is entirely derived from which
 columns are filled. Identity columns (`url`, `processing_level`, `n_subjects`,
