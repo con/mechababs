@@ -6,15 +6,16 @@ routing on which ledger columns are filled:
                                 curated/pre-placed one), compose the babs config,
                                 `babs init` (NO submit), pin the inclusion, record
                                 `_babs` (the project-root path).
-  - `_babs` set, not merged  -> ACTIVE: show `babs status`, operator picks the next
-                                step ([d]eploy more / [s]kip / [m]erge).
+  - `_babs` set, not merged  -> ACTIVE: read `babs status --json`, take the next
+                                step (deploy more / skip / merge / flag-failed).
   - `_babs-merged` set       -> done, skipped (no babs query).
 
-The ACTIVE prompt is the manual stand-in for the eventual count-driven decision
-(`babs status --json`, #12); the transitions and ledger writes are the real thing.
-mechababs shells out to babs / merge_config.py and imports the select module.
-`--dry-run` runs read-only steps (e.g. `babs status`) for real and prints the
-mutating commands without running them.
+The ACTIVE step is decided from `babs status --json` counts (the babs_status
+decide seam, PennLINC/babs#387) and dispatched through ITERATE_ACTIONS; the
+transitions and ledger writes are the real thing. mechababs shells out to babs /
+merge_config.py and imports the select and babs_status modules. `--dry-run` runs
+read-only steps (e.g. `babs status`) for real and prints the mutating commands
+without running them.
 """
 
 import os
@@ -26,6 +27,7 @@ from pathlib import Path
 
 import yaml
 
+from mechababs import babs_status
 from mechababs import select
 from mechababs import state
 
@@ -225,49 +227,64 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 # --- ACTIVE-cell transitions: (campaign, cfg, row, short, *, dry_run) -> updates ---
 
 def submit(campaign, cfg, row, short, *, dry_run):
-    """[d] deploy more jobs. Writes no column — submit-state is babs's, re-read from
-    `babs status` next tick."""
+    """The SUBMIT transition: deploy more jobs. Writes no column — submit-state is
+    babs's, re-read from `babs status` next tick."""
     run(["babs", "submit", babs_project(campaign, row, short)], dry_run=dry_run)
     return {}
 
 
 def merge(campaign, cfg, row, short, *, dry_run):
-    """[m] all jobs ended -> babs merge -> pipeline finished. (babs merge runs its
-    own [c]ontinue/[s]kip/[a]bort prompt.)"""
+    """The MERGE transition: all jobs ended (none failed) -> babs merge -> pipeline
+    finished. (babs merge runs its own [c]ontinue/[s]kip/[a]bort prompt.)"""
     run(["babs", "merge", babs_project(campaign, row, short)], dry_run=dry_run)
     return {f"{short}_babs-merged": "true"}
 
 
+def skip(campaign, cfg, row, short, *, dry_run):
+    """The SKIP transition: jobs still in flight -> nothing to do this tick."""
+    return None
+
+
+def fail(campaign, cfg, row, short, *, dry_run):
+    """The FAIL transition: all jobs ended but some failed -> flag, don't merge.
+    Leaves the cell unmerged so it re-surfaces each tick until resolved (retry is
+    M4; the merge/failure policy is deferred, #66)."""
+    proj = babs_project(campaign, row, short)
+    print(f"  {dataset_id(row['url'])}/{short}: jobs FAILED — not merging; needs "
+          f"attention (`babs status {proj}`)", file=sys.stderr)
+    return None
+
+
+# The transitions decide() / the manual prompt can pick, mapped to their handlers.
+# Keys match babs_status.decide's return values; every handler takes the uniform
+# (campaign, cfg, row, short, *, dry_run) signature and returns the ledger update
+# (or None for a no-op), so handle_active dispatches in one line.
+ITERATE_ACTIONS = {
+    "submit": submit,
+    "skip": skip,
+    "merge": merge,
+    "fail": fail,
+}
+
+
 def handle_active(campaign, cfg, row, short, *, dry_run):
-    """A scaffolded-but-unmerged cell: show `babs status`, let the operator choose
-    the next transition.
+    """A scaffolded-but-unmerged cell: read `babs status --json` and take the one
+    next transition.
 
-    The menu documents the rule the count-driven decision will follow (off the
-    `babs status` counts):
-      [d] deploy more  — not all jobs submitted yet          -> babs submit
-      [s] skip         — all submitted, not all ended (rest)  -> no-op
-      [m] merge        — all submitted & ended (done)         -> babs merge
-    This prompt IS the decide() seam — #12 (`babs status --json`) replaces the
-    human with the count check, same three outcomes, same transitions.
-
-    TODO(manual step): the next-step decision is operator-driven until #12 lands a
-    machine-readable `babs status`; then this reads counts instead of asking.
+    The transition is decided from the counts by babs_status.decide
+    (PennLINC/babs#387) and dispatched through ITERATE_ACTIONS: submit / skip /
+    merge, plus the FAIL case (all ended, some failed) surfaced every tick and
+    left to retry (M4). This branch merges only once `babs status --json` is in
+    the pinned babs, so read_status always succeeds — no manual fallback.
     """
     ds = dataset_id(row["url"])
     proj = babs_project(campaign, row, short)
     print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
-    subprocess.run(["babs", "status", str(proj)], check=True)  # read-only; run even in dry-run
-    while True:
-        ans = input(f"  {ds}/{short}: [d]eploy (not all submitted) / [s]kip (running) / "
-                    f"[m]erge (all done) / [a]bort > ").strip().lower()
-        if ans in ("d", "s", "m", "a"):
-            break
-        print("  choose one of d/s/m/a")
-    if ans == "a":
-        sys.exit("Aborting.")
-    if ans == "s":
-        return None
-    return (submit if ans == "d" else merge)(campaign, cfg, row, short, dry_run=dry_run)
+
+    status = babs_status.read_status(proj)
+    action = babs_status.decide(status)
+    print(f"  {ds}/{short}: {status} -> {action}", file=sys.stderr)
+    return ITERATE_ACTIONS[action](campaign, cfg, row, short, dry_run=dry_run)
 
 
 def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
