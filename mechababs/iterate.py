@@ -11,8 +11,7 @@ routing on which ledger columns are filled:
   - `_babs-merged` set       -> done, skipped (no babs query).
 
 The ACTIVE step is decided from `babs status --json` counts (the babs_status
-decide seam, PennLINC/babs#387) and dispatched through ITERATE_ACTIONS; the
-transitions and ledger writes are the real thing. mechababs shells out to babs /
+decide seam) and dispatched through ITERATE_ACTIONS. mechababs shells out to babs /
 merge_config.py and imports the select and babs_status modules. `--dry-run` runs
 read-only steps (e.g. `babs status`) for real and prints the mutating commands
 without running them.
@@ -227,38 +226,34 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 # --- ACTIVE-cell transitions: (campaign, cfg, row, short, *, dry_run) -> updates ---
 
 def submit(campaign, cfg, row, short, *, dry_run):
-    """The SUBMIT transition: deploy more jobs. Writes no column — submit-state is
-    babs's, re-read from `babs status` next tick."""
+    """SUBMIT: deploy more jobs. Writes no column — submit-state is babs's."""
     run(["babs", "submit", babs_project(campaign, row, short)], dry_run=dry_run)
     return {}
 
 
 def merge(campaign, cfg, row, short, *, dry_run):
-    """The MERGE transition: all jobs ended (none failed) -> babs merge -> pipeline
-    finished. (babs merge runs its own [c]ontinue/[s]kip/[a]bort prompt.)"""
+    """MERGE: all jobs done -> babs merge -> pipeline finished."""
     run(["babs", "merge", babs_project(campaign, row, short)], dry_run=dry_run)
     return {f"{short}_babs-merged": "true"}
 
 
 def skip(campaign, cfg, row, short, *, dry_run):
-    """The SKIP transition: jobs still in flight -> nothing to do this tick."""
+    """SKIP: jobs still in flight -> nothing to do this tick."""
     return None
 
 
 def fail(campaign, cfg, row, short, *, dry_run):
-    """The FAIL transition: all jobs ended but some failed -> flag, don't merge.
-    Leaves the cell unmerged so it re-surfaces each tick until resolved (retry is
-    M4; the merge/failure policy is deferred, #66)."""
+    """FAIL: some jobs failed -> flag and leave unmerged (re-surfaces each tick;
+    retry/policy deferred, #66)."""
     proj = babs_project(campaign, row, short)
     print(f"  {dataset_id(row['url'])}/{short}: jobs FAILED — not merging; needs "
           f"attention (`babs status {proj}`)", file=sys.stderr)
     return None
 
 
-# The transitions decide() / the manual prompt can pick, mapped to their handlers.
-# Keys match babs_status.decide's return values; every handler takes the uniform
+# decide()'s return values mapped to handlers; each has the uniform
 # (campaign, cfg, row, short, *, dry_run) signature and returns the ledger update
-# (or None for a no-op), so handle_active dispatches in one line.
+# to apply (or None/{} for no-op), so handle_active dispatches in one line.
 ITERATE_ACTIONS = {
     "submit": submit,
     "skip": skip,
@@ -268,15 +263,8 @@ ITERATE_ACTIONS = {
 
 
 def handle_active(campaign, cfg, row, short, *, dry_run):
-    """A scaffolded-but-unmerged cell: read `babs status --json` and take the one
-    next transition.
-
-    The transition is decided from the counts by babs_status.decide
-    (PennLINC/babs#387) and dispatched through ITERATE_ACTIONS: submit / skip /
-    merge, plus the FAIL case (all ended, some failed) surfaced every tick and
-    left to retry (M4). This branch merges only once `babs status --json` is in
-    the pinned babs, so read_status always succeeds — no manual fallback.
-    """
+    """A scaffolded-but-unmerged cell: read `babs status --json`, decide the next
+    transition (babs_status.decide), dispatch via ITERATE_ACTIONS."""
     ds = dataset_id(row["url"])
     proj = babs_project(campaign, row, short)
     print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
@@ -291,7 +279,7 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
     """One tick: advance each (dataset, pipeline) cell by at most one transition.
 
     Routes on the cell's ledger columns: empty `_babs` -> scaffold; `_babs` set and
-    not `_babs-merged` -> the interactive active handler; merged -> skip. The lock
+    not `_babs-merged` -> the active handler; merged -> skip. The lock
     is held across the whole batch (single writer), and each advanced cell is saved
     as it lands so a long or interrupted tick still records progress.
 
