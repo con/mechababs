@@ -124,14 +124,15 @@ routing on which ledger columns are populated:
 | Cell state | Columns | Transition |
 |---|---|---|
 | not started | `<short>_babs` empty | **scaffold**: generate the inclusion → compose the babs config → `babs init` (no submit) → pin the inclusion → record `<short>_babs` (the project path) |
-| in progress | `<short>_babs` set, `<short>_babs-merged` empty | **active**: show `babs status`, operator picks `[d]eploy more / [s]kip / [m]erge` |
+| in progress | `<short>_babs` set, `<short>_babs-merged` empty | **active**: read `babs status --json`, decide `submit / skip / merge / flag-failed` from the counts |
 | done | `<short>_babs-merged` set | skip (no babs query) |
 
-The interactive `[d/s/m]` prompt is the **manual stand-in** for the eventual
-count-driven decision (a machine-readable `babs status`, upstream
-`PennLINC/babs#387`); the transitions and ledger writes are the real thing. A
-single writer is enforced by a campaign flock, and each advanced cell is saved as
-it lands, so a long or interrupted tick still records progress. `--dry-run` runs
+The active step is decided from `babs status --json` counts
+(`PennLINC/babs#387`): not-all-submitted → submit; still in flight → skip; all
+ended with failures → flag (don't merge); all done → merge. The transitions and
+ledger writes are the real thing. A single writer is enforced by a campaign
+flock, and each advanced cell is saved as it lands, so a long or interrupted tick
+still records progress. `--dry-run` runs
 the read-only steps for real and prints the mutating commands without running
 them.
 
@@ -186,8 +187,6 @@ the code location that needs it (grep `TODO(manual step)`):
   reference it relatively (`container.source: ../repronim-containers-shim`) and
   `configure` vendors it into `code/`. Drop the shim and swap `container.source`
   to the ReproNim GitHub link when `PennLINC/babs#383` lands.
-- **Done-detection.** No machine-readable `babs status` yet (`PennLINC/babs#387`),
-  so the operator polls `babs status` and drives the `[d/s/m]` prompt by hand.
 
 ## Configuration
 
