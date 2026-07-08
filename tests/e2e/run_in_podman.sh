@@ -72,6 +72,13 @@ fi
 CACHE_HOST="$REPO/tests/e2e/_cache"
 mkdir -p "$CACHE_HOST"
 
+# Forward BABS_SPEC (the babs ref under test) into the container if set, so the
+# campaign fixture's bootstrap pins that babs. Needed until `babs status --json`
+# (PennLINC/babs#387) is in babs main — before then the full-run tier needs a branch
+# that has it. A public https URL is required (the container clones anonymously).
+BABS_SPEC_ENV=()
+[ -n "${BABS_SPEC:-}" ] && BABS_SPEC_ENV=(-e "BABS_SPEC=$BABS_SPEC")
+
 # Ephemerality is the container: --rm (default) drops the whole campaign on exit.
 # MECHABABS_E2E_KEEP=1 keeps the container (drops --rm, names it) for post-mortem.
 RM_FLAG=(--rm)
@@ -95,6 +102,7 @@ podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     -v "$CACHE_HOST":/mechababs/tests/e2e/_cache:rw \
     "${EXTRA_MOUNT[@]}" \
     "${SHIM_MOUNT[@]}" \
+    "${BABS_SPEC_ENV[@]}" \
     -e MECHABABS_E2E_SYSTEM_SITE_PACKAGES=1 \
     docker.io/pennlinc/slurm-docker-ci:0.14 \
     bash -c "
