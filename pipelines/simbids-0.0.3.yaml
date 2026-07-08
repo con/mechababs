@@ -33,12 +33,16 @@ singularity_args:
 
 # SLURM resources live on the pipeline axis (each pipeline states its own needs).
 # simbids is a light simulator, so a minimal single-cpu request + short walltime.
+# NO --mem: the slurm-docker-ci fake node advertises little RealMemory, so an explicit
+# request (even 4G) fails there with "Memory specification can not be satisfied";
+# babs's own e2e simbids config likewise omits it. simbids barely uses memory, so
+# slurm's default suffices on real clusters too. The general pipeline-need-vs-cluster-
+# cap split is tracked in #3 / config-composition-axes.
 cluster_resources:
   interpreting_shell: "/bin/bash"
   hard_runtime_limit: "00:30:00"
   customized_text: |
     #SBATCH --cpus-per-task=1
-    #SBATCH --mem=4G
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
 
