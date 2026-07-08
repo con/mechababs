@@ -70,9 +70,12 @@ def test_full_run(campaign, cluster_config, rawdata):
     assert proj_rel, "iterate did not record simbids_babs — scaffold failed"
 
     proj = campaign / proj_rel
-    assert (proj / "input_ria").is_dir()
-    assert (proj / "output_ria").is_dir()
-    code = proj / "analysis" / "code"
+    # BIDS-study layout (simbids pipeline sets analysis_path: "." + .babs/ RIA
+    # stores): the project root IS the analysis dataset, so code/ is at its root
+    # and the RIA stores tuck under .babs/ (babs#369).
+    assert (proj / ".babs" / "input_ria").is_dir()
+    assert (proj / ".babs" / "output_ria").is_dir()
+    code = proj / "code"
     assert (code / "babs_proj_config.yaml").is_file()
     # our inclusion is pinned, and babs's inner-join (requested ∩ present) matches
     assert sub in (code / "mechababs_inclusion.csv").read_text()
@@ -95,11 +98,11 @@ def test_full_run(campaign, cluster_config, rawdata):
 
     # `babs merge` deposits the merged results in the OUTPUT RIA (not the analysis
     # working tree). The RIA store holds one bare dataset repo at
-    # output_ria/<uuid[:3]>/<uuid[3:]>; its master tree lists the produced zip.
+    # .babs/output_ria/<uuid[:3]>/<uuid[3:]>; its master tree lists the produced zip.
     # Checking it there proves the derivative was produced and merged, not just that
     # the ledger flag flipped.
     # (the RIA also keeps an `alias/data` symlink to the dataset — skip it.)
-    ria_repos = [p.parent for p in (proj / "output_ria").glob("*/*/HEAD")
+    ria_repos = [p.parent for p in (proj / ".babs" / "output_ria").glob("*/*/HEAD")
                  if "alias" not in p.parts]
     assert len(ria_repos) == 1, f"expected one output-RIA dataset repo, found {ria_repos}"
     tree = subprocess.run(
