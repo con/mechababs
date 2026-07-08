@@ -9,14 +9,30 @@
 #
 # Rootless: no root daemon, and container-root maps to the invoking host user via
 # userns — so nothing here runs as real root and any host-touching bytes are
-# user-owned. slurm-docker-ci comes up fully rootless with no --cap-add / --privileged
-# (verified: podman 5.8.2, cgroups v2). SELinux is handled with `label=disable`
-# rather than per-mount `:Z`: one of the mounts is the shared git-common-dir, and
-# `:Z` would relabel it on the host and disturb sibling worktrees — disabling the
-# label for this container relabels nothing. `--device /dev/fuse` is the one extra:
-# singularity (the rawdata fixture's data-gen, and the babs jobs once they submit)
-# needs FUSE to mount the squashfs SIF, and rootless podman doesn't expose it by
-# default. It's a device, not a privilege — no --privileged / --cap-add.
+# user-owned (root-in / user-out). slurm-docker-ci comes up rootless with no
+# --privileged (verified: podman 5.8.2, cgroups v2). SELinux is handled with
+# `label=disable` rather than per-mount `:Z`: one of the mounts is the shared
+# git-common-dir, and `:Z` would relabel it on the host and disturb sibling
+# worktrees — disabling the label for this container relabels nothing. Two extras
+# the nested workload needs, NEITHER of which adds a Linux capability or breaks
+# root-in/user-out (we add ZERO caps — no --cap-add, no --privileged):
+#   --device /dev/fuse                singularity mounts the squashfs SIF via FUSE,
+#                                     and rootless podman doesn't expose it by
+#                                     default (a device, not a cap).
+#   --security-opt systempaths=unconfined
+#                                     a babs job runs simbids via `singularity run`
+#                                     INSIDE this container; apptainer (with --userns,
+#                                     set on the simbids pipeline) creates a nested
+#                                     user+PID namespace and mounts a fresh /proc onto
+#                                     it. The kernel only allows that when the caller
+#                                     has a FULLY-VISIBLE /proc, but podman MASKS
+#                                     /proc paths by default -> "mount proc: operation
+#                                     not permitted". systempaths=unconfined unmasks
+#                                     /proc so the nested mount is allowed. It relaxes
+#                                     THIS container's view of /proc, not host
+#                                     privilege — container-root still maps to the
+#                                     unprivileged host user. (Scaffold-only runs —
+#                                     `babs init`, no inner container — don't need it.)
 #
 # The campaign is built in the container's OWN writable layer (/scratch/campaign),
 # not on a host bind mount. So the container is the ephemeral boundary: with --rm
@@ -97,6 +113,7 @@ podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     --platform linux/amd64 \
     -h slurmctl \
     --security-opt label=disable \
+    --security-opt systempaths=unconfined \
     --device /dev/fuse \
     -v "$REPO":/mechababs:ro \
     -v "$CACHE_HOST":/mechababs/tests/e2e/_cache:rw \
