@@ -150,7 +150,11 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 
     n = next_attempt(campaign, ds_id, short)
     project_root = campaign / "derivatives" / f"{ds_id}_{short}_attempt-{n}"
-    analysis = project_root / "analysis"
+    # The analysis dataset's location is babs's `analysis_path` (babs#369),
+    # relative to the project root: 'analysis' by default, '.' for the BIDS-study
+    # layout (project root IS the analysis dataset). pathlib drops a '.' segment,
+    # so `project_root / '.'` is `project_root`.
+    analysis = project_root / pipeline_cfg.get("analysis_path", "analysis")
 
     print(f"\n=== scaffold {ds_id} / {short} -> {project_root.name} ===", file=sys.stderr)
     if not dry_run:
@@ -217,9 +221,9 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
     #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
-    #    answers both "scaffolded?" and "where?". (Today babs reads/writes under
-    #    <root>/analysis; the analysis dir is derived locally where needed, not
-    #    stored, until PennLINC/babs#369 lets the project root be the result dir.)
+    #    answers both "scaffolded?" and "where?". The analysis dir under it is
+    #    babs's `analysis_path` (babs#369); we derive it locally where needed
+    #    (the inclusion-pin cwd above), never store it — babs owns that mapping.
     return {f"{short}_babs": str(project_root.relative_to(campaign))}
 
 

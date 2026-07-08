@@ -6,6 +6,17 @@
 # short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per campaign).
 short_name: simbids
 
+# BIDS-study layout (babs#369): the babs project root IS the analysis dataset, so
+# the derivative dir is a valid BIDS-study dataset (no nested babs-project/analysis/).
+# The RIA stores go under .babs/ rather than babs's default `input_ria`/`output_ria`,
+# which would sit at the dataset's top level (they can't go outside project_root —
+# #369's validation rejects `..`). merge_config passes these pipeline fields straight
+# into the babs config. NOTE: this is a campaign-wide layout choice living per-pipeline
+# for now — its principled home is a campaign-axis setting (see config-composition-axes).
+analysis_path: "."
+input_ria_path: ".babs/input_ria"
+output_ria_path: ".babs/output_ria"
+
 container:
   # Same repronim-containers-shim the real mriqc/fmriprep pipelines use, so the
   # e2e exercises prod's real container-fetch path (and the shim itself). simbids
