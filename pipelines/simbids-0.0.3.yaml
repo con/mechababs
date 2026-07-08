@@ -30,6 +30,17 @@ singularity_args:
   # $JOB_TMP:/tmp bind (cluster axis supplies $JOB_TMP) routes /tmp to disk.
   - --pwd "${PWD}"
   - -B $JOB_TMP:/tmp
+  # --userns: this test pipeline runs INSIDE the rootless-podman slurm-docker-ci
+  # container (clusters/test-docker.yaml), so apptainer must use its unprivileged
+  # user-namespace mode — else, running as mapped-root, it takes the privileged
+  # mount path and fails (fuseapps-driver panic on old apptainer / full-cap demand).
+  # This is really a property of the nested-container test cluster, not of simbids;
+  # its principled home is test-docker.yaml, once merge_config concatenates cluster
+  # + pipeline singularity_args instead of overwriting (#3 / config-composition-axes).
+  # simbids is test-only and only ever runs against test-docker.yaml, so it lives
+  # here for now. (Paired with `--security-opt systempaths=unconfined` on the podman
+  # run, which unmasks /proc so the nested userns can mount a fresh procfs.)
+  - --userns
 
 # SLURM resources live on the pipeline axis (each pipeline states its own needs).
 # simbids is a light simulator, so a minimal single-cpu request + short walltime.
