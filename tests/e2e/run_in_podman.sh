@@ -94,6 +94,8 @@ mkdir -p "$CACHE_HOST"
 # that has it. A public https URL is required (the container clones anonymously).
 BABS_SPEC_ENV=()
 [ -n "${BABS_SPEC:-}" ] && BABS_SPEC_ENV=(-e "BABS_SPEC=$BABS_SPEC")
+# SIMBIDS_PIPELINE selects the full-run pipeline (e.g. the no-zip variant, babs#381).
+[ -n "${SIMBIDS_PIPELINE:-}" ] && BABS_SPEC_ENV+=(-e "SIMBIDS_PIPELINE=$SIMBIDS_PIPELINE")
 
 # Ephemerality is the container: --rm (default) drops the whole campaign on exit.
 # MECHABABS_E2E_KEEP=1 keeps the container (drops --rm, names it) for post-mortem.
