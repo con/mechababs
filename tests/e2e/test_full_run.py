@@ -93,9 +93,18 @@ def test_full_run(campaign, cluster_config, rawdata):
     assert row["simbids_babs-merged"] == "true", \
         f"merge tick did not set simbids_babs-merged (row={row})"
 
-    # `babs merge` collapses the per-job result branches into the analysis dataset,
-    # so the subject's zip is git-tracked there (a pointer/symlink even if the annex
-    # content lives only in the output RIA). Its presence proves the derivative was
-    # produced and recorded, not just that the ledger flag flipped.
-    zips = list((proj / "analysis").glob(f"{sub}_*.zip"))
-    assert zips, f"no {sub}_*.zip under {proj / 'analysis'} after merge — merge produced no derivative"
+    # `babs merge` deposits the merged results in the OUTPUT RIA (not the analysis
+    # working tree). The RIA store holds one bare dataset repo at
+    # output_ria/<uuid[:3]>/<uuid[3:]>; its master tree lists the produced zip.
+    # Checking it there proves the derivative was produced and merged, not just that
+    # the ledger flag flipped.
+    # (the RIA also keeps an `alias/data` symlink to the dataset — skip it.)
+    ria_repos = [p.parent for p in (proj / "output_ria").glob("*/*/HEAD")
+                 if "alias" not in p.parts]
+    assert len(ria_repos) == 1, f"expected one output-RIA dataset repo, found {ria_repos}"
+    tree = subprocess.run(
+        ["git", f"--git-dir={ria_repos[0]}", "ls-tree", "-r", "--name-only", "master"],
+        check=True, capture_output=True, text=True,
+    ).stdout
+    assert f"{sub}_" in tree and ".zip" in tree, \
+        f"merge produced no {sub} derivative zip in the output RIA master:\n{tree}"
