@@ -1,0 +1,44 @@
+# NO-ZIP variant of simbids-0.0.3.yaml (babs#381 optional-zip demo). Identical to
+# simbids-0.0.3.yaml except it OMITS the `{builtin: zip}` post_run hook, so the
+# derivative is committed unzipped under `output_dir` (directly browsable, a valid
+# BIDS-study derivative) instead of archived. Requires a babs with #381.
+# Select it in the e2e via SIMBIDS_PIPELINE=simbids-nozip-0.0.3.yaml.
+
+short_name: simbids
+
+# BIDS-study layout (babs#369): the babs project root IS the analysis dataset, so
+# the derivative dir is a valid BIDS-study dataset (no nested babs-project/analysis/).
+analysis_path: "."
+input_ria_path: ".babs/input_ria"
+output_ria_path: ".babs/output_ria"
+
+container:
+  source: ../repronim-containers-shim
+  name: bids-simbids
+
+bids_app_args:
+  --bids-app: "fmriprep"
+  $SUBJECT_SELECTION_FLAG: "--participant-label"
+  --stop-on-first-crash: ""
+  -vv: ""
+  --anat-only: ""
+
+singularity_args:
+  - --containall
+  - --pwd "${PWD}"
+  - -B $JOB_TMP:/tmp
+  # --userns: nested rootless-podman apptainer (see simbids-0.0.3.yaml for the full why).
+  - --userns
+
+cluster_resources:
+  interpreting_shell: "/bin/bash"
+  hard_runtime_limit: "00:30:00"
+  customized_text: |
+    #SBATCH --cpus-per-task=1
+    #SBATCH --nodes=1
+    #SBATCH --ntasks=1
+
+# Output WITHOUT zipping (babs#381): `output_dir` is the versioned derivative name;
+# with no `{builtin: zip}` hook the granular output is committed unzipped and merged
+# to the output RIA as-is.
+output_dir: outputs/fmriprep_anat-24-1-1

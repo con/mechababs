@@ -51,8 +51,11 @@ def _ledger_row(campaign):
 
 
 def test_full_run(campaign, cluster_config, rawdata):
+    # SIMBIDS_PIPELINE lets the demo run the no-zip variant (optional-zip off,
+    # babs#381) against the same harness; defaults to the zipping pipeline.
+    pipeline = os.environ.get("SIMBIDS_PIPELINE", "simbids-0.0.3.yaml")
     _venv_run(campaign, "mechababs", "configure",
-              "--pipelines", "simbids-0.0.3.yaml", "--cluster", cluster_config)
+              "--pipelines", pipeline, "--cluster", cluster_config)
     _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
               "--processing-level", "subject")
 
@@ -109,5 +112,10 @@ def test_full_run(campaign, cluster_config, rawdata):
         ["git", f"--git-dir={ria_repos[0]}", "ls-tree", "-r", "--name-only", "master"],
         check=True, capture_output=True, text=True,
     ).stdout
-    assert f"{sub}_" in tree and ".zip" in tree, \
-        f"merge produced no {sub} derivative zip in the output RIA master:\n{tree}"
+    # With the zip hook the tree lists `{sub}_*.zip`; with optional-zip OFF the
+    # derivative is committed unzipped under `output_dir`. Accept either so the
+    # one test validates both the zipping and no-zip pipelines.
+    zipped = f"{sub}_" in tree and ".zip" in tree
+    unzipped = f"outputs/fmriprep_anat-24-1-1/{sub}" in tree
+    assert zipped or unzipped, \
+        f"merge produced no {sub} derivative (zipped or unzipped) in the output RIA master:\n{tree}"

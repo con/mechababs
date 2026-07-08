@@ -68,6 +68,12 @@ cluster_resources:
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
 
-all_results_in_one_zip: true
-zip_foldernames:
-  fmriprep_anat: "24-1-1"
+# Output + zipping (babs#381): `output_dir` is the single versioned name (app write
+# dir = datalad-run output = zip source), replacing the old `zip_foldernames` +
+# `all_results_in_one_zip`. Zipping is now an OPTIONAL post_run hook — the argless
+# `{builtin: zip}` archives `output_dir`. Drop the hook for an unzipped (directly
+# browsable) BIDS-study derivative; keep it to ship a zip. Requires a babs with #381.
+output_dir: outputs/fmriprep_anat-24-1-1
+hooks:
+  post_run:
+    - builtin: zip
