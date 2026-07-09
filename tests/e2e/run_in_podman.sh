@@ -96,7 +96,7 @@ podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     "${EXTRA_MOUNT[@]}" \
     "${SHIM_MOUNT[@]}" \
     -e MECHABABS_E2E_SYSTEM_SITE_PACKAGES=1 \
-    pennlinc/slurm-docker-ci:0.14 \
+    docker.io/pennlinc/slurm-docker-ci:0.14 \
     bash -c "
         set -e
         # Container-only prep: the repo is host-owned but git runs as
