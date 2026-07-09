@@ -5,7 +5,7 @@
 set -euo pipefail
 
 BABS_DEFAULT="https://github.com/PennLINC/babs.git@main"
-MECHABABS_DEFAULT="git@github.com:asmacdo/mechababs.git@main"
+MECHABABS_DEFAULT="https://github.com/asmacdo/mechababs.git@main"
 
 usage() {
     cat <<'EOF'

@@ -72,12 +72,16 @@ Bootstrapping has a chicken-and-egg problem: the operate-side CLI is installed
 *from the mechababs code vendored into the campaign*, so it can't be what creates
 the campaign. The split is bootstrap-vs-operate:
 
-### 1. `bootstrap.sh` — build the environment (repo root, run once per campaign)
+### 1. `bootstrap.sh` — build the environment (run once per campaign)
+
+`bootstrap.sh` is self-contained — it clones the code pins itself, so you only
+need `git` + `uv` on PATH; no repo checkout required. Pipe it straight into bash:
 
 ```bash
-./bootstrap.sh my-campaign \
-    [--babs URL@REF]        # default: https://github.com/PennLINC/babs.git@main
-    [--mechababs URL@REF]   # default: git@github.com:asmacdo/mechababs.git@main
+curl -sSL https://raw.githubusercontent.com/asmacdo/mechababs/main/bootstrap.sh \
+  | bash -s -- my-campaign \
+      [--babs URL@REF]        # default: https://github.com/PennLINC/babs.git@main
+      [--mechababs URL@REF]   # default: https://github.com/asmacdo/mechababs.git@main
 ```
 
 Clones the two code pins into `code/`, builds `.venv` with `uv`, makes the
