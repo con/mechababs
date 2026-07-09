@@ -1,6 +1,12 @@
 # short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per campaign).
 short_name: mriqc
 
+# BIDS-study layout (babs#369): the project root IS the analysis dataset, so the
+# derivative dir is a valid BIDS-study dataset (no nested babs-project/analysis/).
+analysis_path: "."
+input_ria_path: ".babs/input_ria"
+output_ria_path: ".babs/output_ria"
+
 container:
   # TODO: swap source to the ReproNim github link (+ ref) once PennLINC/babs#383
   # lands — then the shim is unnecessary.
@@ -47,6 +53,7 @@ cluster_resources:
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
 
-all_results_in_one_zip: true
-zip_foldernames:
-  mriqc: "24-0-2"
+# Output WITHOUT zipping (babs#381): `output_dir` is the versioned derivative
+# name; with no `{builtin: zip}` hook the granular output is committed unzipped
+# and merged to the output RIA as-is — a directly-browsable BIDS-study derivative.
+output_dir: outputs/mriqc-24-0-2
