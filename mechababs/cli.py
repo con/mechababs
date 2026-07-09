@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 from mechababs import construct
+from mechababs import guard
 from mechababs import iterate as iterate_mod
 from mechababs import select
 from mechababs import state
@@ -35,6 +36,9 @@ def cmd_configure(args):
     for sub in ("code/mechababs", "code/babs"):
         if not (campaign / sub).is_dir():
             sys.exit(f"not a campaign skeleton (missing {sub}): {campaign}")
+
+    # Provenance guard: the code pins must match what the campaign records.
+    guard.require_clean_pins(campaign)
 
     # The PATH guard, the whole point: are we the campaign venv's python? Its
     # sys.prefix is <campaign>/.venv. If not, an ambient mechababs is running and
@@ -77,6 +81,7 @@ def cmd_add_dataset(args):
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
         sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    guard.require_clean_pins(campaign)
 
     ds_id = iterate_mod.dataset_id(args.url)
     if args.processing_level:
@@ -113,6 +118,7 @@ def cmd_iterate(args):
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
         sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    guard.require_clean_pins(campaign)
     if not args.dry_run:
         iterate_mod.warn_if_no_tmux()
     iterate_mod.run_iterate(campaign, batch=args.batch, dry_run=args.dry_run,
