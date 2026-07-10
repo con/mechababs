@@ -1,0 +1,17 @@
+# Unity cluster profile (UMass Unity, issue #33). Same shape as dartmouth.yaml;
+# the only Unity-specific adaptation is scratch: Unity has no persistent per-user
+# /scratch, so allocate an HPC workspace once (`ws_allocate mechababs 30`, max
+# 30 days / 3 extensions). NOTE the leading index: workspaces are spread across
+# numbered /scratchN filesystems and the index is ASSIGNED at allocation, not
+# derivable from ${USER} — this campaign's landed on /scratch4 (`ws_find
+# mechababs` prints the live path). apptainer is already on PATH (no module),
+# and `cpu` is the default partition (no -p needed — simbids's own
+# cluster_resources sizing applies unchanged).
+script_preamble: |
+  # campaign venv (abspath substituted at compose time by merge_config)
+  source "{{MECHABABS_VENV}}/bin/activate"
+  export JOB_TMP="/scratch4/workspace/${USER}-mechababs/sjob-tmp/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
+  mkdir -p "${JOB_TMP}"
+  trap 'rm -rf "${JOB_TMP}"' EXIT
+
+job_compute_space: "/scratch4/workspace/${USER}-mechababs"
