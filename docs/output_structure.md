@@ -14,7 +14,7 @@ campaign/                                       # LAYER 1 — the campaign, 1 pe
   desc-mechababs_datasets.tsv                     #   the state ledger, BIDS-named, leading dataset_id
   code/{babs,mechababs,containers}               #   vendored + pinned tooling (provenance)
   derivatives/                                   # PRODUCED — one babs project per (dataset, pipeline) cell
-    dsXXXXXX_<pipeline>_attempt-N/               #   each produces one derivative
+    <tool>-ds<XXXXXX>+attempt<N>/                #   each produces one derivative
       ...
   studies/                                       # COMPOSED — one study per dataset, gathering its derivatives
     study-dsXXXXXX/                              # LAYER 2 — study-dsXXXXXX-shaped, composed from derivatives/
@@ -22,7 +22,7 @@ campaign/                                       # LAYER 1 — the campaign, 1 pe
       LICENSE                                    #   full license text
       sourcedata/dsXXXXXX/                        #   raw BIDS (submodule -> OpenNeuroDatasets)
       derivatives/
-        <tool>-<ver>-<stage>+mb1/                # LAYER 3 — the derivative (created by babs, composed into our studies)
+        <tool>-<ver>+<stage>+mb1/                # LAYER 3 — the derivative (created by babs, composed into our studies)
           dataset_description.json               #   DatasetType: "derivative", GeneratedBy Babs + <bids_app>, License (SPDX id)
           LICENSE                                #   full license text
           sub-XXX/ ...
