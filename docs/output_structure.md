@@ -8,7 +8,8 @@ The derivatives publish to **OpenNeuroDerivatives**; the composed studies publis
 
 ```
 campaign/                                       # LAYER 1 — the campaign, 1 per cluster, a valid BIDS-study super
-  dataset_description.json                       #   DatasetType: "study" GeneratedBy Mechababs
+  dataset_description.json                       #   DatasetType: "study", GeneratedBy Mechababs, License (SPDX id)
+  LICENSE                                        #   full license text
   .mechababs/campaign.yaml                        #   non-BIDS campaign config (hidden dot-dir)
   desc-mechababs_datasets.tsv                     #   the state ledger, BIDS-named, leading dataset_id
   code/{babs,mechababs,containers}               #   vendored + pinned tooling (provenance)
@@ -17,10 +18,12 @@ campaign/                                       # LAYER 1 — the campaign, 1 pe
       ...
   studies/                                       # COMPOSED — one study per dataset, gathering its derivatives
     study-dsXXXXXX/                              # LAYER 2 — study-dsXXXXXX-shaped, composed from derivatives/
-      dataset_description.json                   #   study-level description GeneratedBy Mechababs/babs
+      dataset_description.json                   #   study-level description, GeneratedBy Mechababs/babs, License (SPDX id)
+      LICENSE                                    #   full license text
       sourcedata/dsXXXXXX/                        #   raw BIDS (submodule -> OpenNeuroDatasets)
       derivatives/
         <tool>-<ver>-<stage>+mb1/                # LAYER 3 — the derivative (created by babs, composed into our studies)
-          dataset_description.json               #   DatasetType: "derivative" + GeneratedBy Babs + <bids_app>
+          dataset_description.json               #   DatasetType: "derivative", GeneratedBy Babs + <bids_app>, License (SPDX id)
+          LICENSE                                #   full license text
           sub-XXX/ ...
 ```
