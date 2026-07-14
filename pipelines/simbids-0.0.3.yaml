@@ -6,6 +6,17 @@
 # short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per campaign).
 short_name: simbids
 
+# BIDS-study layout (babs#369): the babs project root IS the analysis dataset, so
+# the derivative dir is a valid BIDS-study dataset (no nested babs-project/analysis/).
+# The RIA stores go under .babs/ rather than babs's default `input_ria`/`output_ria`,
+# which would sit at the dataset's top level (they can't go outside project_root —
+# #369's validation rejects `..`). merge_config passes these pipeline fields straight
+# into the babs config. NOTE: this is a campaign-wide layout choice living per-pipeline
+# for now — its principled home is a campaign-axis setting (see config-composition-axes).
+analysis_path: "."
+input_ria_path: ".babs/input_ria"
+output_ria_path: ".babs/output_ria"
+
 container:
   # Same repronim-containers-shim the real mriqc/fmriprep pipelines use, so the
   # e2e exercises prod's real container-fetch path (and the shim itself). simbids
@@ -30,15 +41,30 @@ singularity_args:
   # $JOB_TMP:/tmp bind (cluster axis supplies $JOB_TMP) routes /tmp to disk.
   - --pwd "${PWD}"
   - -B $JOB_TMP:/tmp
+  # --userns: this test pipeline runs INSIDE the rootless-podman slurm-docker-ci
+  # container (clusters/test-docker.yaml), so apptainer must use its unprivileged
+  # user-namespace mode — else, running as mapped-root, it takes the privileged
+  # mount path and fails (fuseapps-driver panic on old apptainer / full-cap demand).
+  # This is really a property of the nested-container test cluster, not of simbids;
+  # its principled home is test-docker.yaml, once merge_config concatenates cluster
+  # + pipeline singularity_args instead of overwriting (#3 / config-composition-axes).
+  # simbids is test-only and only ever runs against test-docker.yaml, so it lives
+  # here for now. (Paired with `--security-opt systempaths=unconfined` on the podman
+  # run, which unmasks /proc so the nested userns can mount a fresh procfs.)
+  - --userns
 
 # SLURM resources live on the pipeline axis (each pipeline states its own needs).
 # simbids is a light simulator, so a minimal single-cpu request + short walltime.
+# NO --mem: the slurm-docker-ci fake node advertises little RealMemory, so an explicit
+# request (even 4G) fails there with "Memory specification can not be satisfied";
+# babs's own e2e simbids config likewise omits it. simbids barely uses memory, so
+# slurm's default suffices on real clusters too. The general pipeline-need-vs-cluster-
+# cap split is tracked in #3 / config-composition-axes.
 cluster_resources:
   interpreting_shell: "/bin/bash"
   hard_runtime_limit: "00:30:00"
   customized_text: |
     #SBATCH --cpus-per-task=1
-    #SBATCH --mem=4G
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
 

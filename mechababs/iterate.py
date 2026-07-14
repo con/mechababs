@@ -6,15 +6,15 @@ routing on which ledger columns are filled:
                                 curated/pre-placed one), compose the babs config,
                                 `babs init` (NO submit), pin the inclusion, record
                                 `_babs` (the project-root path).
-  - `_babs` set, not merged  -> ACTIVE: show `babs status`, operator picks the next
-                                step ([d]eploy more / [s]kip / [m]erge).
+  - `_babs` set, not merged  -> ACTIVE: read `babs status --json`, take the next
+                                step (deploy more / skip / merge / flag-failed).
   - `_babs-merged` set       -> done, skipped (no babs query).
 
-The ACTIVE prompt is the manual stand-in for the eventual count-driven decision
-(`babs status --json`, #12); the transitions and ledger writes are the real thing.
-mechababs shells out to babs / merge_config.py and imports the select module.
-`--dry-run` runs read-only steps (e.g. `babs status`) for real and prints the
-mutating commands without running them.
+The ACTIVE step is decided from `babs status --json` counts (the babs_status
+decide seam) and dispatched through ITERATE_ACTIONS. mechababs shells out to babs /
+merge_config.py and imports the select and babs_status modules. `--dry-run` runs
+read-only steps (e.g. `babs status`) for real and prints the mutating commands
+without running them.
 """
 
 import os
@@ -26,6 +26,7 @@ from pathlib import Path
 
 import yaml
 
+from mechababs import babs_status
 from mechababs import select
 from mechababs import state
 
@@ -149,7 +150,11 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 
     n = next_attempt(campaign, ds_id, short)
     project_root = campaign / "derivatives" / f"{ds_id}_{short}_attempt-{n}"
-    analysis = project_root / "analysis"
+    # The analysis dataset's location is babs's `analysis_path` (babs#369),
+    # relative to the project root: 'analysis' by default, '.' for the BIDS-study
+    # layout (project root IS the analysis dataset). pathlib drops a '.' segment,
+    # so `project_root / '.'` is `project_root`.
+    analysis = project_root / pipeline_cfg.get("analysis_path", "analysis")
 
     print(f"\n=== scaffold {ds_id} / {short} -> {project_root.name} ===", file=sys.stderr)
     if not dry_run:
@@ -216,65 +221,77 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
     #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
-    #    answers both "scaffolded?" and "where?". (Today babs reads/writes under
-    #    <root>/analysis; the analysis dir is derived locally where needed, not
-    #    stored, until PennLINC/babs#369 lets the project root be the result dir.)
+    #    answers both "scaffolded?" and "where?". The analysis dir under it is
+    #    babs's `analysis_path` (babs#369); we derive it locally where needed
+    #    (the inclusion-pin cwd above), never store it — babs owns that mapping.
     return {f"{short}_babs": str(project_root.relative_to(campaign))}
 
 
 # --- ACTIVE-cell transitions: (campaign, cfg, row, short, *, dry_run) -> updates ---
 
 def submit(campaign, cfg, row, short, *, dry_run):
-    """[d] deploy more jobs. Writes no column — submit-state is babs's, re-read from
-    `babs status` next tick."""
+    """SUBMIT: deploy more jobs. Writes no column — submit-state is babs's."""
     run(["babs", "submit", babs_project(campaign, row, short)], dry_run=dry_run)
     return {}
 
 
 def merge(campaign, cfg, row, short, *, dry_run):
-    """[m] all jobs ended -> babs merge -> pipeline finished. (babs merge runs its
-    own [c]ontinue/[s]kip/[a]bort prompt.)"""
-    run(["babs", "merge", babs_project(campaign, row, short)], dry_run=dry_run)
+    """MERGE: all jobs done -> babs merge -> pull results into the campaign -> finished.
+
+    `babs merge` leaves the merged results in the output RIA (content stays there
+    by design); `datalad update` fast-forwards the babs project's working tree to
+    the merged branch so the campaign actually holds the produced derivative while
+    the RIA store is still live.
+    """
+    proj = babs_project(campaign, row, short)
+    run(["babs", "merge", proj], dry_run=dry_run)
+    run(["datalad", "update", "--how", "merge", "-s", "output", "-d", proj], dry_run=dry_run)
     return {f"{short}_babs-merged": "true"}
 
 
+def skip(campaign, cfg, row, short, *, dry_run):
+    """SKIP: jobs still in flight -> nothing to do this tick."""
+    return None
+
+
+def fail(campaign, cfg, row, short, *, dry_run):
+    """FAIL: some jobs failed -> flag and leave unmerged (re-surfaces each tick;
+    retry/policy deferred, #66)."""
+    proj = babs_project(campaign, row, short)
+    print(f"  {dataset_id(row['url'])}/{short}: jobs FAILED — not merging; needs "
+          f"attention (`babs status {proj}`)", file=sys.stderr)
+    return None
+
+
+# decide()'s return values mapped to handlers; each has the uniform
+# (campaign, cfg, row, short, *, dry_run) signature and returns the ledger update
+# to apply (or None/{} for no-op), so handle_active dispatches in one line.
+ITERATE_ACTIONS = {
+    "submit": submit,
+    "skip": skip,
+    "merge": merge,
+    "fail": fail,
+}
+
+
 def handle_active(campaign, cfg, row, short, *, dry_run):
-    """A scaffolded-but-unmerged cell: show `babs status`, let the operator choose
-    the next transition.
-
-    The menu documents the rule the count-driven decision will follow (off the
-    `babs status` counts):
-      [d] deploy more  — not all jobs submitted yet          -> babs submit
-      [s] skip         — all submitted, not all ended (rest)  -> no-op
-      [m] merge        — all submitted & ended (done)         -> babs merge
-    This prompt IS the decide() seam — #12 (`babs status --json`) replaces the
-    human with the count check, same three outcomes, same transitions.
-
-    TODO(manual step): the next-step decision is operator-driven until #12 lands a
-    machine-readable `babs status`; then this reads counts instead of asking.
-    """
+    """A scaffolded-but-unmerged cell: read `babs status --json`, decide the next
+    transition (babs_status.decide), dispatch via ITERATE_ACTIONS."""
     ds = dataset_id(row["url"])
     proj = babs_project(campaign, row, short)
     print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
-    subprocess.run(["babs", "status", str(proj)], check=True)  # read-only; run even in dry-run
-    while True:
-        ans = input(f"  {ds}/{short}: [d]eploy (not all submitted) / [s]kip (running) / "
-                    f"[m]erge (all done) / [a]bort > ").strip().lower()
-        if ans in ("d", "s", "m", "a"):
-            break
-        print("  choose one of d/s/m/a")
-    if ans == "a":
-        sys.exit("Aborting.")
-    if ans == "s":
-        return None
-    return (submit if ans == "d" else merge)(campaign, cfg, row, short, dry_run=dry_run)
+
+    status = babs_status.read_status(proj)
+    action = babs_status.decide(status)
+    print(f"  {ds}/{short}: {status} -> {action}", file=sys.stderr)
+    return ITERATE_ACTIONS[action](campaign, cfg, row, short, dry_run=dry_run)
 
 
 def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
     """One tick: advance each (dataset, pipeline) cell by at most one transition.
 
     Routes on the cell's ledger columns: empty `_babs` -> scaffold; `_babs` set and
-    not `_babs-merged` -> the interactive active handler; merged -> skip. The lock
+    not `_babs-merged` -> the active handler; merged -> skip. The lock
     is held across the whole batch (single writer), and each advanced cell is saved
     as it lands so a long or interrupted tick still records progress.
 
