@@ -43,7 +43,7 @@ The unit of work. Each is itself a valid BIDS-study (the babs BIDS-study layout)
   code/                             # babs scaffold — run records + committed config (provenance)
   sourcedata/raw/                   # raw BIDS (submodule -> OpenNeuroDatasets)   [seam]
   derivatives/
-    <tool>-<ver>+<stage>+mb1/       # the derivative — a FOLDER in this study, NOT a separate dataset
+    <tool>-<ver>+<stage>/           # the derivative — a FOLDER in this study, NOT a separate dataset
       dataset_description.json      # DatasetType: "derivative"; GeneratedBy: [<bids_app>]
       sub-*                         # TARGET: unzipped here (today babs zips it; removing zipping lands it here — see optional-zipping / #4)
 ```
