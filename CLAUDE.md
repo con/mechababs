@@ -77,6 +77,13 @@ per derivative). A true linear chain needs upstream BABS work — tracked in
 (version pin, me-output-echos hedge, syn-sdc, slice-timing) lives in the
 `OpenNeuroDerivatives/fmriprepDerivatives` opinions repo.
 
+## Target structure
+
+@docs/output_structure.md
+
+We should be producing things according to the stucture document.
+Any deviations should be open issues or else the document itself needs to change.
+
 ## Conventions
 
 The README covers three-axis composition, one-tool-two-modes / dev-exercises-prod,
