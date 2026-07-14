@@ -236,8 +236,16 @@ def submit(campaign, cfg, row, short, *, dry_run):
 
 
 def merge(campaign, cfg, row, short, *, dry_run):
-    """MERGE: all jobs done -> babs merge -> pipeline finished."""
-    run(["babs", "merge", babs_project(campaign, row, short)], dry_run=dry_run)
+    """MERGE: all jobs done -> babs merge -> pull results into the campaign -> finished.
+
+    `babs merge` leaves the merged results in the output RIA (content stays there
+    by design); `datalad update` fast-forwards the babs project's working tree to
+    the merged branch so the campaign actually holds the produced derivative while
+    the RIA store is still live.
+    """
+    proj = babs_project(campaign, row, short)
+    run(["babs", "merge", proj], dry_run=dry_run)
+    run(["datalad", "update", "--how", "merge", "-s", "output", "-d", proj], dry_run=dry_run)
     return {f"{short}_babs-merged": "true"}
 
 
