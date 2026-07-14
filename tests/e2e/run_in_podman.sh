@@ -34,20 +34,20 @@
 #                                     unprivileged host user. (Scaffold-only runs —
 #                                     `babs init`, no inner container — don't need it.)
 #
-# The campaign is built in the container's OWN writable layer (/scratch/campaign),
-# not on a host bind mount. So the container is the ephemeral boundary: with --rm
-# (the default) the campaign — RIA stores, read-only annex objects and all — dies
-# with the container, leaving no host cleanup behind. To inspect a run afterwards,
-# set MECHABABS_E2E_KEEP=1: it drops --rm and names the container so you can
-# `podman cp` the campaign out and `podman rm` it when done.
+# The campaign is built on a host bind mount at $MECHABABS_E2E_WORKDIR, mounted at
+# the SAME absolute path inside the container. Same-path is deliberate: babs bakes
+# *absolute* RIA-store paths at init, so building at an identical host==container
+# path is what lets the campaign resolve — and stay operable — on the host after the
+# run. It persists regardless of --rm (it lives on the host, not the container
+# layer); MECHABABS_E2E_KEEP=1 only additionally keeps the *container* for post-mortem.
 #
 # Host-prep ONCE first — build the shim (the prod container-shim command; dies at
 # babs#383):
 #   REPRONIM=$MECHABABS_E2E_WORKDIR/repronim-containers-shim \
 #       tmp-repronim-container-shim.sh bids-simbids
-# It's bind-mounted read-only as a campaign sibling at /scratch/repronim-containers-shim
-# (from MECHABABS_E2E_WORKDIR, default /tmp/mechababs-e2e) so configure resolves the
-# pipeline's `../repronim-containers-shim`. The fake BIDS input is NOT host-prep — the
+# It sits as a campaign sibling under $MECHABABS_E2E_WORKDIR (default /tmp/mechababs-e2e),
+# visible through the same-path workdir mount, so configure resolves the pipeline's
+# `../repronim-containers-shim`. The fake BIDS input is NOT host-prep — the
 # rawdata fixture generates it into the gitignored repo cache tests/e2e/_cache, which
 # we bind-mount read-write (over the :ro repo) so it persists across runs.
 #
@@ -68,18 +68,20 @@ REAL_GIT_DIR="$(cd "$GIT_COMMON_DIR" && pwd)"
 EXTRA_MOUNT=()
 [ "$REAL_GIT_DIR" != "$REPO/.git" ] && EXTRA_MOUNT=(-v "$REAL_GIT_DIR:$REAL_GIT_DIR")
 
-# The shim, built as host-prep, mounted read-only as a campaign sibling under
-# /scratch. The campaign is built at /scratch/campaign, so the shim lands at the
-# pipeline's `../repronim-containers-shim`; it's a clone source, hence :ro.
-# /scratch itself is the container's writable layer (no host mount); podman creates
-# this child mountpoint under it.
-WORKDIR_HOST="${MECHABABS_E2E_WORKDIR:-/tmp/mechababs-e2e}"
-SHIM_MOUNT=()
-if [ -d "$WORKDIR_HOST/repronim-containers-shim/.datalad" ]; then
-    SHIM_MOUNT=(-v "$WORKDIR_HOST/repronim-containers-shim:/scratch/repronim-containers-shim:ro")
-else
-    echo "note: no shim at $WORKDIR_HOST/repronim-containers-shim — build it first:" >&2
-    echo "    REPRONIM=$WORKDIR_HOST/repronim-containers-shim tmp-repronim-container-shim.sh bids-simbids" >&2
+# Bind-mount the workdir at the SAME absolute path inside the container, and build
+# the campaign there (via MECHABABS_E2E_WORKDIR, passed in below) instead of the
+# container's ephemeral /scratch layer. host==container path is what makes babs's
+# init-time *absolute* RIA-store paths resolve on the host afterwards, so the
+# campaign survives as a real, operable dataset — no `podman cp`, no dead /scratch
+# abspaths. (Same idiom as $REAL_GIT_DIR above.) The shim is a sibling under the
+# workdir, so the pipeline's `../repronim-containers-shim` resolves through this one
+# mount — no separate shim mount needed.
+MECHABABS_E2E_WORKDIR="${MECHABABS_E2E_WORKDIR:-/tmp/mechababs-e2e}"
+mkdir -p "$MECHABABS_E2E_WORKDIR"
+WORKDIR_MOUNT=(-v "$MECHABABS_E2E_WORKDIR:$MECHABABS_E2E_WORKDIR")
+if [ ! -d "$MECHABABS_E2E_WORKDIR/repronim-containers-shim/.datalad" ]; then
+    echo "note: no shim at $MECHABABS_E2E_WORKDIR/repronim-containers-shim — build it first:" >&2
+    echo "    REPRONIM=$MECHABABS_E2E_WORKDIR/repronim-containers-shim tmp-repronim-container-shim.sh bids-simbids" >&2
 fi
 
 # The gitignored repo cache for generated fake BIDS, bind-mounted read-write OVER
@@ -95,17 +97,18 @@ mkdir -p "$CACHE_HOST"
 BABS_SPEC_ENV=()
 [ -n "${BABS_SPEC:-}" ] && BABS_SPEC_ENV=(-e "BABS_SPEC=$BABS_SPEC")
 
-# Ephemerality is the container: --rm (default) drops the whole campaign on exit.
-# MECHABABS_E2E_KEEP=1 keeps the container (drops --rm, names it) for post-mortem.
+# The campaign persists on the host bind mount ($MECHABABS_E2E_WORKDIR/test-campaign-*)
+# regardless of --rm. MECHABABS_E2E_KEEP=1 additionally keeps the *container* (drops
+# --rm, names it) for post-mortem of the container itself.
 RM_FLAG=(--rm)
 NAME_FLAG=()
 if [ -n "${MECHABABS_E2E_KEEP:-}" ]; then
     CONTAINER="mechababs-e2e-$$"
     RM_FLAG=()
     NAME_FLAG=(--name "$CONTAINER")
-    echo "KEEP: container $CONTAINER persists after the run. Inspect with:" >&2
-    echo "    podman cp $CONTAINER:/scratch ./scratch-inspect   # campaign is test-campaign-*" >&2
-    echo "    podman rm $CONTAINER   # when done" >&2
+    echo "KEEP: container $CONTAINER persists (the campaign is already on the host at" >&2
+    echo "    $MECHABABS_E2E_WORKDIR/test-campaign-*). Remove the container with:" >&2
+    echo "    podman rm $CONTAINER" >&2
 fi
 
 # Run the e2e scenario: pytest inside the container. Extra args ($*) pass through.
@@ -118,8 +121,9 @@ podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     -v "$REPO":/mechababs:ro \
     -v "$CACHE_HOST":/mechababs/tests/e2e/_cache:rw \
     "${EXTRA_MOUNT[@]}" \
-    "${SHIM_MOUNT[@]}" \
+    "${WORKDIR_MOUNT[@]}" \
     "${BABS_SPEC_ENV[@]}" \
+    -e "MECHABABS_E2E_WORKDIR=$MECHABABS_E2E_WORKDIR" \
     -e MECHABABS_E2E_SYSTEM_SITE_PACKAGES=1 \
     docker.io/pennlinc/slurm-docker-ci:0.14 \
     bash -c "
