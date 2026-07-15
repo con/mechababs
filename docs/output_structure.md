@@ -112,13 +112,19 @@ Records are written at init, from facts known at scaffold time; the app's output
       "Id": "urn:uuid:a4c32684-d47e-4133-9e9e-29c8bc8f44c1",
       "Label": "mechababs campaign: my-example-campaign",
       "AtLocation": "https://github.com/con/my-example-campaign.git",
-      // The commit pins the state. Without it the link resolves to a campaign
-      // that has since accreted more ticks and datasets, and the orchestration
-      // of THIS derivative can't be located in it.
+      // The commit pins the state — without it the link resolves to a campaign
+      // that has since accreted more ticks and datasets.
       // A Bundle is itself an Entity in PROV-DM, so `Digest` is Entity's field.
-      // TODO: the campaign's history for a derivative is not over at init —
-      // scaffold is one commit, submit and merge add more. Record the scaffold
-      // commit, or re-write this file at merge with the completing commit?
+      //
+      // This is the DEPLOY commit: the campaign version that fixed the config,
+      // the code pins, and the inclusion for this run. It necessarily predates
+      // the commit that ingests the merged result, so the pointer always
+      // references an earlier immutable version and the graph is acyclic by
+      // construction. The alternative — pinning the completing commit — is not
+      // just inelegant but unconstructible: the campaign pins the derivative as
+      // a subdataset, so the derivative cannot contain that campaign's sha.
+      // This derivative's orchestration is then `git log -- <its path>` in the
+      // campaign; orchestration events are sparse, so the walk is cheap.
       "Digest": { "sha1": "9f3c1a2b7e4d5a6c8b0f1e2d3c4b5a6978e0f1a2" }
     }
   ]
