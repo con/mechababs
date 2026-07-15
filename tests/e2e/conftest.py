@@ -121,7 +121,8 @@ def campaign(workdir):
     """A freshly bootstrapped campaign env (provisioning).
 
     Calls the real bootstrap.sh — prod's exact construction path — vendoring this
-    repo (at its current branch) as the mechababs under test. A unique name per
+    repo (at its current branch) as the mechababs under test; it clones, so only
+    committed work is under test and a dirty tree is refused. A unique name per
     session keeps bootstrap's refuse-existing-dir guard happy and avoids clobbering
     a prior run; clean up stale ones with `rm -rf $MECHABABS_E2E_WORKDIR/test-campaign-*`.
 
@@ -129,6 +130,15 @@ def campaign(workdir):
     run_in_podman.sh for the CentOS7 container, whose 2015 toolchain can't build the
     newest wheels); a real cluster leaves it unset and builds prod's isolated venv.
     """
+    dirty = subprocess.run(
+        ["git", "-C", str(REPO), "status", "--porcelain"],
+        check=True, text=True, capture_output=True,
+    ).stdout.strip()
+    if dirty:
+        pytest.fail(
+            "repo is dirty; bootstrap clones the committed branch, so this run would "
+            "test your last commit and silently ignore the working tree:\n" + dirty
+        )
     ref = subprocess.run(
         ["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"],
         check=True, text=True, capture_output=True,

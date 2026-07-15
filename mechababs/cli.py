@@ -11,6 +11,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from mechababs import __version__
 from mechababs import construct
 from mechababs import guard
 from mechababs import iterate as iterate_mod
@@ -131,6 +132,7 @@ def main():
         description=__doc__.split("\n\n")[0],
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    p.add_argument("--version", action="version", version=f"mechababs {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     pc = sub.add_parser("configure",
