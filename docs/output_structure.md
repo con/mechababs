@@ -1,74 +1,186 @@
 # mechababs output structure
 
-**The goal.** This is the target published shape for a mechababs campaign and its derivatives.
+**The goal.** This is the **target** shape for a mechababs campaign, the studies it adds to, and the derivatives it produces.
+It is not what we produce today, in several ways.
 Gaps between what we produce today and this target — and the work to close them — are tracked in [#4](https://github.com/asmacdo/mechababs/issues/4).
 
 ## Everything is a dataset
 
-Every level here is the *same kind of object*: a datalad **dataset** whose root carries BIDS metadata (`dataset_description.json`, `LICENSE`).
-Subdataset membership — and each dataset's own `.gitmodules` — is datalad-maintained, not authored here.
+Every level here is a datalad **dataset**, and valid BIDS (i.e. `dataset_description.json` and `LICENSE` in the root of each) — except where noted, as possible future improvements to BIDS.
 
-A mechababs `campaign` **produces** derivatives — `campaign/derivatives/<babs-study>/`, one babs project per (dataset, pipeline) cell, each a self-contained BIDS-study holding its raw input and the derivative it produced.
-This is mechababs's core output: the unit of *work*, tracked by the state ledger.
+mechababs orchestrates babs, which **produces derivatives**.
+Neither babs nor mechababs authors studies: target studies are cloned from [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies), which already describes the raw dataset and any
+derivatives previously made from it. mechababs adds one derivative per (dataset, pipeline) cell.
 
-**Composition into studies is optional and project-specific** — documented in the last section below.
+A derivative is created **in its final home**, inside the cloned study's `derivatives/`. 
+Nothing is composed or relocated afterwards (preserves clean datalad run provenance); publishing moves objects outward without reshaping them.
 
 ## `campaign/` — the campaign dataset
 
-One per cluster. A valid BIDS super-study; its members are the produced babs-studies.
+One per cluster. Holds the pinned tooling, the state ledger, and the studies being worked in.
+A campaign is a working object, published to a durable home of its own — never to OpenNeuro.
+Subdataset structure and commit history are the record of "Orchestration Provenance".
+(BEP 28 is not decided yet, but we are trying to align with the direction and reignite those efforts.)
 
 ```
 campaign/
-  dataset_description.json          # DatasetType: "study"; GeneratedBy: [mechababs]; License (SPDX id)
-  LICENSE                           # full license text
-  .mechababs/campaign.yaml          # non-BIDS campaign config (hidden dot-dir)
-  desc-mechababs_datasets.tsv       # the state ledger, BIDS-named, leading dataset_id
-  .gitmodules                       # lists code/*, each produced babs-study
+  dataset_description.json     # DatasetType "study"; GeneratedBy [mechababs]
+  LICENSE
+  .mechababs/campaign.yaml
+  desc-mechababs_datasets.tsv  # the state ledger
+  .bidsignore                  # studies/
   code/
-    babs/  mechababs/  containers/  # vendored + pinned tooling (submodules — provenance)
-  derivatives/                      # PRODUCED — one babs-study per (dataset, pipeline) cell
-    <tool>-ds<XXXXXX>+attempt<N>/   #   -> a babs-study dataset          [seam - see next section]
+    babs/  mechababs/  containers/    # pinned submodules
+  studies/                     # see below
+    study-ds<XXXXXX>/
+```
+
+`studies/` is `.bidsignore`d because BIDS describes no study containing studies — nesting is *by kind* (`sourcedata/`, `derivatives/`).
+The pattern is nonetheless already in use upstream: [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies) is itself a study containing studies — `DatasetType: "study"` at its root, with its `study-ds<XXXXXX>/` members sitting directly beside it.
+So this is a gap in the spec rather than a misuse of it. **TODO: raise with BIDS** — a study of studies should be expressible, and `.bidsignore` should not be the answer.
+
+---
+
+## `study-ds<XXXXXX>/` — a study dataset
+
+Cloned from `OpenNeuroStudies/study-ds<XXXXXX>`. Its `dataset_description.json`, `README`, and existing derivative links
+are authored upstream and are **not modified**. mechababs' only change is additive: a new derivative under `derivatives/`.
+
+```
+study-ds<XXXXXX>/
+  dataset_description.json     # upstream's; GeneratedBy [openneuro-studies]
+  README.md
+  sourcedata/ds<XXXXXX>/       # submodule -> OpenNeuroDatasets
+  derivatives/
+    fMRIPrep-21.0.1/           # previously existing derivatives
+    MRIQC-0.16.1/
+    <Tool>-<Ver>+<stage>/      # new babs derivatives
+```
+
+Derivative directory names follow the upstream convention — `<Tool>-<Ver>` in the tool's own casing
+(`fMRIPrep-25.1.1`, `MRIQC-24.0.2`) — plus `+<stage>` where a pipeline runs in stages (`fMRIPrep-25.1.1+anat`).
+
+---
+
+## `<Tool>-<Ver>+<stage>/` — a derivative dataset
+
+The unit of work, one per (dataset, pipeline) cell, tracked by the state ledger.
+This is the babs project: `babs init` targets this path, and its root is the derivative's root.
+The BIDS app writes `dataset_description.json` and `sub-*` here.
+
+```
+<Tool>-<Ver>+<stage>/          # e.g. fMRIPrep-25.1.1+anat
+  dataset_description.json     # DatasetType "derivative"; GeneratedBy [<bids_app>]
+  .bidsignore                  # containers/, logs/, prov/
+  sub-*                        # unzipped derivative content
+  prov/                        # not valid BIDS today — see below
+  code/                        # babs scaffold: run script, config, inclusion
+  containers/                  # submodule — the image that ran
+  logs/
+  sourcedata/raw/              # submodule -> OpenNeuroDatasets
+  .babs/                       # babs config + RIA stores (git-ignored)
+```
+
+Inputs are registered by **URL**, not local path, so the recorded provenance re-resolves anywhere.
+
+### `prov/` — orchestration provenance
+
+The BIDS app records itself in its own `dataset_description.json`. `prov/` records the tools that *composed and ran* it,
+following [BEP028 / BIDS-Prov](https://github.com/bids-standard/BEP028_BIDSprov): `prov/prov-<label>_<suffix>.json`.
+Records are written at init, from facts known at scaffold time; the app's outputs are never modified afterwards.
+
+`prov/prov-mechababs_base.json` — context, and the link to the campaign that ran the pipeline:
+
+```jsonc
+{
+  "@context": "https://purl.org/nidash/bidsprov/context.json",
+  "BIDSProvVersion": "0.0.1",
+
+  // The campaign is LINKED, not copied: it holds the orchestration's full git
+  // history, its `datalad run` records, the pinned code, and the ledger — the
+  // real provenance, which a summary could only approximate.
+  //
+  // `Bundle` is W3C PROV's term for "a named set of provenance descriptions,
+  // and is itself an entity, so allowing provenance of provenance to be
+  // expressed" (PROV-DM §5.4, https://www.w3.org/TR/prov-dm/#component4) —
+  // exactly what a campaign is. BIDS-Prov has no record type for a reference
+  // to provenance held in another dataset; this is carried pending an answer.
+  "Bundle": [
+    {
+      // The campaign's datalad-id: stable identity, the same across every
+      // commit — it says WHICH campaign, never which state of it.
+      "Id": "urn:uuid:a4c32684-d47e-4133-9e9e-29c8bc8f44c1",
+      "Label": "mechababs campaign: my-example-campaign",
+      "AtLocation": "https://github.com/con/my-example-campaign.git",
+      // The commit pins the state. Without it the link resolves to a campaign
+      // that has since accreted more ticks and datasets, and the orchestration
+      // of THIS derivative can't be located in it.
+      // A Bundle is itself an Entity in PROV-DM, so `Digest` is Entity's field.
+      // TODO: the campaign's history for a derivative is not over at init —
+      // scaffold is one commit, submit and merge add more. Record the scaffold
+      // commit, or re-write this file at merge with the completing commit?
+      "Digest": { "sha1": "9f3c1a2b7e4d5a6c8b0f1e2d3c4b5a6978e0f1a2" }
+    }
+  ]
+}
+```
+
+`prov/prov-mechababs_soft.json` — the tools that composed and executed the run:
+
+```jsonc
+{
+  "Records": {
+    "Agent": [
+      {
+        "Id": "bids::prov/#mechababs",
+        "Label": "mechababs",
+        "Version": "0.1.dev42+g9f3c1a2"   // commit-bearing, so the exact code is recoverable
+      },
+      {
+        "Id": "bids::prov/#babs",
+        "Label": "BABS",
+        // BIDS-Prov's Agent record has no field for a source repository. The
+        // commit disambiguates the code; the fork it came from does not.
+        "Version": "0.1.dev674+g07d0a80"
+      }
+    ]
+  }
+}
+```
+
+**Commands.** Each job's invocation is recorded twice over by babs, inside the derivative: `code/participant_job.sh` holds the `singularity run` command,
+and the `datalad run` records in git history bind each command to the inputs it
+consumed and the outputs it produced. The commands that *drove* those jobs — configure, iterate, their arguments and
+timings — live in the campaign's run records, reached through the `Bundle` link.
+
+BIDS-Prov serializes this as `Activity` records, which map closely onto `datalad run` records:
+
+```jsonc
+{
+  "Records": {
+    "Activity": [
+      {
+        "Id": "bids::prov/#fmriprep-sub-0001-ses-01",
+        "Label": "fMRIPrep anatomical workflow, sub-0001 ses-01",
+        "Command": "singularity run -B \"${PWD}\" --no-home containers/.datalad/environments/fmriprep-25-1-1/image \"${PWD}/sourcedata/raw\" \"${PWD}/outputs/fmriprep_anat\" participant --anat-only --participant-label sub-0001",
+        "AssociatedWith": "bids::prov/#babs",
+        "Used": ["bids::sourcedata/raw"],
+        "StartedAtTime": "2026-07-15T16:11:04",
+        "EndedAtTime": "2026-07-15T16:11:29"
+      }
+    ]
+  }
+}
 ```
 
 ---
 
-## `<tool>-ds<XXXXXX>+attempt<N>/` — a babs-study dataset (produced)
+## Publishing
 
-The unit of work. Each is itself a valid BIDS-study (the babs BIDS-study layout), holding the raw data it ran on and the one derivative it produced.
+Each object goes to its own home:
 
-```
-<tool>-ds<XXXXXX>+attempt<N>/       # e.g. fmriprep-ds000117+attempt1
-  dataset_description.json          # DatasetType: "study"; GeneratedBy: [babs]; License (SPDX id)
-  LICENSE
-  code/                             # babs scaffold — run records + committed config (provenance)
-  sourcedata/raw/                   # raw BIDS (submodule -> OpenNeuroDatasets)   [seam]
-  derivatives/
-    <tool>-<ver>+<stage>/           # the derivative — a FOLDER in this study, NOT a separate dataset
-      dataset_description.json      # DatasetType: "derivative"; GeneratedBy: [<bids_app>]
-      sub-*                         # TARGET: unzipped here (today babs zips it; removing zipping lands it here — see optional-zipping / #4)
-```
+- the **derivative** → its own `OpenNeuroDerivatives/ds<XXXXXX>-<tool>` repository, standing alone;
+- the **study**, with the new derivative registered under `derivatives/`, → `OpenNeuroStudies/study-ds<XXXXXX>`;
+- the **campaign** → TODO needs a durable home of its own.
 
----
-
-## Composition into studies (unsure if this belongs in mechababs)
-
-Unsure if this belongs in mechababs — this automation may belong in the OpenNeuroStudies repo, not here.
-Documenting it in this doc anyway, to keep the whole target shape in one place.
-
-Composition gathers, **per raw dataset**, all the derivatives mechababs produced for it (across pipelines and stages) into one OpenNeuroStudies-style `study-ds<XXXXXX>/` dataset.
-It is a read-of-many-produced, write-one-study step — the produced babs-studies above are the *inputs*; a `study-ds<XXXXXX>/` is the *output*.
-
-```
-study-ds<XXXXXX>/                   # one per raw dataset; the OpenNeuroStudies glue shape
-  dataset_description.json          # DatasetType: "study"; GeneratedBy: [mechababs]; License (SPDX id)
-  LICENSE
-  sourcedata/ds<XXXXXX>/            # raw BIDS (submodule -> OpenNeuroDatasets)          [seam]
-  derivatives/
-    <tool>-<ver>+<stage>/          # each derivative for this dataset (submodule -> the babs-study that produced it)  [seam]
-    ...                            #   one per (pipeline, stage) that ran on this dataset
-```
-
-Why it's marked uncertain:
-- The produced side (`campaign/derivatives/<babs-study>/`) is mechababs's core output — the unit of work, tracked by the ledger.
-- Composition is a *rearrangement* of those produced datasets into the OpenNeuroStudies layout; it feeds the OpenNeuroStudies superdataset and arguably lives there, not in the campaign.
-- If it lands here, it is a separate, later step over already-produced derivatives — never a prerequisite for producing them.
+Because a derivative is published standalone, everything needed to interpret it travels inside it.

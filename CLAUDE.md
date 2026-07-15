@@ -204,7 +204,7 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 | `OpenNeuroDerivatives/` | https://github.com/OpenNeuroDerivatives/OpenNeuroDerivatives | Upstream mirrors for derivative datasets |
 | `fairly-big-processing-workflow/` | https://github.com/psychoinformatics-de/fairly-big-processing-workflow | The FAIRly Big pattern that BABS implements |
 | `containers/` | https://github.com/ReproNim/containers | ReproNim container dataset — archives built SIFs |
-| `babs_demo/` | (local, Dorota's walkthrough) | Reference scripts for babs workflow with .env-based cluster config |
+| `babs_demo/` | https://github.com/djarecka/babs_demo | Dorota's babs walkthrough (.env-based cluster config). The `*_bids_layout` scripts are the **canonical demonstration of what babs produces**: a derivative dataset inside a study you make yourself. Read these before reasoning about output structure or `analysis_path` |
 | `babs-containers-run-test/` | (local, Austin's test scripts) | Reference scripts for testing babs init with containers-run branch |
 | `bootstrap_fMRIprep/` | Felix's cerebra.fz-juelich.de gitea | Felix's canonical fmriprep wrapper — reference for opinions repo |
 | `ds001761-fmriprep/`, `ds005374-fmriprep/` | OpenNeuroDerivatives mirrors | Joe's published fmriprep runs (2022 + 2025) — reference for output shape |
