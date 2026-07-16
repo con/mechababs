@@ -106,16 +106,21 @@ def resolve_container_ds(campaign, container):
     return campaign / "code" / container_dir(container["source"])
 
 
-def next_attempt(campaign, ds_id, short):
-    """Next free N for derivatives/<ds>_<short>_attempt-N (allocated at creation)."""
-    derivatives = campaign / "derivatives"
-    used = []
-    if derivatives.is_dir():
-        for p in derivatives.glob(f"{ds_id}_{short}_attempt-*"):
-            suffix = p.name.rsplit("attempt-", 1)[-1]
-            if suffix.isdigit():
-                used.append(int(suffix))
-    return max(used, default=0) + 1
+def study_sourcedata_url(study, ds_id):
+    """The raw dataset's URL, read from the cloned study's `.gitmodules`
+    `sourcedata/<id>` entry — the study's own record of its input, so babs
+    registers the input by that URL rather than a campaign-local path. datalad
+    names a submodule by its path, so the entry is `submodule.sourcedata/<id>.url`.
+    """
+    out = subprocess.run(
+        ["git", "config", "--file", str(study / ".gitmodules"),
+         "--get", f"submodule.sourcedata/{ds_id}.url"],
+        capture_output=True, text=True, check=True,
+    )
+    url = out.stdout.strip()
+    if not url:
+        sys.exit(f"no sourcedata/{ds_id} submodule url in {study}/.gitmodules")
+    return url
 
 
 def babs_project(campaign, row, short):
@@ -132,12 +137,13 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     merged babs config) are transient — babs consumes them — so they live in a
     tempdir; the inclusion is then pinned into the project as the durable record.
     """
-    url = row["url"]
-    ds_id = dataset_id(url)
+    ds_id = row["dataset_id"]
     processing_level = row.get("processing_level")
     if not processing_level:
-        sys.exit(f"processing_level not set for {url} — set it in the ledger "
+        sys.exit(f"processing_level not set for {ds_id} — set it in the ledger "
                  f"(add-dataset derives it; a blank means the metadata fetch failed)")
+    study = campaign / "studies" / f"study-{ds_id}"
+    origin_url = study_sourcedata_url(study, ds_id)
     pipeline_path = campaign / cfg["pipelines"][short]
     cluster_path = campaign / cfg["cluster"]
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
@@ -148,12 +154,13 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
         sys.exit("campaign.yaml has no 'venv' — run `mechababs configure` first")
     campaign_venv = str(campaign / venv_rel)
 
-    n = next_attempt(campaign, ds_id, short)
-    project_root = campaign / "derivatives" / f"{ds_id}_{short}_attempt-{n}"
-    # The analysis dataset's location is babs's `analysis_path` (babs#369),
-    # relative to the project root: 'analysis' by default, '.' for the BIDS-study
-    # layout (project root IS the analysis dataset). pathlib drops a '.' segment,
-    # so `project_root / '.'` is `project_root`.
+    # The derivative is produced in its final home, inside the cloned study; the
+    # babs-project root IS the derivative dataset, named by the pipeline's short_name.
+    project_root = study / "derivatives" / short
+    # The analysis dataset's location is babs's `analysis_path`, relative to the
+    # project root: 'analysis' by default, '.' for the BIDS-study layout (project
+    # root IS the analysis dataset). pathlib drops a '.' segment, so
+    # `project_root / '.'` is `project_root`.
     analysis = project_root / pipeline_cfg.get("analysis_path", "analysis")
 
     print(f"\n=== scaffold {ds_id} / {short} -> {project_root.name} ===", file=sys.stderr)
@@ -189,14 +196,14 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
         #    resolving the venv placeholder in the preamble with the campaign venv.
         if dry_run:
             run(["python3", MERGE_CONFIG_SCRIPT, "--pipeline", pipeline_path,
-                 "--cluster", cluster_path, "--dataset-url", url,
+                 "--cluster", cluster_path, "--dataset-url", origin_url,
                  "--campaign-venv", campaign_venv, ">", babs_config],
                 dry_run=True)
         else:
             with open(babs_config, "w") as f:
                 subprocess.run(["python3", str(MERGE_CONFIG_SCRIPT),
                                 "--pipeline", str(pipeline_path), "--cluster", str(cluster_path),
-                                "--dataset-url", url, "--campaign-venv", campaign_venv],
+                                "--dataset-url", origin_url, "--campaign-venv", campaign_venv],
                                check=True, stdout=f)
 
         # 3. babs init — scaffold only, NO submit. --list-sub-file defines the job
@@ -258,7 +265,7 @@ def fail(campaign, cfg, row, short, *, dry_run):
     """FAIL: some jobs failed -> flag and leave unmerged (re-surfaces each tick;
     retry/policy deferred, #66)."""
     proj = babs_project(campaign, row, short)
-    print(f"  {dataset_id(row['url'])}/{short}: jobs FAILED — not merging; needs "
+    print(f"  {row['dataset_id']}/{short}: jobs FAILED — not merging; needs "
           f"attention (`babs status {proj}`)", file=sys.stderr)
     return None
 
@@ -277,7 +284,7 @@ ITERATE_ACTIONS = {
 def handle_active(campaign, cfg, row, short, *, dry_run):
     """A scaffolded-but-unmerged cell: read `babs status --json`, decide the next
     transition (babs_status.decide), dispatch via ITERATE_ACTIONS."""
-    ds = dataset_id(row["url"])
+    ds = row["dataset_id"]
     proj = babs_project(campaign, row, short)
     print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
 
@@ -335,7 +342,7 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
                 row.update(updates)
                 state.write_rows(campaign, cols, rows)
                 state.save(campaign,
-                           f"iterate: {dataset_id(row['url'])}/{short} -> {','.join(updates)}")
+                           f"iterate: {row['dataset_id']}/{short} -> {','.join(updates)}")
 
         if dry_run:
             print(f"\nDRY-RUN: would advance {len(work)} cell(s).", file=sys.stderr)

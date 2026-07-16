@@ -130,19 +130,19 @@ def cmd_add_dataset(args):
     with state.locked(campaign):
         cols = state.header(campaign)
         rows = state.read_rows(campaign)
-        if any(r["url"] == args.url for r in rows):
-            sys.exit(f"already registered: {args.url}")
+        if any(r["dataset_id"] == ds_id for r in rows):
+            sys.exit(f"already registered: {ds_id}")
         row = {c: "" for c in cols}
-        row["url"] = args.url
+        row["dataset_id"] = ds_id
         row["study_url"] = study_url
         row["processing_level"] = processing_level
         rows.append(row)
         state.write_rows(campaign, cols, rows)
         state.save(campaign,
-                   f"add-dataset {args.url} (study {study_url}, "
+                   f"add-dataset {ds_id} (study {study_url}, "
                    f"{processing_level or 'level TBD'})")
 
-    print(f"registered {args.url} (study {study_url}, "
+    print(f"registered {ds_id} (study {study_url}, "
           f"processing_level: {processing_level or 'blank'})", file=sys.stderr)
     return 0
 

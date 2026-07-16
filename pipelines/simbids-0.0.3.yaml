@@ -3,8 +3,10 @@
 # exercised inside the pennlinc/slurm-docker-ci container with NO real cluster.
 # NOT for real data — paired with clusters/test-docker.yaml.
 
-# short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per campaign).
-short_name: simbids
+# short_name: the per-pipeline column prefix in DATASETS_STATE.tsv (unique per
+# campaign) AND the published derivative directory name (studies/<study>/
+# derivatives/<short_name>) — the tool's own casing plus version.
+short_name: SimBIDS-0.0.3
 
 # BIDS-study layout (babs#369): the babs project root IS the analysis dataset, so
 # the derivative dir is a valid BIDS-study dataset (no nested babs-project/analysis/).

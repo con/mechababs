@@ -18,6 +18,10 @@ import subprocess
 
 log = logging.getLogger("mechababs.e2e")
 
+# The simbids pipeline's short_name: its ledger column prefix and the derivative
+# directory name (studies/<study>/derivatives/<short_name>).
+SHORT = "SimBIDS-0.0.3"
+
 
 def _venv_run(campaign, tool, *args):
     """Run a campaign-venv tool (`mechababs` or `babs`) with the venv on PATH.
@@ -74,13 +78,17 @@ def test_full_run(campaign, cluster_config, rawdata, study):
 
     row = _ledger_row(campaign)
     assert row["processing_level"] == "subject"
-    proj_rel = row["simbids_babs"]
-    assert proj_rel, "iterate did not record simbids_babs — scaffold failed"
+    proj_rel = row[f"{SHORT}_babs"]
+    assert proj_rel, f"iterate did not record {SHORT}_babs — scaffold failed"
+    # The derivative is produced in its final home inside the cloned study, named
+    # by the pipeline's short_name.
+    assert proj_rel == f"studies/study-ds999999/derivatives/{SHORT}", \
+        f"scaffold did not init into the study's derivatives/: {proj_rel}"
 
     proj = campaign / proj_rel
-    # BIDS-study layout (simbids pipeline sets analysis_path: "." + .babs/ RIA
+    # BIDS-study layout (the simbids pipeline sets analysis_path: "." + .babs/ RIA
     # stores): the project root IS the analysis dataset, so code/ is at its root
-    # and the RIA stores tuck under .babs/ (babs#369).
+    # and the RIA stores tuck under .babs/.
     assert (proj / ".babs" / "input_ria").is_dir()
     assert (proj / ".babs" / "output_ria").is_dir()
     code = proj / "code"
@@ -88,7 +96,7 @@ def test_full_run(campaign, cluster_config, rawdata, study):
     # our inclusion is pinned, and babs's inner-join (requested ∩ present) matches
     assert sub in (code / "mechababs_inclusion.csv").read_text()
     assert sub in (code / "processing_inclusion.csv").read_text()
-    assert not row.get("simbids_babs-merged"), "merged before any job ran"
+    assert not row.get(f"{SHORT}_babs-merged"), "merged before any job ran"
 
     # --- tick 2: active cell, nothing submitted -> decide "submit" -> `babs submit` ---
     _venv_run(campaign, "mechababs", "iterate", "--batch", "1")
@@ -101,8 +109,8 @@ def test_full_run(campaign, cluster_config, rawdata, study):
 
     # --- the ledger records the merge, and a derivative was produced ---
     row = _ledger_row(campaign)
-    assert row["simbids_babs-merged"] == "true", \
-        f"merge tick did not set simbids_babs-merged (row={row})"
+    assert row[f"{SHORT}_babs-merged"] == "true", \
+        f"merge tick did not set {SHORT}_babs-merged (row={row})"
 
     # `babs merge` deposits the merged results in the OUTPUT RIA (not the analysis
     # working tree). The RIA store holds one bare dataset repo at

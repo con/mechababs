@@ -139,9 +139,9 @@ cell is saved as it lands, so a long or interrupted tick still records progress.
 without running them.
 
 There is **no status enum** — a pipeline's state is entirely derived from which
-columns are filled. Identity columns (`url`, `processing_level`, `n_subjects`,
-`n_sessions`) are *inputs* iterate reads and never overwrites; the
-`<short>_babs*` columns are *derived* and reconciled each tick.
+columns are filled. Identity columns (`dataset_id`, `study_url`,
+`processing_level`, `n_subjects`, `n_sessions`) are *inputs* iterate reads and
+never overwrites; the `<short>_babs*` columns are *derived* and reconciled each tick.
 
 `babs init` runs **on the cluster** (via `iterate`), because babs bakes absolute
 RIA-store paths into the project at init that can't be relocated. Cheap steps
