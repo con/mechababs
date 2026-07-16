@@ -8,8 +8,7 @@ This is the piece that exercises the reconciler's ACTIVE-cell path
 (handle_active -> babs_status.read_status -> decide -> ITERATE_ACTIONS): the second
 tick decides "submit", the third decides "merge". Full-run tier = simbids only (light
 enough to actually submit+run under the slurm-docker-ci slurm); the scaffold
-assertions here double as the scaffold tier. Needs a babs with `babs status --json`
-(PennLINC/babs#387) — set BABS_SPEC to that ref until it lands in main.
+assertions here double as the scaffold tier.
 """
 
 import csv
@@ -50,11 +49,20 @@ def _ledger_row(campaign):
     return rows[0]
 
 
-def test_full_run(campaign, cluster_config, rawdata):
+def test_full_run(campaign, cluster_config, rawdata, study):
     _venv_run(campaign, "mechababs", "configure",
               "--pipelines", "simbids-0.0.3.yaml", "--cluster", cluster_config)
     _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
-              "--processing-level", "subject")
+              "--study", str(study), "--processing-level", "subject")
+
+    # add-dataset cloned the study into the campaign and recorded its URL.
+    study_ds = campaign / "studies" / "study-ds999999"
+    assert (study_ds / "dataset_description.json").is_file(), \
+        "add-dataset did not clone the study into studies/"
+    assert "studies/study-ds999999" in (campaign / ".gitmodules").read_text(), \
+        "study not registered as a campaign subdataset"
+    assert _ledger_row(campaign)["study_url"] == str(study), \
+        "add-dataset did not record study_url"
 
     sub = _first_subject(rawdata)
     inc = campaign / "inc.csv"

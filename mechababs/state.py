@@ -1,7 +1,7 @@
 """state.py — the campaign's DATASETS_STATE.tsv ledger accessor.
 
-A wide TSV: dataset/identity columns (``url``, ``processing_level``,
-``n_subjects``, ``n_sessions``) then a column-group per pipeline
+A wide TSV: dataset/identity columns (``url``, ``study_url``,
+``processing_level``, ``n_subjects``, ``n_sessions``) then a column-group per pipeline
 (``<p>_babs``/``_babs-merged``). There is no status enum — a pipeline's state is
 derived from which columns are populated (``babs`` -> the babs-project path, set
 once scaffolded; ``babs-merged`` -> finished). The per-pipeline
@@ -23,7 +23,7 @@ from pathlib import Path
 STATE_FILENAME = "DATASETS_STATE.tsv"
 LOCK_FILENAME = "." + STATE_FILENAME + ".lock"
 
-IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
+IDENTITY_COLUMNS = ["url", "study_url", "processing_level", "n_subjects", "n_sessions"]
 PIPELINE_COLUMNS = ["babs", "babs-merged"]
 
 

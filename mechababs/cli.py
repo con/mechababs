@@ -8,6 +8,7 @@ is bootstrap.sh's job.
 """
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,8 +67,22 @@ def cmd_configure(args):
     return 0
 
 
+STUDY_URL_TEMPLATE = "https://github.com/OpenNeuroStudies/study-{ds_id}"
+
+
+def default_study_url(ds_id):
+    """The OpenNeuroStudies study for a dataset, by convention (``study-<id>``)."""
+    return STUDY_URL_TEMPLATE.format(ds_id=ds_id)
+
+
 def cmd_add_dataset(args):
-    """Register a dataset by URL: append one ledger row (dataset-axis only).
+    """Register a dataset: clone its study into the campaign, append one ledger row.
+
+    The derivative is produced inside a study (cloned from OpenNeuroStudies), so
+    add-dataset clones that study now — ``study-<id>`` by convention, or ``--study``
+    to override (a non-OpenNeuro study, e.g. an e2e fixture). Only the study
+    skeleton is fetched (submodule pointers); sourcedata content is pulled later by
+    ``babs init``.
 
     Derives ``processing_level`` from the dataset's OpenNeuroStudies metadata
     (has-sessions → session) and records it as an INPUT column — iterate reads it,
@@ -76,8 +91,7 @@ def cmd_add_dataset(args):
     an e2e fixture), which has no OpenNeuroStudies entry to derive from. On a
     metadata-fetch failure with no override it is left blank (set it by hand, or
     re-add once the dataset is in OpenNeuroStudies). All pipeline columns start
-    empty; does NOT clone sourcedata or generate an inclusion (selection is
-    pipeline-axis, deferred to deploy).
+    empty; no inclusion is generated (selection is pipeline-axis, deferred to deploy).
     """
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
@@ -85,6 +99,7 @@ def cmd_add_dataset(args):
     guard.require_clean_pins(campaign)
 
     ds_id = iterate_mod.dataset_id(args.url)
+    study_url = args.study or default_study_url(ds_id)
     if args.processing_level:
         processing_level = args.processing_level
         print(f"using --processing-level {processing_level} for {ds_id} "
@@ -97,6 +112,21 @@ def cmd_add_dataset(args):
             print(f"warning: could not derive processing_level for {ds_id} ({e}); "
                   f"left blank — set it in the ledger before iterate", file=sys.stderr)
 
+    # Clone the study into the campaign (registers it as a subdataset). Outside the
+    # ledger lock — it's slow and touches no ledger state. A present study dir means
+    # this dataset was already added; the ledger dedup below is the authority, but
+    # bail early rather than let datalad clone fail on a non-empty target.
+    study_dest = campaign / "studies" / f"study-{ds_id}"
+    if study_dest.exists():
+        sys.exit(f"study already present at {study_dest.relative_to(campaign)} "
+                 f"— already added? (reset: remove it and the ledger row)")
+    print(f"cloning study {study_url} -> {study_dest.relative_to(campaign)}", file=sys.stderr)
+    subprocess.run(
+        ["datalad", "clone", "--dataset", str(campaign), study_url,
+         str(study_dest.relative_to(campaign))],
+        cwd=str(campaign), check=True,
+    )
+
     with state.locked(campaign):
         cols = state.header(campaign)
         rows = state.read_rows(campaign)
@@ -104,13 +134,16 @@ def cmd_add_dataset(args):
             sys.exit(f"already registered: {args.url}")
         row = {c: "" for c in cols}
         row["url"] = args.url
+        row["study_url"] = study_url
         row["processing_level"] = processing_level
         rows.append(row)
         state.write_rows(campaign, cols, rows)
-        state.save(campaign, f"add-dataset {args.url} ({processing_level or 'level TBD'})")
+        state.save(campaign,
+                   f"add-dataset {args.url} (study {study_url}, "
+                   f"{processing_level or 'level TBD'})")
 
-    print(f"registered {args.url} (processing_level: {processing_level or 'blank'})",
-          file=sys.stderr)
+    print(f"registered {args.url} (study {study_url}, "
+          f"processing_level: {processing_level or 'blank'})", file=sys.stderr)
     return 0
 
 
@@ -148,10 +181,13 @@ def main():
                          "(default: all)")
     pc.set_defaults(func=cmd_configure)
 
-    pa = sub.add_parser("add-dataset", help="register a dataset by URL (append a ledger row)")
+    pa = sub.add_parser("add-dataset", help="clone a dataset's study, append a ledger row")
     pa.add_argument("url", help="the dataset's upstream URL (its identity)")
     pa.add_argument("--campaign-path", type=Path, default=Path("."),
                     help="the campaign dataset (default: current directory)")
+    pa.add_argument("--study", default=None,
+                    help="the study to clone (default: OpenNeuroStudies/study-<id> by "
+                         "convention); override for a non-OpenNeuro study, e.g. a test fixture")
     pa.add_argument("--processing-level", choices=["subject", "session"], default=None,
                     help="set processing_level explicitly, bypassing OpenNeuroStudies "
                          "derivation (needed for a non-OpenNeuro dataset)")

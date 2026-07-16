@@ -37,7 +37,7 @@ SIMBIDS_CONFIG = "ds005237_configs.yaml"
 
 # The fixture's dataset id: an obviously-fake sentinel, chosen to NOT collide with
 # any real OpenNeuro accession (unlike the phantom's own ds005237).
-STUDY_ID = "ds999999"
+DATASET_ID = "ds999999"
 
 # This repo (tests/e2e/conftest.py -> repo root) — the mechababs under test, which
 # bootstrap.sh clones + pins into the campaign. No env var: pytest runs from here.
@@ -94,9 +94,11 @@ def rawdata(simbids_sif):
 
     Prod add-dataset's a real OpenNeuro URL, so fake input has no prod home — it's a
     test-only concern owned by the test. Generated via simbids-raw-mri inside the
-    simbids container; datalad-ified so babs can clone it as raw input.
+    simbids container; datalad-ified so babs can clone it as raw input. Named by its
+    accession (`ds999999`, like real OpenNeuro raw dirs) so the dataset id derives
+    cleanly from its path.
     """
-    dest = Path(__file__).resolve().parent / "_cache" / "simbids-raw"
+    dest = Path(__file__).resolve().parent / "_cache" / DATASET_ID
     if not (dest / ".datalad").exists():
         _generate_fake_bids(dest, simbids_sif)
     return dest
@@ -119,7 +121,7 @@ def _generate_fake_bids(dest, sif):
     subprocess.run(["datalad", "create", "--force", str(dest)], check=True)
     subprocess.run(
         ["datalad", "save", "-d", str(dest), "-m",
-         "simbids-raw-mri ds005237 (fake single-session BIDS)"],
+         f"simbids phantom BIDS ({DATASET_ID})"],
         check=True,
     )
 
@@ -138,7 +140,7 @@ def study(rawdata):
     not a plain dir, so the fixture exercises the nested-dataset structure the
     campaign runs against (campaign -> study -> derivative).
     """
-    dest = Path(__file__).resolve().parent / "_cache" / f"study-{STUDY_ID}"
+    dest = Path(__file__).resolve().parent / "_cache" / f"study-{DATASET_ID}"
     if not (dest / ".datalad").exists():
         _build_study(dest, rawdata)
     return dest
@@ -150,7 +152,7 @@ def _build_study(dest, rawdata):
     # The study is itself a datalad dataset.
     subprocess.run(["datalad", "create", str(dest)], check=True)
     # sourcedata/<id> = the phantom raw, cloned in and registered as a subdataset.
-    src = dest / "sourcedata" / STUDY_ID
+    src = dest / "sourcedata" / DATASET_ID
     subprocess.run(
         ["datalad", "clone", "--dataset", str(dest), str(rawdata), str(src)],
         check=True,
@@ -159,7 +161,7 @@ def _build_study(dest, rawdata):
     _write_study_description(dest / "dataset_description.json")
     subprocess.run(
         ["datalad", "save", "-d", str(dest), "-m",
-         f"fake study-{STUDY_ID} wrapping the simbids phantom"],
+         f"fake study-{DATASET_ID} wrapping the simbids phantom"],
         check=True,
     )
 
@@ -191,7 +193,7 @@ def _write_study_description(path):
     we synthesize the same shape so the fixture is faithful.
     """
     path.write_text(json.dumps({
-        "Name": f"study-{STUDY_ID}",
+        "Name": f"study-{DATASET_ID}",
         "BIDSVersion": "1.9.0",
         "DatasetType": "study",
         "GeneratedBy": [{"Name": "openneuro-studies"}],
