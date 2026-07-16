@@ -15,6 +15,8 @@ scenario drives the campaign CLI, so the fixtures provide everything it needs:
   real bootstrap.sh construction path.
 """
 
+import csv
+import json
 import logging
 import os
 import shutil
@@ -28,8 +30,14 @@ import pytest
 log = logging.getLogger("mechababs.e2e")
 
 # The simbids-raw-mri config baked into the simbids container (a single-session,
-# subject-level phantom dataset).
+# subject-level phantom dataset). It labels its phantom `ds005237` — a REAL
+# OpenNeuro accession, and simbids is upstream (pennlinc/simbids), not ours to
+# change — so the study fixture wraps it under the sentinel id below instead.
 SIMBIDS_CONFIG = "ds005237_configs.yaml"
+
+# The fixture's dataset id: an obviously-fake sentinel, chosen to NOT collide with
+# any real OpenNeuro accession (unlike the phantom's own ds005237).
+STUDY_ID = "ds999999"
 
 # This repo (tests/e2e/conftest.py -> repo root) — the mechababs under test, which
 # bootstrap.sh clones + pins into the campaign. No env var: pytest runs from here.
@@ -114,6 +122,80 @@ def _generate_fake_bids(dest, sif):
          "simbids-raw-mri ds005237 (fake single-session BIDS)"],
         check=True,
     )
+
+
+@pytest.fixture(scope="session")
+def study(rawdata):
+    """A fake OpenNeuroStudies-shaped study wrapping the phantom `rawdata`.
+
+    mechababs clones a study and `babs init`s the derivative into its
+    `derivatives/`. Prod clones `OpenNeuroStudies/study-ds<X>`; dev has no such
+    study, so we build a faithful one from the phantom raw data — the same shape a
+    real clone would have, with no network. Built once into the gitignored repo
+    cache, reused if present.
+
+    The raw phantom is registered as a real datalad SUBDATASET (`sourcedata/<id>`),
+    not a plain dir, so the fixture exercises the nested-dataset structure the
+    campaign runs against (campaign -> study -> derivative).
+    """
+    dest = Path(__file__).resolve().parent / "_cache" / f"study-{STUDY_ID}"
+    if not (dest / ".datalad").exists():
+        _build_study(dest, rawdata)
+    return dest
+
+
+def _build_study(dest, rawdata):
+    log.info("building fake study at %s", dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    # The study is itself a datalad dataset.
+    subprocess.run(["datalad", "create", str(dest)], check=True)
+    # sourcedata/<id> = the phantom raw, cloned in and registered as a subdataset.
+    src = dest / "sourcedata" / STUDY_ID
+    subprocess.run(
+        ["datalad", "clone", "--dataset", str(dest), str(rawdata), str(src)],
+        check=True,
+    )
+    _write_subjects_tsv(dest / "sourcedata" / "sourcedata+subjects.tsv", src)
+    _write_study_description(dest / "dataset_description.json")
+    subprocess.run(
+        ["datalad", "save", "-d", str(dest), "-m",
+         f"fake study-{STUDY_ID} wrapping the simbids phantom"],
+        check=True,
+    )
+
+
+def _write_subjects_tsv(path, raw):
+    """The per-subject metadata `select` reads: subject_id, datatypes, t1w_num,
+    bold_num (the columns its eligibility filters key on). Derived by scanning the
+    raw BIDS — annexed files show as symlinks, so globbing by name counts them
+    without fetching content.
+    """
+    subs = sorted(p for p in raw.iterdir() if p.name.startswith("sub-"))
+    fieldnames = ["subject_id", "datatypes", "t1w_num", "bold_num"]
+    with open(path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        w.writeheader()
+        for sub in subs:
+            datatypes = sorted(d.name for d in sub.iterdir() if d.is_dir())
+            w.writerow({
+                "subject_id": sub.name,
+                "datatypes": ",".join(datatypes),
+                "t1w_num": len(list(sub.glob("anat/*_T1w.nii*"))),
+                "bold_num": len(list(sub.glob("func/*_bold.nii*"))),
+            })
+
+
+def _write_study_description(path):
+    """The study-level `dataset_description.json` — the upstream OpenNeuroStudies
+    shape, which mechababs never authors or modifies in prod (it clones it). Here
+    we synthesize the same shape so the fixture is faithful.
+    """
+    path.write_text(json.dumps({
+        "Name": f"study-{STUDY_ID}",
+        "BIDSVersion": "1.9.0",
+        "DatasetType": "study",
+        "GeneratedBy": [{"Name": "openneuro-studies"}],
+    }, indent=2) + "\n")
 
 
 @pytest.fixture(scope="session")
