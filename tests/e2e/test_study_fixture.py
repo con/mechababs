@@ -22,9 +22,16 @@ def test_study_fixture_shape(study):
     gitmodules = (study / ".gitmodules").read_text()
     assert "sourcedata/ds999999" in gitmodules
 
+    # Metadata must be git-tracked, not annexed — an annex symlink would clone in
+    # broken (no content), so add-dataset's study clone would have no readable
+    # description or TSV. A regular file (not a symlink) proves it's in git.
+    desc_path = study / "dataset_description.json"
+    tsv = study / "sourcedata" / "sourcedata+subjects.tsv"
+    assert not desc_path.is_symlink(), "dataset_description.json is annexed, not in git"
+    assert not tsv.is_symlink(), "sourcedata+subjects.tsv is annexed, not in git"
+
     # The metadata TSV `select` reads, with the columns its eligibility filters key
     # on; at least one subject row, and the phantom is anatomical (t1w present).
-    tsv = study / "sourcedata" / "sourcedata+subjects.tsv"
     rows = list(csv.DictReader(tsv.open(), delimiter="\t"))
     assert rows, "no subject rows in the study metadata TSV"
     assert {"subject_id", "datatypes", "t1w_num", "bold_num"} <= set(rows[0])

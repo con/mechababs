@@ -149,8 +149,11 @@ def study(rawdata):
 def _build_study(dest, rawdata):
     log.info("building fake study at %s", dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    # The study is itself a datalad dataset.
-    subprocess.run(["datalad", "create", str(dest)], check=True)
+    # The study is itself a datalad dataset. text2git keeps the metadata (the
+    # dataset_description + the subjects TSV) in git, not annex, so it travels with
+    # a no-content clone (as real OpenNeuroStudies studies do) — else add-dataset's
+    # clone gets broken annex symlinks.
+    subprocess.run(["datalad", "create", "-c", "text2git", str(dest)], check=True)
     # sourcedata/<id> = the phantom raw, cloned in and registered as a subdataset.
     src = dest / "sourcedata" / DATASET_ID
     subprocess.run(
