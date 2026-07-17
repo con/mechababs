@@ -5,7 +5,7 @@ configure -> add-dataset -> iterate (scaffold via `babs init`) -> iterate (submi
 ledger + babs project at scaffold, then the merged column + a produced derivative.
 
 This is the piece that exercises the reconciler's ACTIVE-cell path
-(handle_active -> babs_status.read_status -> decide -> ITERATE_ACTIONS): the second
+(decide_active -> babs_status.read_status -> decide -> ITERATE_ACTIONS): the second
 tick decides "submit", the third decides "merge". Full-run tier = simbids only (light
 enough to actually submit+run under the slurm-docker-ci slurm); the scaffold
 assertions here double as the scaffold tier.
@@ -147,7 +147,7 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     # COMMITTED the derivative advance, so the recursive save propagates that committed
     # advance study -> campaign in one node — every level clean, merge the latest node.
     _assert_nest_clean([proj, study_ds, campaign], "merge")
-    assert _git(campaign, "log", "--first-parent", "-1", "--format=%s").strip() == f"iterate ds999999/{SHORT}", \
+    assert _git(campaign, "log", "--first-parent", "-1", "--format=%s").strip() == f"merge ds999999/{SHORT}", \
         "campaign mainline did not record the merge node"
 
     # `babs merge` deposits the merged results in the OUTPUT RIA (not the analysis

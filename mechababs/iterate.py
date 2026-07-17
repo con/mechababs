@@ -280,7 +280,7 @@ def fail(campaign, cfg, row, short, *, dry_run):
 
 # decide()'s return values mapped to handlers; each has the uniform
 # (campaign, cfg, row, short, *, dry_run) signature and returns the ledger update
-# to apply (or None/{} for no-op), so handle_active dispatches in one line.
+# to apply (or None/{} for no-op), so run_iterate dispatches ITERATE_ACTIONS[action].
 ITERATE_ACTIONS = {
     "submit": submit,
     "skip": skip,
@@ -289,9 +289,10 @@ ITERATE_ACTIONS = {
 }
 
 
-def handle_active(campaign, cfg, row, short, *, dry_run):
-    """A scaffolded-but-unmerged cell: read `babs status --json`, decide the next
-    transition (babs_status.decide), dispatch via ITERATE_ACTIONS."""
+def decide_active(campaign, row, short):
+    """A scaffolded-but-unmerged cell: read `babs status --json` and decide the next
+    transition (submit/skip/merge/fail) via babs_status.decide. Read-only — the
+    caller names the campaign commit after the returned action, then dispatches it."""
     ds = row["dataset_id"]
     proj = babs_project(campaign, row, short)
     print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
@@ -299,7 +300,7 @@ def handle_active(campaign, cfg, row, short, *, dry_run):
     status = babs_status.read_status(proj)
     action = babs_status.decide(status)
     print(f"  {ds}/{short}: {status} -> {action}", file=sys.stderr)
-    return ITERATE_ACTIONS[action](campaign, cfg, row, short, dry_run=dry_run)
+    return action
 
 
 def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
@@ -322,19 +323,14 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
         cols = state.header(campaign)
         rows = state.read_rows(campaign)
 
-        # Route each cell by which columns are filled. `babs status` (in
-        # handle_active) is reached only for set-but-unmerged cells — a merged cell
-        # is skipped here, before any babs query.
-        # TODO: when a second pipeline exists, a downstream cell's scaffold case
-        #   gains an inline upstream-column read (e.g. require mriqc_babs-merged).
+        # Work = every not-yet-merged cell; the loop derives its action from the
+        # same columns (empty `_babs` -> scaffold, else the babs-status decision).
         work = []
         for row in rows:
             for pf in pipelines:
                 short = construct.pipeline_short(pf)
-                if not row.get(f"{short}_babs"):
-                    work.append((row, short, pf, "scaffold"))
-                elif not row.get(f"{short}_babs-merged"):
-                    work.append((row, short, pf, "active"))
+                if not row.get(f"{short}_babs-merged"):
+                    work.append((row, short, pf))
         if batch is not None:
             work = work[:batch]
         if not work:
@@ -342,15 +338,21 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
             return
 
         campaign_ds = Dataset(campaign)
-        for row, short, pf, kind in work:
+        for row, short, pf in work:
             ds_id = row["dataset_id"]
-            if kind == "scaffold":
-                msg = f"scaffold {ds_id}/{short}"
+            if not row.get(f"{short}_babs"):
+                # TODO: when a second pipeline exists, gate a downstream scaffold on
+                #   the upstream cell's merge (e.g. require mriqc_babs-merged) here.
+                action = "scaffold"
                 transition = partial(scaffold, campaign, cfg, row, short, pf,
                                      inclusion_file=inclusion_file, dry_run=dry_run)
             else:
-                msg = f"iterate {ds_id}/{short}"
-                transition = partial(handle_active, campaign, cfg, row, short, dry_run=dry_run)
+                # Decide the action BEFORE opening the scope (the status read is
+                # read-only) so the campaign commit names what we actually did
+                # (merge / submit / …), not a generic "iterate".
+                action = decide_active(campaign, row, short)
+                transition = partial(ITERATE_ACTIONS[action], campaign, cfg, row, short,
+                                     dry_run=dry_run)
             # Every transition is one recursive node on the campaign: the scope opens
             # clean, spans the transition's work + the ledger row, and its
             # save(since=, recursive=True) bumps the gitlink up each level of the nest
@@ -359,7 +361,8 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
             # no-op). The clean-in guard enforces the between-transitions clean-tree
             # invariant on every tick — a cell that left dirt fails loudly here rather
             # than misattributing it to the next cell's node.
-            with datalad_save_scope(campaign_ds, msg, recursive=True, dry_run=dry_run):
+            with datalad_save_scope(campaign_ds, f"{action} {ds_id}/{short}",
+                                    recursive=True, dry_run=dry_run):
                 updates = transition()
                 if updates and not dry_run:
                     row.update(updates)
