@@ -160,8 +160,7 @@ def cmd_iterate(args):
     guard.require_clean_pins(campaign)
     if not args.dry_run:
         iterate_mod.warn_if_no_tmux()
-    iterate_mod.run_iterate(campaign, batch=args.batch, dry_run=args.dry_run,
-                            inclusion_file=args.inclusion_file)
+    iterate_mod.run_iterate(campaign, batch=args.batch, dry_run=args.dry_run)
     return 0
 
 
@@ -203,9 +202,6 @@ def main():
                     help="the campaign dataset (default: current directory)")
     pi.add_argument("--batch", type=int, default=None,
                     help="cap to N (dataset, pipeline) pairs this tick (default: all)")
-    pi.add_argument("--inclusion-file", default=None,
-                    help="use this inclusion for the pair(s) scaffolded (smoke tests; "
-                         "skips select). Intended with --batch 1.")
     pi.add_argument("--dry-run", action="store_true",
                     help="print the planned commands and change nothing")
     pi.set_defaults(func=cmd_iterate)

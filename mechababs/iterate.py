@@ -2,9 +2,9 @@
 
 One `iterate` advances each (dataset, pipeline) cell by AT MOST ONE transition,
 routing on which ledger columns are filled:
-  - `_babs` empty            -> SCAFFOLD: generate the inclusion (or reuse a
-                                curated/pre-placed one), compose the babs config,
-                                `babs init` (NO submit), pin the inclusion, record
+  - `_babs` empty            -> SCAFFOLD: generate the inclusion into the campaign
+                                pin (or reuse it; a chained cell skips it), compose
+                                the babs config, `babs init` (NO submit), record
                                 `_babs` (the project-root path).
   - `_babs` set, not merged  -> ACTIVE: read `babs status --json`, take the next
                                 step (deploy more / skip / merge / flag-failed).
@@ -176,13 +176,14 @@ def output_ria_url(project_root, producer_cfg):
     return f"ria+file://{Path(project_root).resolve()}/{ria_rel}#~data"
 
 
-def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_run):
+def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
     """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
 
     Returns the ledger update ({<short>_babs: project-root path}); the caller applies
-    it only on a real (non-dry) run. Intermediates (the generated inclusion + the
-    merged babs config) are transient — babs consumes them — so they live in a
-    tempdir; the inclusion is then pinned into the project as the durable record.
+    it only on a real (non-dry) run. Returns None if a chained upstream isn't merged
+    yet (the cell can't scaffold this tick). The inclusion is generated into the
+    campaign pin (code/inclusions/); the merged babs config is transient (babs
+    consumes it) and lives in a tempdir.
     """
     ds_id = row["dataset_id"]
     processing_level = row.get("processing_level")
@@ -226,32 +227,50 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
     if not dry_run:
         project_root.parent.mkdir(parents=True, exist_ok=True)
 
+    # 1. Inclusion. iterate takes no --inclusion-file — it advances whichever cell
+    #    is next, so a runtime inclusion could land on the wrong cell. The
+    #    per-(dataset,pipeline) pin under code/inclusions/ is the interface:
+    #      chained -> no inclusion; babs derives the job set by intersecting the
+    #                 inputs (raw ∩ each upstream output), dropping any subject an
+    #                 upstream didn't produce. It intersects on subject presence, not
+    #                 datatype, so a downstream may still get one its own rule would
+    #                 exclude (e.g. BOLD-less for minimal); those jobs fail fast.
+    #                 TODO: run our own selection to trim these upstream-only jobs.
+    #      pinned  -> reuse it (prior tick, or hand-curated).
+    #      else    -> select generates it from the study TSV + the pipeline's
+    #                 selection rule ({} = all subjects), capped by limit.
+    #    The pin records what we requested; babs writes its own
+    #    processing_inclusion.csv, whose diff flags a requested subject the data lacks.
+    pin = campaign / "code" / "inclusions" / f"{ds_id}_{short}.csv"
+    if edges:
+        inclusion = None
+        print("  chained cell — no inclusion; babs intersects its inputs", file=sys.stderr)
+    elif pin.exists():
+        inclusion = pin
+        print(f"  using pinned inclusion {pin}", file=sys.stderr)
+    else:
+        inclusion = pin
+        mechababs_cfg = pipeline_cfg["mechababs"]
+        if "selection" not in mechababs_cfg:
+            sys.exit(f"pipeline {short} has no `mechababs.selection` and no pinned "
+                     f"inclusion at {pin} — one is needed to define the job universe "
+                     f"(use `selection: {{}}` for pass-through)")
+        rule = mechababs_cfg["selection"] or {}
+        # processing_level (from the ledger) formats the inclusion to match the
+        # level babs runs at, so the two never disagree.
+        limit = cfg.get("limit")
+        if dry_run:
+            print(f"DRY-RUN  select.generate_inclusion for {ds_id}/{short} "
+                  f"(rule={rule}, processing_level={processing_level}, "
+                  f"limit={limit}) -> {pin}", file=sys.stderr)
+        else:
+            pin.parent.mkdir(parents=True, exist_ok=True)
+            tsv_text, _ = select.read_study_metadata(study)
+            select.generate_inclusion(tsv_text, rule, pin,
+                                      processing_level=processing_level, limit=limit)
+
     with tempfile.TemporaryDirectory(prefix=f"mechababs-{ds_id}-{short}-") as tmp:
         babs_config = Path(tmp) / "babs-config.yaml"
-
-        # 1. Inclusion: an explicit --inclusion-file (smoke tests / a curated list)
-        #    wins; otherwise generate one from the cloned study's metadata TSV via
-        #    the in-package select module, applying the pipeline's `selection:` rule.
-        if inclusion_file is not None:
-            inclusion = Path(inclusion_file).resolve()
-            print(f"  using provided inclusion {inclusion}", file=sys.stderr)
-        else:
-            inclusion = Path(tmp) / "mechababs_inclusion.csv"
-            selection_rule = pipeline_cfg["mechababs"].get("selection")
-            if not selection_rule:
-                sys.exit(f"pipeline {short} has no `selection:` rule — needed to generate "
-                         f"an inclusion (or pass --inclusion-file)")
-            # processing_level (from the ledger) formats the inclusion to match the
-            # level babs runs at, so the two never disagree (the attempt-3 bug).
-            limit = cfg.get("limit")
-            if dry_run:
-                print(f"DRY-RUN  select.generate_inclusion for {ds_id}/{short} "
-                      f"(rule={selection_rule}, processing_level={processing_level}, "
-                      f"limit={limit}) -> {inclusion}", file=sys.stderr)
-            else:
-                tsv_text, _ = select.read_study_metadata(study)
-                select.generate_inclusion(tsv_text, selection_rule, inclusion,
-                                          processing_level=processing_level, limit=limit)
 
         # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
         #    resolving the venv placeholder in the preamble with the campaign venv,
@@ -267,31 +286,18 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
             with open(babs_config, "w") as f:
                 subprocess.run(merge_cmd, check=True, stdout=f)
 
-        # 3. babs init — scaffold only, NO submit. --list-sub-file defines the job
-        #    universe; babs INTERSECTS it with the subjects actually present in the
-        #    input dataset (inner join) and records that as code/processing_inclusion.csv.
-        run(["babs", "init", project_root,
-             "--container-ds", resolve_container_ds(campaign, container),
-             "--container-name", container["name"],
-             "--container-config", babs_config,
-             "--list-sub-file", inclusion,
-             "--processing-level", processing_level, "--queue", "slurm"], dry_run=dry_run)
-
-        # 4. Pin our inclusion — what we REQUESTED — on the CAMPAIGN, where mechababs
-        #    is pinned (orchestration provenance, Design P), not in the derivative.
-        #    babs writes processing_inclusion.csv (requested ∩ present-in-data) inside
-        #    the derivative, so the derivative self-documents what RAN; ours records
-        #    intent, and its diff against babs's catches a selected subject the data
-        #    lacks. mechababs writes only to the campaign, so the enclosing campaign
-        #    datalad_save_scope commits this with no derivative-side save — that step
-        #    returns only when prov/ + .bidsignore (which must travel INSIDE the
-        #    published derivative) land.
-        dest = campaign / "code" / "inclusions" / f"{ds_id}_{short}.csv"
-        if dry_run:
-            print(f"DRY-RUN  cp {inclusion} {dest}", file=sys.stderr)
-        else:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(inclusion, dest)
+        # 3. babs init — scaffold only, NO submit. --list-sub-file (when given)
+        #    defines the job universe, which babs records as the derivative's
+        #    code/processing_inclusion.csv. A chained cell omits it, letting babs
+        #    intersect the inputs instead.
+        babs_init = ["babs", "init", project_root,
+                     "--container-ds", resolve_container_ds(campaign, container),
+                     "--container-name", container["name"],
+                     "--container-config", babs_config,
+                     "--processing-level", processing_level, "--queue", "slurm"]
+        if inclusion is not None:
+            babs_init += ["--list-sub-file", inclusion]
+        run(babs_init, dry_run=dry_run)
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
     #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
@@ -360,17 +366,13 @@ def decide_active(campaign, row, short):
     return action
 
 
-def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
+def run_iterate(campaign, *, batch, dry_run):
     """One tick: advance each (dataset, pipeline) cell by at most one transition.
 
     Routes on the cell's ledger columns: empty `_babs` -> scaffold; `_babs` set and
     not `_babs-merged` -> the active handler; merged -> skip. The lock
     is held across the whole batch (single writer), and each advanced cell is saved
     as it lands so a long or interrupted tick still records progress.
-
-    inclusion_file, if given, is used as the inclusion for every cell scaffolded
-    this tick — intended for single-cell smoke tests (`--batch 1`), not real
-    multi-dataset runs (there select generates a per-dataset inclusion).
     """
     cfg = read_config(campaign)
     if not dry_run and cfg.get("venv"):
@@ -402,7 +404,7 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
                 # isn't merged yet it returns None (skip) and a later tick retries.
                 action = "scaffold"
                 transition = partial(scaffold, campaign, cfg, row, short, pf,
-                                     inclusion_file=inclusion_file, dry_run=dry_run)
+                                     dry_run=dry_run)
             else:
                 # Decide the action BEFORE opening the scope (the status read is
                 # read-only) so the campaign commit names what we actually did

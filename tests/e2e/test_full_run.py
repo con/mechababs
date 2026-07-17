@@ -67,9 +67,10 @@ def _ledger_row(campaign):
     return rows[0]
 
 
-def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
+def test_full_run(campaign, cluster_config, rawdata, study):
     _venv_run(campaign, "mechababs", "configure",
-              "--pipelines", "SimBIDS-0.0.3.yaml", "--cluster", cluster_config)
+              "--pipelines", "SimBIDS-0.0.3.yaml", "--cluster", cluster_config,
+              "--limit", "1")
     _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
               "--study", str(study), "--processing-level", "subject")
 
@@ -82,16 +83,13 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     assert _ledger_row(campaign)["study_url"] == str(study), \
         "add-dataset did not record study_url"
 
+    # simbids has `selection: {}` (pass-through), so `--limit 1` selects the first
+    # subject — which _first_subject also returns — and iterate generates the
+    # inclusion itself; no hand-written --inclusion-file.
     sub = _first_subject(rawdata)
-    # The inclusion is an INPUT, kept outside the campaign — a loose file in the
-    # campaign root would trip the scaffold scope's clean-in guard (as the real
-    # smoke-test flow keeps it in /tmp; select generates to a tempdir).
-    inc = tmp_path / "inc.csv"
-    inc.write_text(f"sub_id\n{sub}\n")
 
     # --- tick 1: scaffold (not-started -> `babs init`, no submit) ---
-    _venv_run(campaign, "mechababs", "iterate", "--batch", "1",
-              "--inclusion-file", str(inc))
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "1")
 
     row = _ledger_row(campaign)
     assert row["processing_level"] == "subject"
@@ -110,7 +108,7 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     assert (proj / ".babs" / "output_ria").is_dir()
     code = proj / "code"
     assert (code / "babs_proj_config.yaml").is_file()
-    # babs's inner-join (requested ∩ present-in-data) lands in the derivative.
+    # babs records the subjects it will process in the derivative's inclusion.
     assert sub in (code / "processing_inclusion.csv").read_text()
     assert not row.get(f"{SHORT}_babs-merged"), "merged before any job ran"
 
