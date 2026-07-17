@@ -118,18 +118,22 @@ def resolve_container_ds(campaign, container):
 def study_sourcedata_url(study, ds_id):
     """The raw dataset's URL, read from the cloned study's `.gitmodules`
     `sourcedata/<id>` entry — the study's own record of its input, so babs
-    registers the input by that URL rather than a campaign-local path. datalad
-    names a submodule by its path, so the entry is `submodule.sourcedata/<id>.url`.
+    registers the input by that URL rather than a campaign-local path.
+
+    The `.gitmodules` section name depends on who built the study: OpenNeuroStudies
+    (plain git) names it by dataset id (`[submodule "<id>"]`), while a datalad-built
+    study names it by path (`[submodule "sourcedata/<id>"]`). Both put the same file
+    at `sourcedata/<id>`; try the id key first, then the path key.
     """
-    out = subprocess.run(
-        ["git", "config", "--file", str(study / ".gitmodules"),
-         "--get", f"submodule.sourcedata/{ds_id}.url"],
-        capture_output=True, text=True, check=True,
-    )
-    url = out.stdout.strip()
-    if not url:
-        sys.exit(f"no sourcedata/{ds_id} submodule url in {study}/.gitmodules")
-    return url
+    gitmodules = study / ".gitmodules"
+    for name in (ds_id, f"sourcedata/{ds_id}"):
+        out = subprocess.run(
+            ["git", "config", "--file", str(gitmodules), "--get", f"submodule.{name}.url"],
+            capture_output=True, text=True,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip()
+    sys.exit(f"no sourcedata/{ds_id} submodule url in {gitmodules}")
 
 
 def babs_project(campaign, row, short):
