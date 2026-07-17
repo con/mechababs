@@ -165,9 +165,11 @@ The eligible list is sorted and truncated to `--limit N` (a reproducible
 "first N"), formatted to match the ledger's `processing_level` (`sub_id` vs
 `sub_id,ses_id`), and passed to `babs init --list-sub-file`, which defines the
 job *universe*. babs inner-joins it with the subjects actually present in the
-data and records that as its own `processing_inclusion.csv`; mechababs also pins
-`code/mechababs_inclusion.csv` (what we *requested*) as a diagnostic record of
-intent — the diff catches a selected subject the data doesn't have.
+data and records that as its own `processing_inclusion.csv` inside the derivative;
+mechababs also pins the requested list on the *campaign* at
+`code/inclusions/<dataset>_<pipeline>.csv` (orchestration provenance lives where
+mechababs is pinned) as a diagnostic record of intent — its diff against babs's
+`processing_inclusion.csv` catches a selected subject the data doesn't have.
 
 For a smoke test, hand-write a one-row CSV and pass `--inclusion-file` (skips
 `select`):

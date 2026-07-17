@@ -160,11 +160,6 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
     # The derivative is produced in its final home, inside the cloned study; the
     # babs-project root IS the derivative dataset, named by the pipeline's short_name.
     project_root = study / "derivatives" / short
-    # The analysis dataset's location is babs's `analysis_path`, relative to the
-    # project root: 'analysis' by default, '.' for the BIDS-study layout (project
-    # root IS the analysis dataset). pathlib drops a '.' segment, so
-    # `project_root / '.'` is `project_root`.
-    analysis = project_root / pipeline_cfg.get("analysis_path", "analysis")
 
     print(f"\n=== scaffold {ds_id} / {short} -> {project_root.name} ===", file=sys.stderr)
     if not dry_run:
@@ -219,29 +214,25 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
              "--list-sub-file", inclusion,
              "--processing-level", processing_level, "--queue", "slurm"], dry_run=dry_run)
 
-        # 4. Pin our inclusion into the project — a plain copy (its source is an
-        #    ephemeral tempdir, so a datalad run here would bake a dead abspath);
-        #    the enclosing datalad_save_scope commits it. Kept alongside babs's
-        #    processing_inclusion.csv: ours = what we REQUESTED, babs's = requested
-        #    ∩ present-in-data, so the diff catches a selected subject the data lacks.
-        dest = analysis / "code" / "mechababs_inclusion.csv"
+        # 4. Pin our inclusion — what we REQUESTED — on the CAMPAIGN, where mechababs
+        #    is pinned (orchestration provenance, Design P), not in the derivative.
+        #    babs writes processing_inclusion.csv (requested ∩ present-in-data) inside
+        #    the derivative, so the derivative self-documents what RAN; ours records
+        #    intent, and its diff against babs's catches a selected subject the data
+        #    lacks. mechababs writes only to the campaign, so the enclosing campaign
+        #    datalad_save_scope commits this with no derivative-side save — that step
+        #    returns only when prov/ + .bidsignore (which must travel INSIDE the
+        #    published derivative) land.
+        dest = campaign / "code" / "inclusions" / f"{ds_id}_{short}.csv"
         if dry_run:
             print(f"DRY-RUN  cp {inclusion} {dest}", file=sys.stderr)
         else:
+            dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(inclusion, dest)
-        # Commit mechababs's derivative-side writes as one flat node (babs has
-        # already self-committed its own scaffold). Required: the enclosing campaign
-        # scope's recursive save(since=) only propagates COMMITTED subdataset advances
-        # up the nest — an untracked file here would be left behind, and the study /
-        # campaign gitlinks would point at a derivative commit that predates it.
-        run(["datalad", "save", "-d", analysis, "-m", "mechababs scaffold"],
-            dry_run=dry_run)
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
     #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
-    #    answers both "scaffolded?" and "where?". The analysis dir under it is
-    #    babs's `analysis_path` (babs#369); we derive it locally where needed
-    #    (the inclusion-pin cwd above), never store it — babs owns that mapping.
+    #    answers both "scaffolded?" and "where?".
     return {f"{short}_babs": str(project_root.relative_to(campaign))}
 
 

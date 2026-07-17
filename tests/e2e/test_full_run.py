@@ -101,8 +101,7 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     assert (proj / ".babs" / "output_ria").is_dir()
     code = proj / "code"
     assert (code / "babs_proj_config.yaml").is_file()
-    # our inclusion is pinned, and babs's inner-join (requested ∩ present) matches
-    assert sub in (code / "mechababs_inclusion.csv").read_text()
+    # babs's inner-join (requested ∩ present-in-data) lands in the derivative.
     assert sub in (code / "processing_inclusion.csv").read_text()
     assert not row.get(f"{SHORT}_babs-merged"), "merged before any job ran"
 
@@ -117,14 +116,10 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     head_msg = _git(campaign, "log", "--first-parent", "-1", "--format=%s").strip()
     assert head_msg == f"scaffold ds999999/{SHORT}", \
         f"campaign mainline did not record the scaffold node: {head_msg!r}"
-    # the pinned inclusion is committed in the derivative, and the RIA stores never
-    # leaked into git (the analysis_path='.' gitignore guard; #8 djarecka/babs_demo).
-    # babs tracks .babs/babs_init_config.yaml itself, by design — only the input_ria/
-    # output_ria symlink stores are the #8 hazard, so scope the check to those.
-    assert "mechababs_inclusion.csv" in _git(proj, "ls-files", "code"), \
-        "inclusion not committed in the derivative"
+    # make sure the RIA stores are never committed (babs tracks .babs/babs_init_config.yaml
+    # itself, so scope to the input_ria/output_ria symlink stores, not all of .babs).
     assert not _git(proj, "ls-files", "--", ".babs/input_ria", ".babs/output_ria").strip(), \
-        "RIA store swept into git — the analysis_path='.' gitignore guard failed"
+        "RIA stores committed to git"
 
     # --- tick 2: active cell, nothing submitted -> decide "submit" -> `babs submit` ---
     _venv_run(campaign, "mechababs", "iterate", "--batch", "1")
