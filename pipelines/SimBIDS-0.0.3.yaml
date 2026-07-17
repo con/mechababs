@@ -73,4 +73,4 @@ cluster_resources:
 
 all_results_in_one_zip: true
 zip_foldernames:
-  fmriprep_anat: "24-1-1"
+  SimBIDS-0.0.3: "0-0-3"

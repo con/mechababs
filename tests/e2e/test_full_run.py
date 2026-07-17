@@ -16,11 +16,18 @@ import logging
 import os
 import subprocess
 
+import yaml
+
 log = logging.getLogger("mechababs.e2e")
 
 # The simbids pipeline's short_name: its ledger column prefix and the derivative
 # directory name (studies/<study>/derivatives/<short_name>).
 SHORT = "SimBIDS-0.0.3"
+
+# The chained-inputs scenario (test_chained_run): a second simbids stage whose
+# short_name-keyed input consumes the first stage's output.
+STAGE1 = "SimBIDS-0.0.3"
+STAGE2 = "SimBIDS-0.0.3+chain"
 
 
 def _venv_run(campaign, tool, *args):
@@ -163,3 +170,63 @@ def test_full_run(campaign, cluster_config, rawdata, study):
     ).stdout
     assert f"{sub}_" in tree and ".zip" in tree, \
         f"merge produced no {sub} derivative zip in the output RIA master:\n{tree}"
+
+
+def test_chained_run(campaign, cluster_config, rawdata, study):
+    """Two simbids stages where stage2 consumes stage1's output by name (issue #72).
+
+    Exercises the chaining path unit tests can't reach: the scaffold gate (stage2
+    must wait for stage1 to merge), the output-RIA injection into stage2's babs
+    config, and babs cloning stage1's output as stage2's input. Both stages run the
+    full scaffold->submit->merge flow; --limit 1 on stage1 propagates through the
+    chain (stage2's babs-derived job set intersects to stage1's one produced subject).
+    """
+    _venv_run(campaign, "mechababs", "configure",
+              "--pipelines", f"{STAGE1}.yaml,{STAGE2}.yaml",
+              "--cluster", cluster_config, "--limit", "1")
+    _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
+              "--study", str(study), "--processing-level", "subject")
+    study_ds = campaign / "studies" / "study-ds999999"
+
+    # --- tick with batch covering both cells: stage1 scaffolds; stage2 is GATED
+    #     (stage1 not merged) so it must NOT scaffold this tick ---
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "2")
+    row = _ledger_row(campaign)
+    assert row[f"{STAGE1}_babs"], "stage1 did not scaffold"
+    assert not row.get(f"{STAGE2}_babs"), \
+        "stage2 scaffolded before stage1 merged — the chain gate failed"
+
+    # --- drive stage1 to merged (submit -> wait -> merge); stage2 stays gated ---
+    stage1_proj = campaign / row[f"{STAGE1}_babs"]
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "1")   # active stage1 -> submit
+    _venv_run(campaign, "babs", "status", "--wait", "--wait-interval", "5", str(stage1_proj))
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "1")   # active stage1 -> merge
+    row = _ledger_row(campaign)
+    assert row[f"{STAGE1}_babs-merged"] == "true", "stage1 did not merge"
+
+    # --- gate now open: stage2 scaffolds, with stage1's output-RIA injected ---
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "1")   # scaffold stage2
+    row = _ledger_row(campaign)
+    assert row[f"{STAGE2}_babs"], "stage2 did not scaffold after stage1 merged"
+    stage2_proj = campaign / row[f"{STAGE2}_babs"]
+
+    # stage2's committed babs config carries stage1's output-RIA as the chained
+    # input's origin_url — the alias form, pointing at stage1's project.
+    babs_cfg = yaml.safe_load((stage2_proj / ".babs" / "babs_init_config.yaml").read_text())
+    origin = babs_cfg["input_datasets"][STAGE1]["origin_url"]
+    assert origin.startswith("ria+file://") and origin.endswith("output_ria#~data"), \
+        f"stage2's chained-input origin_url is not the stage1 output-RIA alias: {origin}"
+    assert f"derivatives/{STAGE1}/.babs/output_ria" in origin, \
+        f"origin_url does not point at stage1's output RIA: {origin}"
+    # babs cloned stage1's output as stage2's input subdataset (the RIA resolved).
+    assert f"sourcedata/{STAGE1}" in (stage2_proj / ".gitmodules").read_text(), \
+        "stage2 did not register stage1's output as an input subdataset"
+
+    # --- drive stage2 to merged; the chain completes end to end ---
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "1")   # active stage2 -> submit
+    _venv_run(campaign, "babs", "status", "--wait", "--wait-interval", "5", str(stage2_proj))
+    _venv_run(campaign, "mechababs", "iterate", "--batch", "1")   # active stage2 -> merge
+    row = _ledger_row(campaign)
+    assert row[f"{STAGE2}_babs-merged"] == "true", \
+        f"stage2 did not merge (row={row})"
+    _assert_nest_clean([stage2_proj, study_ds, campaign], "chained merge")
