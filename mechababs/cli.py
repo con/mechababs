@@ -84,14 +84,13 @@ def cmd_add_dataset(args):
     skeleton is fetched (submodule pointers); sourcedata content is pulled later by
     ``babs init``.
 
-    Derives ``processing_level`` from the dataset's OpenNeuroStudies metadata
-    (has-sessions → session) and records it as an INPUT column — iterate reads it,
-    never overwrites it, and it is hand-editable. ``--processing-level`` sets it
-    explicitly, bypassing the derivation — needed for a non-OpenNeuro dataset (e.g.
-    an e2e fixture), which has no OpenNeuroStudies entry to derive from. On a
-    metadata-fetch failure with no override it is left blank (set it by hand, or
-    re-add once the dataset is in OpenNeuroStudies). All pipeline columns start
-    empty; no inclusion is generated (selection is pipeline-axis, deferred to deploy).
+    Derives ``processing_level`` from the cloned study's metadata TSV (has-sessions
+    → session) and records it as an INPUT column — iterate reads it, never overwrites
+    it, and it is hand-editable. ``--processing-level`` sets it explicitly, bypassing
+    the derivation — needed for a study without the metadata TSV (e.g. an e2e
+    fixture). On a read failure with no override it is left blank (set it by hand).
+    All pipeline columns start empty; no inclusion is generated (selection is
+    pipeline-axis, deferred to deploy — see scaffold).
     """
     campaign = args.campaign_path.resolve()
     if not state.state_path(campaign).is_file():
@@ -100,17 +99,6 @@ def cmd_add_dataset(args):
 
     ds_id = iterate_mod.dataset_id(args.url)
     study_url = args.study or default_study_url(ds_id)
-    if args.processing_level:
-        processing_level = args.processing_level
-        print(f"using --processing-level {processing_level} for {ds_id} "
-              f"(bypassing OpenNeuroStudies derivation)", file=sys.stderr)
-    else:
-        try:
-            _, processing_level = select.fetch_openneuro_study_metadata(ds_id)
-        except Exception as e:
-            processing_level = ""
-            print(f"warning: could not derive processing_level for {ds_id} ({e}); "
-                  f"left blank — set it in the ledger before iterate", file=sys.stderr)
 
     # Clone the study into the campaign (registers it as a subdataset). Outside the
     # ledger lock — it's slow and touches no ledger state. A present study dir means
@@ -126,6 +114,23 @@ def cmd_add_dataset(args):
          str(study_dest.relative_to(campaign))],
         cwd=str(campaign), check=True,
     )
+
+    # processing_level is a dataset property (has-sessions -> session), derived from
+    # the CLONED study's metadata TSV and recorded as an INPUT column (iterate reads
+    # it, never overwrites; hand-editable). scaffold re-reads the same local TSV for
+    # the per-(dataset,pipeline) inclusion — a different axis, same file, no network.
+    # --processing-level sets it explicitly (a non-OpenNeuro study without the TSV).
+    if args.processing_level:
+        processing_level = args.processing_level
+        print(f"using --processing-level {processing_level} for {ds_id} "
+              f"(bypassing metadata derivation)", file=sys.stderr)
+    else:
+        try:
+            _, processing_level = select.read_study_metadata(study_dest)
+        except Exception as e:
+            processing_level = ""
+            print(f"warning: could not derive processing_level for {ds_id} ({e}); "
+                  f"left blank — set it in the ledger before iterate", file=sys.stderr)
 
     with state.locked(campaign):
         cols = state.header(campaign)

@@ -1,3 +1,7 @@
+selection:
+  require_datatypes: [anat, func]
+  require_positive: [t1w_num, bold_num]
+
 container:
   # TODO: swap source to the ReproNim github link (+ ref) once PennLINC/babs#383
   # lands — then the shim is unnecessary.

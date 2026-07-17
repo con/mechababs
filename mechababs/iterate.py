@@ -175,25 +175,27 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
         babs_config = Path(tmp) / "babs-config.yaml"
 
         # 1. Inclusion: an explicit --inclusion-file (smoke tests / a curated list)
-        #    wins; otherwise generate one from OpenNeuroStudies metadata via the
-        #    in-package select module (read-only: HTTP + a tempdir write).
+        #    wins; otherwise generate one from the cloned study's metadata TSV via
+        #    the in-package select module, applying the pipeline's `selection:` rule.
         if inclusion_file is not None:
             inclusion = Path(inclusion_file).resolve()
             print(f"  using provided inclusion {inclusion}", file=sys.stderr)
         else:
             inclusion = Path(tmp) / "mechababs_inclusion.csv"
-            # TODO: the eligibility rule belongs in the pipeline config (a Next
-            #   item). For now short_name doubles as select's pipeline rule —
-            #   which only works while it matches select's mriqc/fmriprep choices.
+            selection_rule = pipeline_cfg.get("selection")
+            if not selection_rule:
+                sys.exit(f"pipeline {short} has no `selection:` rule — needed to generate "
+                         f"an inclusion (or pass --inclusion-file)")
             # processing_level (from the ledger) formats the inclusion to match the
             # level babs runs at, so the two never disagree (the attempt-3 bug).
             limit = cfg.get("limit")
             if dry_run:
-                print(f"DRY-RUN  select.generate_inclusion({ds_id}, {short}, "
-                      f"processing_level={processing_level}, limit={limit}) -> {inclusion}",
-                      file=sys.stderr)
+                print(f"DRY-RUN  select.generate_inclusion for {ds_id}/{short} "
+                      f"(rule={selection_rule}, processing_level={processing_level}, "
+                      f"limit={limit}) -> {inclusion}", file=sys.stderr)
             else:
-                select.generate_inclusion(ds_id, short, inclusion,
+                tsv_text, _ = select.read_study_metadata(study)
+                select.generate_inclusion(tsv_text, selection_rule, inclusion,
                                           processing_level=processing_level, limit=limit)
 
         # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
