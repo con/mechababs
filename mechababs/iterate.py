@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from functools import partial
 from pathlib import Path
 
 import yaml
@@ -338,24 +339,25 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
         for row, short, kind in work:
             ds_id = row["dataset_id"]
             if kind == "scaffold":
-                # One recursive node records the whole advance: the scope opens
-                # clean at the campaign, spans babs init + the mechababs writes +
-                # the ledger row, and its save(since=, recursive=True) bumps the
-                # gitlink up each level (derivative -> study -> campaign).
-                with datalad_save_scope(campaign_ds, f"scaffold {ds_id}/{short}",
-                                        recursive=True, dry_run=dry_run):
-                    updates = scaffold(campaign, cfg, row, short,
-                                       inclusion_file=inclusion_file, dry_run=dry_run)
-                    if not dry_run:
-                        row.update(updates)
-                        state.write_rows(campaign, cols, rows)
+                msg = f"scaffold {ds_id}/{short}"
+                transition = partial(scaffold, campaign, cfg, row, short,
+                                     inclusion_file=inclusion_file, dry_run=dry_run)
             else:
-                updates = handle_active(campaign, cfg, row, short, dry_run=dry_run)
+                msg = f"iterate {ds_id}/{short}"
+                transition = partial(handle_active, campaign, cfg, row, short, dry_run=dry_run)
+            # Every transition is one recursive node on the campaign: the scope opens
+            # clean, spans the transition's work + the ledger row, and its
+            # save(since=, recursive=True) bumps the gitlink up each level of the nest
+            # (derivative -> study -> campaign). scaffold and merge mutate the nest;
+            # submit/skip mutate nothing trackable, so their scope saves nothing (a
+            # no-op). The clean-in guard enforces the between-transitions clean-tree
+            # invariant on every tick — a cell that left dirt fails loudly here rather
+            # than misattributing it to the next cell's node.
+            with datalad_save_scope(campaign_ds, msg, recursive=True, dry_run=dry_run):
+                updates = transition()
                 if updates and not dry_run:
                     row.update(updates)
                     state.write_rows(campaign, cols, rows)
-                    state.save(campaign,
-                               f"iterate: {ds_id}/{short} -> {','.join(updates)}")
 
         if dry_run:
             print(f"\nDRY-RUN: would advance {len(work)} cell(s).", file=sys.stderr)

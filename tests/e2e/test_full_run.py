@@ -45,6 +45,15 @@ def _git(cwd, *args):
                           check=True, capture_output=True, text=True).stdout
 
 
+def _assert_nest_clean(levels, phase):
+    """Every level of the nest is clean after a record-up. Campaign-porcelain bubbles
+    sub-dirt up as a modified submodule, but check each level so a future submodule
+    `ignore=` can't mask it — and so a failure names the level that's dirty."""
+    for level in levels:
+        assert not _git(level, "status", "--porcelain").strip(), \
+            f"{level.name} dirty after {phase} — record-up left a level uncommitted"
+
+
 def _first_subject(rawdata):
     subs = sorted(p.name for p in rawdata.iterdir() if p.name.startswith("sub-"))
     assert subs, f"no sub-* under {rawdata} — host fixtures not mounted?"
@@ -108,9 +117,8 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     # --- record-up: the scaffold advance is committed UP the nest, not just on disk ---
     # The datalad_save_scope's recursive save must register the fresh derivative into
     # the study and bump the gitlink campaign <- study <- derivative in one node,
-    # leaving the campaign clean (green == tracked).
-    assert not _git(campaign, "status", "--porcelain").strip(), \
-        "campaign tree dirty after scaffold — the scope did not commit the advance"
+    # leaving every level clean (green == tracked).
+    _assert_nest_clean([proj, study_ds, campaign], "scaffold")
     assert f"derivatives/{SHORT}" in (study_ds / ".gitmodules").read_text(), \
         "study did not register the derivative as a subdataset"
     head_msg = _git(campaign, "log", "--first-parent", "-1", "--format=%s").strip()
@@ -134,6 +142,13 @@ def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     row = _ledger_row(campaign)
     assert row[f"{SHORT}_babs-merged"] == "true", \
         f"merge tick did not set {SHORT}_babs-merged (row={row})"
+
+    # merge recorded UP the nest, same as scaffold: `datalad update --how merge`
+    # COMMITTED the derivative advance, so the recursive save propagates that committed
+    # advance study -> campaign in one node — every level clean, merge the latest node.
+    _assert_nest_clean([proj, study_ds, campaign], "merge")
+    assert _git(campaign, "log", "--first-parent", "-1", "--format=%s").strip() == f"iterate ds999999/{SHORT}", \
+        "campaign mainline did not record the merge node"
 
     # `babs merge` deposits the merged results in the OUTPUT RIA (not the analysis
     # working tree). The RIA store holds one bare dataset repo at
