@@ -194,7 +194,7 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
     pipeline_path = campaign / pipeline_file
     cluster_path = campaign / cfg["cluster"]
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
-    container = pipeline_cfg["container"]
+    container = pipeline_cfg["mechababs"]["container"]
 
     # Chained inputs: gate this cell on every upstream stage it consumes having
     # merged, then resolve each upstream's output-RIA URL to inject as that input's
@@ -237,7 +237,7 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
             print(f"  using provided inclusion {inclusion}", file=sys.stderr)
         else:
             inclusion = Path(tmp) / "mechababs_inclusion.csv"
-            selection_rule = pipeline_cfg.get("selection")
+            selection_rule = pipeline_cfg["mechababs"].get("selection")
             if not selection_rule:
                 sys.exit(f"pipeline {short} has no `selection:` rule — needed to generate "
                          f"an inclusion (or pass --inclusion-file)")

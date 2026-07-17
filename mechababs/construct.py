@@ -82,15 +82,16 @@ def resolve_containers(campaign, pipeline_rels):
     None for a local source. Rejects a dir mapped to conflicting (source, ref).
     """
     containers = {}
-    for rel in pipeline_rels:
-        c = (yaml.safe_load((campaign / rel).read_text()) or {}).get("container") or {}
-        if not c:
+    for pipeline_rel in pipeline_rels:
+        mechababs_cfg = (yaml.safe_load((campaign / pipeline_rel).read_text()) or {}).get("mechababs") or {}
+        container = mechababs_cfg.get("container") or {}
+        if not container:
             continue
-        source, ref = c["source"], c.get("ref")
-        dir_ = container_dir(source)
-        if dir_ in containers and containers[dir_] != (source, ref):
-            sys.exit(f"container dir {dir_!r} maps to conflicting (source, ref)")
-        containers[dir_] = (source, ref)
+        source, ref = container["source"], container.get("ref")
+        vendor_dir = container_dir(source)
+        if vendor_dir in containers and containers[vendor_dir] != (source, ref):
+            sys.exit(f"container dir {vendor_dir!r} maps to conflicting (source, ref)")
+        containers[vendor_dir] = (source, ref)
     return containers
 
 

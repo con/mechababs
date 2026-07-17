@@ -25,8 +25,9 @@ def merge_babs_config(pipeline_config, cluster_config, dataset_url, input_origin
                       campaign_venv=None):
     """Merge pipeline and cluster configs with dataset URL into a babs config dict."""
     # Pipeline config (bids_app_args, singularity_args, zip_foldernames, etc.)
-    # Exclude 'container' — that's metadata for babs init args, not babs config
-    merged = {k: v for k, v in pipeline_config.items() if k != "container"}
+    # Strip 'mechababs' — the mechababs-only namespace (container = babs-init CLI
+    # args; selection = eligibility rule), consumed by mechababs, never babs config.
+    merged = {k: v for k, v in pipeline_config.items() if k != "mechababs"}
 
     # Cluster config (cluster_resources, script_preamble, job_compute_space)
     for k, v in cluster_config.items():

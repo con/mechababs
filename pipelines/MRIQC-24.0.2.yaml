@@ -1,6 +1,17 @@
-selection:
-  require_datatypes: [anat]
-  require_positive: [t1w_num]
+mechababs:
+  # mechababs-only config: consumed by mechababs, stripped by merge_config so none
+  # of it reaches the babs config. selection = deploy-time subject-eligibility rule;
+  # container = which image to vendor + pass to `babs init --container-ds/--container-name`.
+  selection:
+    require_datatypes: [anat]
+    require_positive: [t1w_num]
+  container:
+    # TODO: swap source to the ReproNim github link (+ ref) once PennLINC/babs#383
+    # lands — then the shim is unnecessary.
+    source: ../repronim-containers-shim
+    name: bids-mriqc
+    # alternative: build from docker URI (not implemented yet)
+    # build: docker://nipreps/mriqc:24.0.2
 
 # BIDS-study layout (babs#369): the babs project root IS the analysis dataset,
 # and the RIA stores go under .babs/ — babs's default top-level input_ria/output_ria
@@ -11,14 +22,6 @@ selection:
 analysis_path: "."
 input_ria_path: ".babs/input_ria"
 output_ria_path: ".babs/output_ria"
-
-container:
-  # TODO: swap source to the ReproNim github link (+ ref) once PennLINC/babs#383
-  # lands — then the shim is unnecessary.
-  source: ../repronim-containers-shim
-  name: bids-mriqc
-  # alternative: build from docker URI (not implemented yet)
-  # build: docker://nipreps/mriqc:24.0.2
 
 bids_app_args:
   --no-datalad-get: ""
