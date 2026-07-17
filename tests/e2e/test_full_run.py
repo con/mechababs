@@ -40,6 +40,11 @@ def _venv_run(campaign, tool, *args):
     )
 
 
+def _git(cwd, *args):
+    return subprocess.run(["git", "-C", str(cwd), *args],
+                          check=True, capture_output=True, text=True).stdout
+
+
 def _first_subject(rawdata):
     subs = sorted(p.name for p in rawdata.iterdir() if p.name.startswith("sub-"))
     assert subs, f"no sub-* under {rawdata} — host fixtures not mounted?"
@@ -53,7 +58,7 @@ def _ledger_row(campaign):
     return rows[0]
 
 
-def test_full_run(campaign, cluster_config, rawdata, study):
+def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     _venv_run(campaign, "mechababs", "configure",
               "--pipelines", "simbids-0.0.3.yaml", "--cluster", cluster_config)
     _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
@@ -69,7 +74,10 @@ def test_full_run(campaign, cluster_config, rawdata, study):
         "add-dataset did not record study_url"
 
     sub = _first_subject(rawdata)
-    inc = campaign / "inc.csv"
+    # The inclusion is an INPUT, kept outside the campaign — a loose file in the
+    # campaign root would trip the scaffold scope's clean-in guard (as the real
+    # smoke-test flow keeps it in /tmp; select generates to a tempdir).
+    inc = tmp_path / "inc.csv"
     inc.write_text(f"sub_id\n{sub}\n")
 
     # --- tick 1: scaffold (not-started -> `babs init`, no submit) ---
@@ -97,6 +105,26 @@ def test_full_run(campaign, cluster_config, rawdata, study):
     assert sub in (code / "mechababs_inclusion.csv").read_text()
     assert sub in (code / "processing_inclusion.csv").read_text()
     assert not row.get(f"{SHORT}_babs-merged"), "merged before any job ran"
+
+    # --- record-up: the scaffold advance is committed UP the nest, not just on disk ---
+    # The datalad_save_scope's recursive save must register the fresh derivative into
+    # the study and bump the gitlink campaign <- study <- derivative in one node,
+    # leaving the campaign clean (green == tracked).
+    assert not _git(campaign, "status", "--porcelain").strip(), \
+        "campaign tree dirty after scaffold — the scope did not commit the advance"
+    assert f"derivatives/{SHORT}" in (study_ds / ".gitmodules").read_text(), \
+        "study did not register the derivative as a subdataset"
+    head_msg = _git(campaign, "log", "--first-parent", "-1", "--format=%s").strip()
+    assert head_msg == f"scaffold ds999999/{SHORT}", \
+        f"campaign mainline did not record the scaffold node: {head_msg!r}"
+    # the pinned inclusion is committed in the derivative, and the RIA stores never
+    # leaked into git (the analysis_path='.' gitignore guard; #8 djarecka/babs_demo).
+    # babs tracks .babs/babs_init_config.yaml itself, by design — only the input_ria/
+    # output_ria symlink stores are the #8 hazard, so scope the check to those.
+    assert "mechababs_inclusion.csv" in _git(proj, "ls-files", "code"), \
+        "inclusion not committed in the derivative"
+    assert not _git(proj, "ls-files", "--", ".babs/input_ria", ".babs/output_ria").strip(), \
+        "RIA store swept into git — the analysis_path='.' gitignore guard failed"
 
     # --- tick 2: active cell, nothing submitted -> decide "submit" -> `babs submit` ---
     _venv_run(campaign, "mechababs", "iterate", "--batch", "1")

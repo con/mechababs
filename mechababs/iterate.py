@@ -26,9 +26,12 @@ from pathlib import Path
 
 import yaml
 
+from datalad.api import Dataset
+
 from mechababs import babs_status
 from mechababs import select
 from mechababs import state
+from mechababs.scope import datalad_save_scope
 
 # Repo root of the vendored mechababs — holds the top-level helper scripts iterate
 # still shells out to (merge_config); selection is now the in-package select module.
@@ -216,15 +219,23 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
              "--list-sub-file", inclusion,
              "--processing-level", processing_level, "--queue", "slurm"], dry_run=dry_run)
 
-        # 4. Pin our inclusion into the project (datalad run records the cp in git).
-        #    Kept as mechababs_inclusion.csv alongside babs's processing_inclusion.csv:
-        #    ours = what we REQUESTED, babs's = requested ∩ present-in-data, so the
-        #    diff is diagnostic (a selected subject the data doesn't have). Not merely
-        #    redundant — it's the record of intent.
-        run(["datalad", "run", "-m", "Pin run inclusion list",
-             "--output", "code/mechababs_inclusion.csv",
-             "--", "cp", inclusion, "code/mechababs_inclusion.csv"],
-            dry_run=dry_run, cwd=analysis)
+        # 4. Pin our inclusion into the project — a plain copy (its source is an
+        #    ephemeral tempdir, so a datalad run here would bake a dead abspath);
+        #    the enclosing datalad_save_scope commits it. Kept alongside babs's
+        #    processing_inclusion.csv: ours = what we REQUESTED, babs's = requested
+        #    ∩ present-in-data, so the diff catches a selected subject the data lacks.
+        dest = analysis / "code" / "mechababs_inclusion.csv"
+        if dry_run:
+            print(f"DRY-RUN  cp {inclusion} {dest}", file=sys.stderr)
+        else:
+            shutil.copy(inclusion, dest)
+        # Commit mechababs's derivative-side writes as one flat node (babs has
+        # already self-committed its own scaffold). Required: the enclosing campaign
+        # scope's recursive save(since=) only propagates COMMITTED subdataset advances
+        # up the nest — an untracked file here would be left behind, and the study /
+        # campaign gitlinks would point at a derivative commit that predates it.
+        run(["datalad", "save", "-d", analysis, "-m", "mechababs scaffold"],
+            dry_run=dry_run)
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
     #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
@@ -332,17 +343,28 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
             print("iterate: nothing to do (every pipeline is merged).", file=sys.stderr)
             return
 
+        campaign_ds = Dataset(campaign)
         for row, short, kind in work:
+            ds_id = row["dataset_id"]
             if kind == "scaffold":
-                updates = scaffold(campaign, cfg, row, short,
-                                   inclusion_file=inclusion_file, dry_run=dry_run)
+                # One recursive node records the whole advance: the scope opens
+                # clean at the campaign, spans babs init + the mechababs writes +
+                # the ledger row, and its save(since=, recursive=True) bumps the
+                # gitlink up each level (derivative -> study -> campaign).
+                with datalad_save_scope(campaign_ds, f"scaffold {ds_id}/{short}",
+                                        recursive=True, dry_run=dry_run):
+                    updates = scaffold(campaign, cfg, row, short,
+                                       inclusion_file=inclusion_file, dry_run=dry_run)
+                    if not dry_run:
+                        row.update(updates)
+                        state.write_rows(campaign, cols, rows)
             else:
                 updates = handle_active(campaign, cfg, row, short, dry_run=dry_run)
-            if updates and not dry_run:
-                row.update(updates)
-                state.write_rows(campaign, cols, rows)
-                state.save(campaign,
-                           f"iterate: {row['dataset_id']}/{short} -> {','.join(updates)}")
+                if updates and not dry_run:
+                    row.update(updates)
+                    state.write_rows(campaign, cols, rows)
+                    state.save(campaign,
+                               f"iterate: {ds_id}/{short} -> {','.join(updates)}")
 
         if dry_run:
             print(f"\nDRY-RUN: would advance {len(work)} cell(s).", file=sys.stderr)
