@@ -2,6 +2,16 @@ selection:
   require_datatypes: [anat, func]
   require_positive: [t1w_num, bold_num]
 
+# BIDS-study layout (babs#369): the babs project root IS the analysis dataset,
+# and the RIA stores go under .babs/ — babs's default top-level input_ria/output_ria
+# would break datalad's nesting of the (untracked) babs project inside the study.
+# Campaign-wide layout choice, living per-pipeline for now (see config-composition-axes);
+# MUST match across every pipeline in a campaign. merge_config passes these straight
+# into the babs config.
+analysis_path: "."
+input_ria_path: ".babs/input_ria"
+output_ria_path: ".babs/output_ria"
+
 container:
   # TODO: swap source to the ReproNim github link (+ ref) once PennLINC/babs#383
   # lands — then the shim is unnecessary.
@@ -25,10 +35,10 @@ bids_app_args:
   --stop-on-first-crash: ""
   # HOST path; BABS rewrites to /SGLR/FREESURFER_HOME/license.txt.
   --fs-license-file: "/dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt"
-  # Path inside the unzipped fmriprep_anat input. The double nesting
-  # is real: path_in_babs is sourcedata/fmriprep_anat, and the zip's
-  # top folder is also fmriprep_anat/.
-  --fs-subjects-dir: '"${PWD}"/sourcedata/fmriprep_anat/fmriprep_anat/sourcedata/freesurfer'
+  # Path inside the unzipped fMRIPrep-25.2.5+anat input. The double nesting
+  # is real: path_in_babs is sourcedata/fMRIPrep-25.2.5+anat, and the zip's
+  # top folder is also fMRIPrep-25.2.5+anat/.
+  --fs-subjects-dir: '"${PWD}"/sourcedata/fMRIPrep-25.2.5+anat/fMRIPrep-25.2.5+anat/sourcedata/freesurfer'
   --nprocs: "4"
   --omp-nthreads: "2"
   --mem-mb: "32000"
@@ -45,12 +55,12 @@ singularity_args:
 # Project 1 babs-project's output_ria. There is no placeholder
 # substitution here yet.
 input_datasets:
-  fmriprep_anat:
+  fMRIPrep-25.2.5+anat:
     required_files:
-      - "*fmriprep_anat*.zip"
+      - "*fMRIPrep-25.2.5+anat*.zip"
     is_zipped: true
     origin_url: "ria+file:///dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/processing/openneuro-pipe-2026-05-17/ds005896-fmriprep-anat/babs-project/output_ria#~data"
-    path_in_babs: sourcedata/fmriprep_anat
+    path_in_babs: sourcedata/fMRIPrep-25.2.5+anat
 
 cluster_resources:
   interpreting_shell: "/bin/bash"
