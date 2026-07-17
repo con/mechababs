@@ -70,7 +70,7 @@ BABS_URL="${BABS_SPEC%@*}";       BABS_REF="${BABS_SPEC##*@}"
 require_url_ref "$MECHABABS_SPEC"
 MECHA_URL="${MECHABABS_SPEC%@*}"; MECHA_REF="${MECHABABS_SPEC##*@}"
 
-for tool in git uv; do
+for tool in git uv git-annex; do
     command -v "$tool" >/dev/null 2>&1 || { echo "required tool not on PATH: $tool" >&2; exit 1; }
 done
 [ -e "$CAMPAIGN" ] && { echo "path already exists (fresh campaign only): $CAMPAIGN" >&2; exit 1; }
