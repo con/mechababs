@@ -11,7 +11,7 @@ container:
 # produce CIFTI. The output is the cheapest viable starting point
 # for someone who wants to do their own resampling.
 #
-# Pair-runs with fmriprep-full-25.2.5.yaml off the same anat
+# Pair-runs with fMRIPrep-25.2.5+full.yaml off the same anat
 # scaffold so we can compare the two outputs directly.
 bids_app_args:
   $SUBJECT_SELECTION_FLAG: "--participant-label"

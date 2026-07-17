@@ -3,7 +3,7 @@
 
 Usage:
     python3 merge_config.py \\
-        --pipeline pipelines/mriqc-24.0.2.yaml \\
+        --pipeline pipelines/MRIQC-24.0.2.yaml \\
         --cluster clusters/dartmouth.yaml \\
         --dataset-url https://github.com/OpenNeuroDatasets/ds000003.git
 

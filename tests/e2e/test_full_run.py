@@ -69,7 +69,7 @@ def _ledger_row(campaign):
 
 def test_full_run(campaign, cluster_config, rawdata, study, tmp_path):
     _venv_run(campaign, "mechababs", "configure",
-              "--pipelines", "simbids-0.0.3.yaml", "--cluster", cluster_config)
+              "--pipelines", "SimBIDS-0.0.3.yaml", "--cluster", cluster_config)
     _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
               "--study", str(study), "--processing-level", "subject")
 

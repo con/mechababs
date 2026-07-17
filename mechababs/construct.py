@@ -47,25 +47,32 @@ def container_dir(source):
     return name[:-4] if name.endswith(".git") else name
 
 
-def resolve_pipelines(campaign, pipeline_files):
-    """Map each pipeline file's ``short_name`` -> its campaign-relative path.
+def pipeline_short(rel):
+    """A pipeline's short_name: its filename stem. One identity for the ledger
+    column prefix and the published derivative dir name ``<Tool>-<Ver>+<stage>``
+    (e.g. ``fMRIPrep-25.2.5+anat``). No declared key — the filename IS the name."""
+    return Path(rel).stem
 
-    Reads short_name from the vendored mechababs pipeline configs; rejects a
-    missing short_name or a duplicate (a collision would merge column groups).
+
+def resolve_pipelines(campaign, pipeline_files):
+    """Campaign-relative paths to the requested pipeline configs, validated.
+
+    Stores paths (not stems) so the identity stays decoupled from the location —
+    moving pipelines out of the vendored ``mechababs/pipelines/`` later is a
+    base-dir change here, not a format change. Rejects a duplicate stem (two files
+    that would merge column groups).
     """
-    mapping = {}
+    rels, seen = [], set()
     for fname in pipeline_files:
         rel = f"{MECHABABS}/pipelines/{fname}"
-        path = campaign / rel
-        if not path.is_file():
+        if not (campaign / rel).is_file():
             sys.exit(f"pipeline config not found: {rel}")
-        short = (yaml.safe_load(path.read_text()) or {}).get("short_name")
-        if not short:
-            sys.exit(f"pipeline {fname} declares no short_name")
-        if short in mapping:
-            sys.exit(f"duplicate short_name {short!r} — pipeline short_names must be unique")
-        mapping[short] = rel
-    return mapping
+        short = pipeline_short(rel)
+        if short in seen:
+            sys.exit(f"duplicate pipeline {short!r} — pipeline names must be unique")
+        seen.add(short)
+        rels.append(rel)
+    return rels
 
 
 def resolve_containers(campaign, pipeline_rels):
@@ -117,14 +124,15 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
     ``campaign`` is a Path to the (already bootstrapped) campaign dataset;
     ``venv_rel`` is the venv's campaign-relative path (recorded for the job
     preamble); ``limit`` is the campaign-wide cap on each dataset's inclusion
-    (None → all). Returns the resolved ``{short_name: pipeline_file}`` map.
+    (None → all). Returns the list of campaign-relative pipeline paths.
     """
     pipelines = resolve_pipelines(campaign, pipeline_files)
+    shorts = [pipeline_short(rel) for rel in pipelines]
     cluster_rel = f"{MECHABABS}/clusters/{cluster}"
     if not (campaign / cluster_rel).is_file():
         sys.exit(f"cluster config not found: {cluster_rel}")
 
-    for dir_, (source, ref) in resolve_containers(campaign, pipelines.values()).items():
+    for dir_, (source, ref) in resolve_containers(campaign, pipelines).items():
         vendor_container(campaign, dir_, source, ref)
 
     config = campaign / "campaign.yaml"
@@ -135,8 +143,8 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
         "Write campaign.yaml (cluster + pipelines + venv)", config)
 
     ledger = campaign / state.STATE_FILENAME
-    ledger.write_text(state.initial_header(pipelines.keys()))
+    ledger.write_text(state.initial_header(shorts))
     run(DATALAD, "save", "--dataset", campaign, "--message",
-        f"Initialize {state.STATE_FILENAME} for pipelines {', '.join(pipelines)}", ledger)
+        f"Initialize {state.STATE_FILENAME} for pipelines {', '.join(shorts)}", ledger)
 
-    return pipelines
+    return shorts

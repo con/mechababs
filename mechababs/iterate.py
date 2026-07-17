@@ -30,6 +30,7 @@ import yaml
 from datalad.api import Dataset
 
 from mechababs import babs_status
+from mechababs import construct
 from mechababs import select
 from mechababs import state
 from mechababs.scope import datalad_save_scope
@@ -69,7 +70,11 @@ def warn_if_no_tmux():
 
 # TODO move to util
 def read_config(campaign):
-    """campaign.yaml -> {cluster, pipelines: {short_name: file}} (campaign-relative paths)."""
+    """campaign.yaml -> {cluster, pipelines: [file, ...]} (campaign-relative paths).
+
+    A pipeline's short_name is its filename stem (construct.pipeline_short) — the
+    ledger column prefix and the derivative dir name — so the list of paths is the
+    only pipeline state; the identifier is derived, never declared."""
     return yaml.safe_load((campaign / "campaign.yaml").read_text())
 
 
@@ -133,7 +138,7 @@ def babs_project(campaign, row, short):
     return campaign / row[f"{short}_babs"]
 
 
-def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
+def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_run):
     """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
 
     Returns the ledger update ({<short>_babs: project-root path}); the caller applies
@@ -148,7 +153,7 @@ def scaffold(campaign, cfg, row, short, *, inclusion_file, dry_run):
                  f"(add-dataset derives it; a blank means the metadata fetch failed)")
     study = campaign / "studies" / f"study-{ds_id}"
     origin_url = study_sourcedata_url(study, ds_id)
-    pipeline_path = campaign / cfg["pipelines"][short]
+    pipeline_path = campaign / pipeline_file
     cluster_path = campaign / cfg["cluster"]
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
     container = pipeline_cfg["container"]
@@ -324,11 +329,12 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
         #   gains an inline upstream-column read (e.g. require mriqc_babs-merged).
         work = []
         for row in rows:
-            for short in pipelines:
+            for pf in pipelines:
+                short = construct.pipeline_short(pf)
                 if not row.get(f"{short}_babs"):
-                    work.append((row, short, "scaffold"))
+                    work.append((row, short, pf, "scaffold"))
                 elif not row.get(f"{short}_babs-merged"):
-                    work.append((row, short, "active"))
+                    work.append((row, short, pf, "active"))
         if batch is not None:
             work = work[:batch]
         if not work:
@@ -336,11 +342,11 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
             return
 
         campaign_ds = Dataset(campaign)
-        for row, short, kind in work:
+        for row, short, pf, kind in work:
             ds_id = row["dataset_id"]
             if kind == "scaffold":
                 msg = f"scaffold {ds_id}/{short}"
-                transition = partial(scaffold, campaign, cfg, row, short,
+                transition = partial(scaffold, campaign, cfg, row, short, pf,
                                      inclusion_file=inclusion_file, dry_run=dry_run)
             else:
                 msg = f"iterate {ds_id}/{short}"

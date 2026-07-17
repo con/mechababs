@@ -103,7 +103,7 @@ source .venv/bin/activate
 # campaign.yaml + the empty ledger. Guards that THIS process is the campaign
 # venv's python (the check that prevents the wrong, unpinned babs from running).
 mechababs configure \
-    --pipelines mriqc-24.0.2.yaml \
+    --pipelines MRIQC-24.0.2.yaml \
     --cluster dartmouth.yaml \
     [--limit N]              # cap each dataset's inclusion to the first N eligible subjects
 
