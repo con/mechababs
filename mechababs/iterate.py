@@ -142,6 +142,40 @@ def babs_project(campaign, row, short):
     return campaign / row[f"{short}_babs"]
 
 
+def selected_pipelines(campaign, cfg):
+    """{short_name: loaded pipeline cfg} for every pipeline in this campaign."""
+    return {construct.pipeline_short(pf): yaml.safe_load((campaign / pf).read_text())
+            for pf in cfg["pipelines"]}
+
+
+def chain_edges(pipeline_cfg, selected):
+    """The in-campaign upstream stages this pipeline consumes: its `input_datasets`
+    keys that name another selected pipeline's short_name.
+
+    A key that matches a selected short_name IS a chained edge — its origin_url is
+    intentionally absent from the YAML (the upstream RIA doesn't exist until it has
+    run + merged), so the name match is the only signal knowable at author time. A
+    key matching no selected pipeline is an external input (raw BIDS, or a
+    precomputed derivative from outside the campaign) that carries its own
+    origin_url."""
+    return [k for k in (pipeline_cfg.get("input_datasets") or {}) if k in selected]
+
+
+def output_ria_url(project_root, producer_cfg):
+    """The clone source a downstream stage registers as its input's origin_url: the
+    producing babs project's output RIA, addressed through the `data` alias babs
+    writes there at init.
+
+    The alias is layout-agnostic (no dataset-id lookup, no assumption about the
+    analysis/RIA nesting); the RIA's location is per-pipeline babs config
+    (`output_ria_path`, babs default `output_ria`). Validated to clone + retrieve
+    annex content on a real produced derivative. The abspath is fine here: it's a
+    per-run RIA source consumed at compose time and baked into the derivative's own
+    babs config by babs — never recorded in the git-tracked ledger."""
+    ria_rel = producer_cfg.get("output_ria_path", "output_ria")
+    return f"ria+file://{Path(project_root).resolve()}/{ria_rel}#~data"
+
+
 def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_run):
     """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
 
@@ -161,6 +195,23 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
     cluster_path = campaign / cfg["cluster"]
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
     container = pipeline_cfg["container"]
+
+    # Chained inputs: gate this cell on every upstream stage it consumes having
+    # merged, then resolve each upstream's output-RIA URL to inject as that input's
+    # origin_url (the YAML leaves it blank — the RIA doesn't exist until the
+    # upstream runs). A not-yet-merged upstream means this cell can't scaffold this
+    # tick; return None so the reconciler skips it (a later tick retries once the
+    # upstream merges). No filesystem mutation happens before this gate.
+    selected = selected_pipelines(campaign, cfg)
+    edges = chain_edges(pipeline_cfg, selected)
+    unmet = [u for u in edges if not row.get(f"{u}_babs-merged")]
+    if unmet:
+        print(f"  {ds_id}/{short}: waiting on upstream {', '.join(unmet)} "
+              f"(not merged) — skipping this tick", file=sys.stderr)
+        return None
+    input_origins = {
+        u: output_ria_url(campaign / row[f"{u}_babs"], selected[u]) for u in edges
+    }
 
     venv_rel = cfg.get("venv")
     if not venv_rel:
@@ -203,18 +254,18 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, inclusion_file, dry_ru
                                           processing_level=processing_level, limit=limit)
 
         # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
-        #    resolving the venv placeholder in the preamble with the campaign venv.
+        #    resolving the venv placeholder in the preamble with the campaign venv,
+        #    and injecting each chained input's resolved upstream output-RIA URL.
+        merge_cmd = ["python3", str(MERGE_CONFIG_SCRIPT),
+                     "--pipeline", str(pipeline_path), "--cluster", str(cluster_path),
+                     "--dataset-url", origin_url, "--campaign-venv", campaign_venv]
+        for key, url in input_origins.items():
+            merge_cmd += ["--input-origin", f"{key}={url}"]
         if dry_run:
-            run(["python3", MERGE_CONFIG_SCRIPT, "--pipeline", pipeline_path,
-                 "--cluster", cluster_path, "--dataset-url", origin_url,
-                 "--campaign-venv", campaign_venv, ">", babs_config],
-                dry_run=True)
+            run(merge_cmd + [">", str(babs_config)], dry_run=True)
         else:
             with open(babs_config, "w") as f:
-                subprocess.run(["python3", str(MERGE_CONFIG_SCRIPT),
-                                "--pipeline", str(pipeline_path), "--cluster", str(cluster_path),
-                                "--dataset-url", origin_url, "--campaign-venv", campaign_venv],
-                               check=True, stdout=f)
+                subprocess.run(merge_cmd, check=True, stdout=f)
 
         # 3. babs init — scaffold only, NO submit. --list-sub-file defines the job
         #    universe; babs INTERSECTS it with the subjects actually present in the
@@ -347,8 +398,8 @@ def run_iterate(campaign, *, batch, dry_run, inclusion_file=None):
         for row, short, pf in work:
             ds_id = row["dataset_id"]
             if not row.get(f"{short}_babs"):
-                # TODO: when a second pipeline exists, gate a downstream scaffold on
-                #   the upstream cell's merge (e.g. require mriqc_babs-merged) here.
+                # scaffold self-gates on its chained upstreams: if a consumed stage
+                # isn't merged yet it returns None (skip) and a later tick retries.
                 action = "scaffold"
                 transition = partial(scaffold, campaign, cfg, row, short, pf,
                                      inclusion_file=inclusion_file, dry_run=dry_run)
