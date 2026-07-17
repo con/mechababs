@@ -203,15 +203,17 @@ def _write_study_description(path):
     }, indent=2) + "\n")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def campaign(workdir):
-    """A freshly bootstrapped campaign env (provisioning).
+    """A freshly bootstrapped campaign env (provisioning), one per test.
 
     Calls the real bootstrap.sh — prod's exact construction path — vendoring this
     repo (at its current branch) as the mechababs under test; it clones, so only
-    committed work is under test and a dirty tree is refused. A unique name per
-    session keeps bootstrap's refuse-existing-dir guard happy and avoids clobbering
-    a prior run; clean up stale ones with `rm -rf $MECHABABS_E2E_WORKDIR/test-campaign-*`.
+    committed work is under test and a dirty tree is refused. Function-scoped so each
+    test gets its own campaign (tests `configure` it, and `configure` refuses an
+    existing ledger — a shared campaign would collide). The unique per-call name keeps
+    bootstrap's refuse-existing-dir guard happy and avoids clobbering a prior run;
+    clean up stale ones with `rm -rf $MECHABABS_E2E_WORKDIR/test-campaign-*`.
 
     --system-site-packages is opt-in via MECHABABS_E2E_SYSTEM_SITE_PACKAGES (set by
     run_in_podman.sh for the CentOS7 container, whose 2015 toolchain can't build the
