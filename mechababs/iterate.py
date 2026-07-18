@@ -41,14 +41,33 @@ MECHABABS_ROOT = Path(__file__).resolve().parent.parent
 MERGE_CONFIG_SCRIPT = MECHABABS_ROOT / "merge_config.py"
 
 
-def run(cmd, *, dry_run, cwd=None):
-    """Run a command (list of args), or just print it under dry_run."""
+def run(cmd, *, dry_run, cwd=None, env=None):
+    """Run a command (list of args), or just print it under dry_run.
+
+    `env`, if given, is merged over the current environment for the child."""
     shown = " ".join(str(c) for c in cmd) + (f"   (cwd={cwd})" if cwd else "")
     if dry_run:
         print(f"DRY-RUN  {shown}", file=sys.stderr)
         return
     print(f"+ {shown}", file=sys.stderr)
-    subprocess.run([str(c) for c in cmd], cwd=cwd, check=True)
+    subprocess.run([str(c) for c in cmd], cwd=cwd, check=True,
+                   env={**os.environ, **env} if env else None)
+
+
+def datalad_duct(cmd, *, dataset, message, log_prefix, dry_run):
+    """Run a mutating shell-out under duct (resource logging) inside a `datalad run`,
+    so the duct logs land tracked in the campaign.
+
+    No inputs/outputs are declared (datalad run saves whatever changed, mirroring
+    datalad_save_scope's since-save). The duct output prefix is passed via the
+    DUCT_OUTPUT_PREFIX env var, NOT duct's -p flag: datalad run runs its own
+    {placeholder} substitution over the command and would choke on duct's
+    {datetime}/{pid} format fields (same lesson as the babs add-duct branch's
+    764d5ae). Read-only babs shell-outs (`babs status`) are NOT wrapped — only the
+    mutating steps (init now; submit/merge later)."""
+    duct_cmd = ["duct", *[str(c) for c in cmd]]
+    run(["datalad", "run", "-d", str(dataset), "-m", message, *duct_cmd],
+        dry_run=dry_run, cwd=dataset, env={"DUCT_OUTPUT_PREFIX": log_prefix})
 
 
 # TODO move to util
@@ -269,6 +288,14 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
             select.generate_inclusion(tsv_text, rule, pin,
                                       processing_level=processing_level, limit=limit)
 
+    # babs init runs under `datalad run` (via datalad_duct), which needs a clean
+    # tree to detect the command's changes. The inclusion pin we may have just
+    # written is the one pre-init change on the campaign — commit it first so the
+    # run starts clean (a no-op when the pin was reused unchanged).
+    if inclusion is not None:
+        run(["datalad", "save", "-d", campaign, "-m", f"pin inclusion {ds_id}/{short}",
+             str(inclusion)], dry_run=dry_run)
+
     with tempfile.TemporaryDirectory(prefix=f"mechababs-{ds_id}-{short}-") as tmp:
         babs_config = Path(tmp) / "babs-config.yaml"
 
@@ -297,7 +324,10 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
                      "--processing-level", processing_level, "--queue", "slurm"]
         if inclusion is not None:
             babs_init += ["--list-sub-file", inclusion]
-        run(babs_init, dry_run=dry_run)
+        datalad_duct(babs_init, dataset=campaign,
+                     message=f"scaffold {ds_id}/{short}: babs init",
+                     log_prefix=f".duct-logs/{ds_id}/{short}/babs-init_{{datetime}}-{{pid}}_",
+                     dry_run=dry_run)
 
     # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
     #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence

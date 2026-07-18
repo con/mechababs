@@ -9,7 +9,7 @@ description = "Automation glue for running BIDS apps across many datasets on HPC
 requires-python = ">=3.10"
 dependencies = [
     "pyyaml",
-    "datalad",
+    "datalad>=1.6",
     "datalad-container",
 ]
 
