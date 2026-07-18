@@ -87,7 +87,7 @@ Any deviations should be open issues or else the document itself needs to change
 ## Conventions
 
 The README covers three-axis composition, one-tool-two-modes / dev-exercises-prod,
-and the canonical inclusion-file flow. These are the conventions it doesn't:
+and the selection & inclusion flow. These are the conventions it doesn't:
 
 - **Wrap runs in duct.** Every run should carry con/duct usage/resource
   logs alongside its outputs — con/duct is a first-class campaign tool

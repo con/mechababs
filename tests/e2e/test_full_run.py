@@ -92,7 +92,7 @@ def test_full_run(campaign, cluster_config, rawdata, study):
 
     # simbids has `selection: {}` (pass-through), so `--limit 1` selects the first
     # subject — which _first_subject also returns — and iterate generates the
-    # inclusion itself; no hand-written --inclusion-file.
+    # inclusion itself.
     sub = _first_subject(rawdata)
 
     # --- tick 1: scaffold (not-started -> `babs init`, no submit) ---

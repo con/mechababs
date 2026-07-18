@@ -227,9 +227,9 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
     if not dry_run:
         project_root.parent.mkdir(parents=True, exist_ok=True)
 
-    # 1. Inclusion. iterate takes no --inclusion-file — it advances whichever cell
-    #    is next, so a runtime inclusion could land on the wrong cell. The
-    #    per-(dataset,pipeline) pin under code/inclusions/ is the interface:
+    # 1. Inclusion. The per-(dataset,pipeline) pin under code/inclusions/ is the
+    #    interface — iterate advances whichever cell is next, so a runtime
+    #    inclusion could land on the wrong cell:
     #      chained -> no inclusion; babs derives the job set by intersecting the
     #                 inputs (raw ∩ each upstream output), dropping any subject an
     #                 upstream didn't produce. It intersects on subject presence, not

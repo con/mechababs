@@ -112,7 +112,7 @@ mechababs configure \
 mechababs add-dataset https://github.com/OpenNeuroDatasets/ds005896
 
 # advance the campaign one reconciler tick (see below)
-mechababs iterate [--batch N] [--dry-run] [--inclusion-file <csv>]
+mechababs iterate [--batch N] [--dry-run]
 ```
 
 `configure` refuses to overwrite an existing ledger — resetting a campaign is
@@ -171,13 +171,17 @@ mechababs also pins the requested list on the *campaign* at
 mechababs is pinned) as a diagnostic record of intent — its diff against babs's
 `processing_inclusion.csv` catches a selected subject the data doesn't have.
 
-For a smoke test, hand-write a one-row CSV and pass `--inclusion-file` (skips
-`select`):
+For a smoke test, hand-write a one-row inclusion and drop it at the pin path;
+`iterate` uses a present pin as-is (no `select`):
 
 ```bash
-printf "sub_id\nsub-CSI1\n" > /tmp/inc.csv
-mechababs iterate --batch 1 --inclusion-file /tmp/inc.csv
+mkdir -p code/inclusions
+printf "sub_id\nsub-CSI1\n" > code/inclusions/dsXXXXXX_<short>.csv
+mechababs iterate --batch 1
 ```
+
+Or, for a pass-through pipeline (`selection: {}`), cap the job universe at
+`configure` time with `--limit 1` and let `iterate` generate the inclusion.
 
 ## Manual shims (temporary, automated later)
 
