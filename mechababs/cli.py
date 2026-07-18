@@ -1,8 +1,8 @@
 """mechababs — the operate-side CLI (configure / add-dataset / iterate / …).
 
 Runs inside a campaign's venv (built by bootstrap.sh). ``configure`` binds an
-ordered pipeline-set to a cluster (campaign.yaml + the ledger) from inside that
-venv; the other subcommands mutate or advance the DATASETS_STATE.tsv ledger. The
+ordered pipeline-set to a cluster (the mechababs config + the ledger) from inside
+that venv; the other subcommands mutate or advance the state-file ledger. The
 environment half of the bootstrap — datalad dataset, vendored code pins, venv —
 is bootstrap.sh's job.
 """
@@ -28,7 +28,7 @@ def cmd_configure(args):
     + code/babs registered, and THIS process runs from the campaign's own .venv —
     which is how we know the pinned code (not some ambient install) is executing.
     This is the guard that kills the wrong-babs bug. Then construct.build vendors
-    the pipelines' containers and writes campaign.yaml + the ledger.
+    the pipelines' containers and writes the config + the ledger.
     """
     campaign = args.campaign_path.resolve()
 

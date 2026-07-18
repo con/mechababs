@@ -32,8 +32,8 @@ derivatives, and the vendored code) are subdatasets inside it:
 
 ```
 my-campaign/                             # a campaign = a datalad dataset (datalad create)
-  campaign.yaml                          # cluster file + {short_name: pipeline_file} + venv + limit
-  DATASETS_STATE.tsv                     # the state ledger (one row per dataset)
+  .mechababs/campaign.yaml               # cluster file + {short_name: pipeline_file} + venv + limit
+  desc-mechababs_datasets.tsv            # the state ledger (one row per dataset)
   .venv/                                 # campaign venv (gitignored, rebuildable)
   code/
     mechababs/                           # subdataset, pinned at a chosen ref
@@ -52,7 +52,7 @@ Why this shape:
   editable-installs them, so the `babs` / `mechababs` that run are the
   provenance-pinned ones recorded in the campaign — not whatever happens to be on
   PATH. A different babs commit (e.g. to test a PR) is just a different pin.
-- **State is a re-derivable cache, not the source of truth.** `DATASETS_STATE.tsv`
+- **State is a re-derivable cache, not the source of truth.** `desc-mechababs_datasets.tsv`
   is reconciled from ground truth (babs / the output RIA) each tick, so a crashed
   run, a hand-edited file, or a changed inclusion self-heals on the next
   `iterate`. To change an outcome, change ground truth (the inclusion, or reset).
@@ -99,8 +99,8 @@ is how the pin is set.
 cd my-campaign
 source .venv/bin/activate
 
-# bind an ordered pipeline-set to a cluster: vendor containers, write
-# campaign.yaml + the empty ledger. Guards that THIS process is the campaign
+# bind an ordered pipeline-set to a cluster: vendor containers, write the
+# mechababs config + the empty ledger. Guards that THIS process is the campaign
 # venv's python (the check that prevents the wrong, unpinned babs from running).
 mechababs configure \
     --pipelines MRIQC-24.0.2.yaml \
@@ -116,8 +116,8 @@ mechababs iterate [--batch N] [--dry-run]
 ```
 
 `configure` refuses to overwrite an existing ledger — resetting a campaign is
-"delete `DATASETS_STATE.tsv`, re-run `configure`" (containers already vendored
-are reused).
+"delete `desc-mechababs_datasets.tsv`, re-run `configure`" (containers already
+vendored are reused).
 
 ## The reconciler tick (`iterate`)
 

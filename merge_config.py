@@ -34,7 +34,7 @@ def merge_babs_config(pipeline_config, cluster_config, dataset_url, input_origin
         merged[k] = v
 
     # Resolve the venv placeholder in the preamble with the campaign venv abspath
-    # (campaign.yaml keeps it relative; the caller resolves against the campaign root).
+    # (the mechababs config keeps it relative; the caller resolves against the campaign root).
     if campaign_venv and "script_preamble" in merged:
         merged["script_preamble"] = merged["script_preamble"].replace(
             "{{MECHABABS_VENV}}", campaign_venv)

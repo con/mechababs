@@ -93,12 +93,13 @@ run git clone --branch "$BABS_REF"  "$BABS_URL"  code/babs
 run uv venv ${SSP:+--system-site-packages} "$VENV"
 run uv pip install --python "$VENV_PY" -e code/mechababs
 
-# gitignore before create/save so .venv/ + lock are never captured
-printf '%s\n' '.venv/' '.DATASETS_STATE.tsv.lock' > .gitignore
+# gitignore .venv before create/save so it's never captured. The ledger lock is
+# added by `mechababs configure`, which owns the ledger filename constant.
+printf '%s\n' '.venv/' > .gitignore
 
 # make the campaign a datalad dataset over the populated dir, then register pins
 run "$VENV_DATALAD" create --force -c text2git .
-run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Ignore .venv and the ledger lock" .gitignore
+run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Ignore .venv" .gitignore
 save_pin mechababs "$MECHA_REF"
 save_pin babs "$BABS_REF"
 

@@ -4,7 +4,7 @@ Runs from inside the campaign venv (invoked by ``cli.cmd_configure`` after
 ``bootstrap.sh`` built the environment: the datalad dataset, the vendored
 babs/mechababs code pins, and the venv). It reads the vendored pipeline +
 cluster configs, vendors each pipeline's container into ``code/<dir>``, and
-writes ``campaign.yaml`` + the ``DATASETS_STATE.tsv`` ledger.
+writes the mechababs config + the mechababs state-file ledger.
 
 Re-runnable: container vendoring skips a ``code/<dir>`` already present, so a
 reset (delete the ledger, re-run ``configure``) reuses the vendored containers.
@@ -122,7 +122,7 @@ def vendor_container(campaign, dir_, source, ref):
 
 
 def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
-    """Construct the campaign: vendor containers, write campaign.yaml + ledger.
+    """Construct the campaign: vendor containers, write the config + ledger.
 
     ``campaign`` is a Path to the (already bootstrapped) campaign dataset;
     ``venv_rel`` is the venv's campaign-relative path (recorded for the job
@@ -152,12 +152,24 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
     run(DATALAD, "save", "--dataset", campaign, "--message",
         "Write campaign dataset_description.json (DatasetType study)", desc)
 
-    config = campaign / "campaign.yaml"
+    config = state.config_path(campaign)
+    config.parent.mkdir(parents=True, exist_ok=True)
     config.write_text(yaml.safe_dump(
         {"cluster": cluster_rel, "pipelines": pipelines, "venv": venv_rel, "limit": limit},
         sort_keys=False))
     run(DATALAD, "save", "--dataset", campaign, "--message",
-        "Write campaign.yaml (cluster + pipelines + venv)", config)
+        f"Write {state.CONFIG_FILENAME} (cluster + pipelines + venv)", config)
+
+    # Gitignore the ledger lock here (not in bootstrap.sh): its filename derives
+    # from a mechababs constant, so the entry belongs where that constant lives.
+    # Idempotent — a reset re-run (delete ledger, re-configure) must not dup it.
+    gitignore = campaign / ".gitignore"
+    lines = gitignore.read_text().splitlines() if gitignore.exists() else []
+    if state.LOCK_FILENAME not in lines:
+        with gitignore.open("a") as f:
+            f.write(f"{state.LOCK_FILENAME}\n")
+        run(DATALAD, "save", "--dataset", campaign, "--message",
+            f"Ignore the ledger lock ({state.LOCK_FILENAME})", gitignore)
 
     ledger = campaign / state.STATE_FILENAME
     ledger.write_text(state.initial_header(shorts))

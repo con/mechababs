@@ -89,12 +89,12 @@ def warn_if_no_tmux():
 
 # TODO move to util
 def read_config(campaign):
-    """campaign.yaml -> {cluster, pipelines: [file, ...]} (campaign-relative paths).
+    """The mechababs config -> {cluster, pipelines: [file, ...]} (campaign-relative paths).
 
     A pipeline's short_name is its filename stem (construct.pipeline_short) — the
     ledger column prefix and the derivative dir name — so the list of paths is the
     only pipeline state; the identifier is derived, never declared."""
-    return yaml.safe_load((campaign / "campaign.yaml").read_text())
+    return yaml.safe_load(state.config_path(campaign).read_text())
 
 
 def assert_venv_tools(campaign, cfg):
@@ -224,7 +224,7 @@ def _scaffold_context(campaign, cfg, row, short, pipeline_file):
                  f"(add-dataset derives it; a blank means the metadata fetch failed)")
     venv_rel = cfg.get("venv")
     if not venv_rel:
-        sys.exit("campaign.yaml has no 'venv' — run `mechababs configure` first")
+        sys.exit(f"{state.CONFIG_FILENAME} has no 'venv' — run `mechababs configure` first")
     study = campaign / "studies" / f"study-{ds_id}"
     pipeline_path = campaign / pipeline_file
     pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
@@ -275,7 +275,7 @@ def _resolve_inclusion(ctx, edges, *, dry_run):
     if edges:
         print("  chained cell — no inclusion; babs intersects its inputs", file=sys.stderr)
         return None
-    pin = ctx.campaign / ".mechababs" / "inclusions" / f"{ctx.ds_id}_{ctx.short}.csv"
+    pin = ctx.campaign / state.MECHABABS_DIR / "inclusions" / f"{ctx.ds_id}_{ctx.short}.csv"
     if pin.exists():
         print(f"  using pinned inclusion {pin}", file=sys.stderr)
         return pin
@@ -308,7 +308,7 @@ def _compose_babs_config(ctx, input_origins, *, dry_run):
     references it relatively. (babs consumes it and stores its own altered copy at
     .babs/, so the config is recorded a few times over — the redundancy was always
     there, now it's visible/tracked.) Returns the config path."""
-    babs_config = ctx.campaign / ".mechababs" / "babs-init-config" / f"{ctx.ds_id}_{ctx.short}.yaml"
+    babs_config = ctx.campaign / state.MECHABABS_DIR / "babs-init-config" / f"{ctx.ds_id}_{ctx.short}.yaml"
     merge_cmd = ["python3", str(MERGE_CONFIG_SCRIPT),
                  "--pipeline", str(ctx.pipeline_path), "--cluster", str(ctx.cluster_path),
                  "--dataset-url", ctx.origin_url, "--campaign-venv", ctx.campaign_venv]

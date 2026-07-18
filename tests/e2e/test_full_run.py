@@ -19,6 +19,8 @@ import subprocess
 
 import yaml
 
+from mechababs import state
+
 log = logging.getLogger("mechababs.e2e")
 
 # The simbids pipeline's short_name: its ledger column prefix and the derivative
@@ -70,7 +72,7 @@ def _first_subject(rawdata):
 
 def _ledger_row(campaign):
     """The single ledger row (the fixture registers exactly one dataset)."""
-    rows = list(csv.DictReader((campaign / "DATASETS_STATE.tsv").open(), delimiter="\t"))
+    rows = list(csv.DictReader((campaign / state.STATE_FILENAME).open(), delimiter="\t"))
     assert len(rows) == 1, f"expected one ledger row, got {len(rows)}"
     return rows[0]
 

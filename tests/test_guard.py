@@ -13,6 +13,7 @@ import subprocess
 import pytest
 
 from mechababs import guard
+from mechababs import state
 
 
 def _git(cwd, *args):
@@ -59,7 +60,7 @@ def test_dirt_outside_pins_ignored(tmp_path):
     """A dirty file outside code/* is not the pin guard's concern — an in-progress
     derivative / unsaved ledger is expected state (making it clean is #52)."""
     campaign = _campaign_with_pins(tmp_path)
-    (campaign / "DATASETS_STATE.tsv").write_text("url\n")
+    (campaign / state.STATE_FILENAME).write_text("url\n")
     (campaign / "derivatives").mkdir()
     (campaign / "derivatives" / "in_progress.txt").write_text("scaffolding\n")
     guard.require_clean_pins(campaign)  # no SystemExit
