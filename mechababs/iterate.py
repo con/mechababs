@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 
@@ -194,6 +195,160 @@ def output_ria_url(project_root, producer_cfg):
     return f"ria+file://{Path(project_root).resolve()}/{ria_rel}#~data"
 
 
+@dataclass
+class _ScaffoldCtx:
+    """The paths + config one scaffold needs, gathered once and threaded to its steps."""
+    campaign: Path
+    cfg: dict
+    short: str
+    ds_id: str
+    processing_level: str
+    study: Path
+    origin_url: str
+    pipeline_path: Path
+    cluster_path: Path
+    pipeline_cfg: dict
+    container: dict
+    campaign_venv: str
+    project_root: Path
+
+
+def _scaffold_context(campaign, cfg, row, short, pipeline_file):
+    """Gather the scaffold's inputs, validating the prerequisites (processing_level,
+    venv). The derivative is produced in its final home inside the cloned study; the
+    babs-project root IS the derivative dataset, named by the pipeline's short_name."""
+    ds_id = row["dataset_id"]
+    processing_level = row.get("processing_level")
+    if not processing_level:
+        sys.exit(f"processing_level not set for {ds_id} — set it in the ledger "
+                 f"(add-dataset derives it; a blank means the metadata fetch failed)")
+    venv_rel = cfg.get("venv")
+    if not venv_rel:
+        sys.exit("campaign.yaml has no 'venv' — run `mechababs configure` first")
+    study = campaign / "studies" / f"study-{ds_id}"
+    pipeline_path = campaign / pipeline_file
+    pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
+    return _ScaffoldCtx(
+        campaign=campaign, cfg=cfg, short=short, ds_id=ds_id,
+        processing_level=processing_level, study=study,
+        origin_url=study_sourcedata_url(study, ds_id),
+        pipeline_path=pipeline_path, cluster_path=campaign / cfg["cluster"],
+        pipeline_cfg=pipeline_cfg, container=pipeline_cfg["mechababs"]["container"],
+        campaign_venv=str(campaign / venv_rel),
+        project_root=study / "derivatives" / short,
+    )
+
+
+def _resolve_chained_inputs(ctx, row):
+    """Gate the cell on every upstream stage it consumes having merged, and resolve
+    each upstream's output-RIA URL to inject as that input's origin_url (the YAML
+    leaves it blank — the RIA doesn't exist until the upstream runs). Returns
+    (edges, input_origins) — `edges` may be empty (unchained) — or None if an
+    upstream isn't merged yet, so the reconciler skips this cell (a later tick
+    retries). No filesystem mutation happens before this gate."""
+    selected = selected_pipelines(ctx.campaign, ctx.cfg)
+    edges = chain_edges(ctx.pipeline_cfg, selected)
+    unmet = [u for u in edges if not row.get(f"{u}_babs-merged")]
+    if unmet:
+        print(f"  {ctx.ds_id}/{ctx.short}: waiting on upstream {', '.join(unmet)} "
+              f"(not merged) — skipping this tick", file=sys.stderr)
+        return None
+    input_origins = {u: output_ria_url(ctx.campaign / row[f"{u}_babs"], selected[u])
+                     for u in edges}
+    return edges, input_origins
+
+
+def _resolve_inclusion(ctx, edges, *, dry_run):
+    """The per-(dataset,pipeline) inclusion pin under .mechababs/inclusions/ (or None
+    for a chained cell). The pin is the interface — iterate advances whichever cell is
+    next, so a runtime inclusion could land on the wrong cell:
+      chained -> None; babs derives the job set by intersecting the inputs (raw ∩ each
+                 upstream output), dropping any subject an upstream didn't produce. It
+                 intersects on subject presence, not datatype, so a downstream may
+                 still get one its own rule would exclude (e.g. BOLD-less for minimal);
+                 those jobs fail fast. TODO: run our own selection to trim them.
+      pinned  -> reuse it (prior tick, or hand-curated).
+      else    -> select generates it from the study TSV + the pipeline's selection
+                 rule ({} = all subjects), capped by limit.
+    The pin records what we requested; babs writes its own processing_inclusion.csv,
+    whose diff flags a requested subject the data lacks."""
+    if edges:
+        print("  chained cell — no inclusion; babs intersects its inputs", file=sys.stderr)
+        return None
+    pin = ctx.campaign / ".mechababs" / "inclusions" / f"{ctx.ds_id}_{ctx.short}.csv"
+    if pin.exists():
+        print(f"  using pinned inclusion {pin}", file=sys.stderr)
+        return pin
+    mechababs_cfg = ctx.pipeline_cfg["mechababs"]
+    if "selection" not in mechababs_cfg:
+        sys.exit(f"pipeline {ctx.short} has no `mechababs.selection` and no pinned "
+                 f"inclusion at {pin} — one is needed to define the job universe "
+                 f"(use `selection: {{}}` for pass-through)")
+    rule = mechababs_cfg["selection"] or {}
+    # processing_level (from the ledger) formats the inclusion to match the level babs
+    # runs at, so the two never disagree.
+    limit = ctx.cfg.get("limit")
+    if dry_run:
+        print(f"DRY-RUN  select.generate_inclusion for {ctx.ds_id}/{ctx.short} "
+              f"(rule={rule}, processing_level={ctx.processing_level}, "
+              f"limit={limit}) -> {pin}", file=sys.stderr)
+    else:
+        pin.parent.mkdir(parents=True, exist_ok=True)
+        tsv_text, _ = select.read_study_metadata(ctx.study)
+        select.generate_inclusion(tsv_text, rule, pin,
+                                  processing_level=ctx.processing_level, limit=limit)
+    return pin
+
+
+def _compose_babs_config(ctx, input_origins, *, dry_run):
+    """Compose the babs container-config (pipeline x cluster x dataset-url), resolving
+    the venv placeholder with the campaign venv and injecting each chained input's
+    resolved upstream output-RIA URL. Written to a tracked campaign path
+    (.mechababs/babs-init-config/), not a tempdir, so the babs-init datalad-run command
+    references it relatively. (babs consumes it and stores its own altered copy at
+    .babs/, so the config is recorded a few times over — the redundancy was always
+    there, now it's visible/tracked.) Returns the config path."""
+    babs_config = ctx.campaign / ".mechababs" / "babs-init-config" / f"{ctx.ds_id}_{ctx.short}.yaml"
+    merge_cmd = ["python3", str(MERGE_CONFIG_SCRIPT),
+                 "--pipeline", str(ctx.pipeline_path), "--cluster", str(ctx.cluster_path),
+                 "--dataset-url", ctx.origin_url, "--campaign-venv", ctx.campaign_venv]
+    for key, url in input_origins.items():
+        merge_cmd += ["--input-origin", f"{key}={url}"]
+    if dry_run:
+        run(merge_cmd + [">", str(babs_config)], dry_run=True)
+    else:
+        babs_config.parent.mkdir(parents=True, exist_ok=True)
+        with open(babs_config, "w") as f:
+            subprocess.run(merge_cmd, check=True, stdout=f)
+    return babs_config
+
+
+def _babs_init(ctx, inclusion, babs_config, *, dry_run):
+    """Commit the mechababs inputs, then `babs init` under duct (scaffold only, NO
+    submit). babs init runs under `datalad run` (via datalad_duct), which needs a clean
+    tree to detect the command's changes — so commit the inclusion pin + composed
+    config first. Paths are campaign-RELATIVE so the recorded command is portable (the
+    run's cwd is the campaign); --list-sub-file (when given) defines the job universe,
+    which babs records as the derivative's code/processing_inclusion.csv — a chained
+    cell omits it, letting babs intersect the inputs instead."""
+    inputs = [str(babs_config)] + ([str(inclusion)] if inclusion is not None else [])
+    run(["datalad", "save", "-d", ctx.campaign,
+         "-m", f"scaffold inputs {ctx.ds_id}/{ctx.short}", *inputs], dry_run=dry_run)
+
+    babs_init = ["babs", "init", str(ctx.project_root.relative_to(ctx.campaign)),
+                 "--container-ds",
+                 str(resolve_container_ds(ctx.campaign, ctx.container).relative_to(ctx.campaign)),
+                 "--container-name", ctx.container["name"],
+                 "--container-config", str(babs_config.relative_to(ctx.campaign)),
+                 "--processing-level", ctx.processing_level, "--queue", "slurm"]
+    if inclusion is not None:
+        babs_init += ["--list-sub-file", str(inclusion.relative_to(ctx.campaign))]
+    datalad_duct(babs_init, dataset=ctx.campaign,
+                 message=f"scaffold {ctx.ds_id}/{ctx.short}: babs init",
+                 log_prefix=f".duct-logs/{ctx.ds_id}/{ctx.short}/babs-init_{{datetime}}-{{pid}}_",
+                 dry_run=dry_run)
+
+
 def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
     """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
 
@@ -204,140 +359,25 @@ def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
     (`inclusions/`, `babs-init-config/`) so the babs-init `datalad run` record
     references portable relative paths.
     """
-    ds_id = row["dataset_id"]
-    processing_level = row.get("processing_level")
-    if not processing_level:
-        sys.exit(f"processing_level not set for {ds_id} — set it in the ledger "
-                 f"(add-dataset derives it; a blank means the metadata fetch failed)")
-    study = campaign / "studies" / f"study-{ds_id}"
-    origin_url = study_sourcedata_url(study, ds_id)
-    pipeline_path = campaign / pipeline_file
-    cluster_path = campaign / cfg["cluster"]
-    pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
-    container = pipeline_cfg["mechababs"]["container"]
-
-    # Chained inputs: gate this cell on every upstream stage it consumes having
-    # merged, then resolve each upstream's output-RIA URL to inject as that input's
-    # origin_url (the YAML leaves it blank — the RIA doesn't exist until the
-    # upstream runs). A not-yet-merged upstream means this cell can't scaffold this
-    # tick; return None so the reconciler skips it (a later tick retries once the
-    # upstream merges). No filesystem mutation happens before this gate.
-    selected = selected_pipelines(campaign, cfg)
-    edges = chain_edges(pipeline_cfg, selected)
-    unmet = [u for u in edges if not row.get(f"{u}_babs-merged")]
-    if unmet:
-        print(f"  {ds_id}/{short}: waiting on upstream {', '.join(unmet)} "
-              f"(not merged) — skipping this tick", file=sys.stderr)
+    ctx = _scaffold_context(campaign, cfg, row, short, pipeline_file)
+    gate = _resolve_chained_inputs(ctx, row)
+    if gate is None:
         return None
-    input_origins = {
-        u: output_ria_url(campaign / row[f"{u}_babs"], selected[u]) for u in edges
-    }
+    edges, input_origins = gate
 
-    venv_rel = cfg.get("venv")
-    if not venv_rel:
-        sys.exit("campaign.yaml has no 'venv' — run `mechababs configure` first")
-    campaign_venv = str(campaign / venv_rel)
-
-    # The derivative is produced in its final home, inside the cloned study; the
-    # babs-project root IS the derivative dataset, named by the pipeline's short_name.
-    project_root = study / "derivatives" / short
-
-    print(f"\n=== scaffold {ds_id} / {short} -> {project_root.name} ===", file=sys.stderr)
+    print(f"\n=== scaffold {ctx.ds_id} / {short} -> {ctx.project_root.name} ===",
+          file=sys.stderr)
     if not dry_run:
-        project_root.parent.mkdir(parents=True, exist_ok=True)
+        ctx.project_root.parent.mkdir(parents=True, exist_ok=True)
 
-    # 1. Inclusion. The per-(dataset,pipeline) pin under .mechababs/inclusions/ is the
-    #    interface — iterate advances whichever cell is next, so a runtime
-    #    inclusion could land on the wrong cell:
-    #      chained -> no inclusion; babs derives the job set by intersecting the
-    #                 inputs (raw ∩ each upstream output), dropping any subject an
-    #                 upstream didn't produce. It intersects on subject presence, not
-    #                 datatype, so a downstream may still get one its own rule would
-    #                 exclude (e.g. BOLD-less for minimal); those jobs fail fast.
-    #                 TODO: run our own selection to trim these upstream-only jobs.
-    #      pinned  -> reuse it (prior tick, or hand-curated).
-    #      else    -> select generates it from the study TSV + the pipeline's
-    #                 selection rule ({} = all subjects), capped by limit.
-    #    The pin records what we requested; babs writes its own
-    #    processing_inclusion.csv, whose diff flags a requested subject the data lacks.
-    pin = campaign / ".mechababs" / "inclusions" / f"{ds_id}_{short}.csv"
-    if edges:
-        inclusion = None
-        print("  chained cell — no inclusion; babs intersects its inputs", file=sys.stderr)
-    elif pin.exists():
-        inclusion = pin
-        print(f"  using pinned inclusion {pin}", file=sys.stderr)
-    else:
-        inclusion = pin
-        mechababs_cfg = pipeline_cfg["mechababs"]
-        if "selection" not in mechababs_cfg:
-            sys.exit(f"pipeline {short} has no `mechababs.selection` and no pinned "
-                     f"inclusion at {pin} — one is needed to define the job universe "
-                     f"(use `selection: {{}}` for pass-through)")
-        rule = mechababs_cfg["selection"] or {}
-        # processing_level (from the ledger) formats the inclusion to match the
-        # level babs runs at, so the two never disagree.
-        limit = cfg.get("limit")
-        if dry_run:
-            print(f"DRY-RUN  select.generate_inclusion for {ds_id}/{short} "
-                  f"(rule={rule}, processing_level={processing_level}, "
-                  f"limit={limit}) -> {pin}", file=sys.stderr)
-        else:
-            pin.parent.mkdir(parents=True, exist_ok=True)
-            tsv_text, _ = select.read_study_metadata(study)
-            select.generate_inclusion(tsv_text, rule, pin,
-                                      processing_level=processing_level, limit=limit)
+    inclusion = _resolve_inclusion(ctx, edges, dry_run=dry_run)
+    babs_config = _compose_babs_config(ctx, input_origins, dry_run=dry_run)
+    _babs_init(ctx, inclusion, babs_config, dry_run=dry_run)
 
-    # 2. Compose the babs container-config (pipeline x cluster x dataset-url),
-    #    resolving the venv placeholder with the campaign venv and injecting each
-    #    chained input's resolved upstream output-RIA URL. Written to a tracked
-    #    campaign path (.mechababs/babs-init-config/), not a tempdir, so the
-    #    babs-init datalad-run command references it relatively. (babs consumes it
-    #    and stores its own altered copy at .babs/, so the config is recorded a few
-    #    times over — the redundancy was always there, now it's visible/tracked.)
-    babs_config = campaign / ".mechababs" / "babs-init-config" / f"{ds_id}_{short}.yaml"
-    merge_cmd = ["python3", str(MERGE_CONFIG_SCRIPT),
-                 "--pipeline", str(pipeline_path), "--cluster", str(cluster_path),
-                 "--dataset-url", origin_url, "--campaign-venv", campaign_venv]
-    for key, url in input_origins.items():
-        merge_cmd += ["--input-origin", f"{key}={url}"]
-    if dry_run:
-        run(merge_cmd + [">", str(babs_config)], dry_run=True)
-    else:
-        babs_config.parent.mkdir(parents=True, exist_ok=True)
-        with open(babs_config, "w") as f:
-            subprocess.run(merge_cmd, check=True, stdout=f)
-
-    # babs init runs under `datalad run` (via datalad_duct), which needs a clean
-    # tree to detect the command's changes. The inclusion pin and the composed
-    # config we just wrote are the pre-init changes on the campaign — commit both
-    # first so the run starts clean.
-    inputs = [str(babs_config)] + ([str(inclusion)] if inclusion is not None else [])
-    run(["datalad", "save", "-d", campaign, "-m", f"scaffold inputs {ds_id}/{short}",
-         *inputs], dry_run=dry_run)
-
-    # 3. babs init — scaffold only, NO submit. Paths are campaign-RELATIVE so the
-    #    recorded datalad-run command is portable (the run's cwd is the campaign).
-    #    --list-sub-file (when given) defines the job universe, which babs records as
-    #    the derivative's code/processing_inclusion.csv; a chained cell omits it,
-    #    letting babs intersect the inputs instead.
-    babs_init = ["babs", "init", str(project_root.relative_to(campaign)),
-                 "--container-ds",
-                 str(resolve_container_ds(campaign, container).relative_to(campaign)),
-                 "--container-name", container["name"],
-                 "--container-config", str(babs_config.relative_to(campaign)),
-                 "--processing-level", processing_level, "--queue", "slurm"]
-    if inclusion is not None:
-        babs_init += ["--list-sub-file", str(inclusion.relative_to(campaign))]
-    datalad_duct(babs_init, dataset=campaign,
-                 message=f"scaffold {ds_id}/{short}: babs init",
-                 log_prefix=f".duct-logs/{ds_id}/{short}/babs-init_{{datetime}}-{{pid}}_",
-                 dry_run=dry_run)
-
-    # 5. Ledger: babs = the babs-project root, campaign-relative — the handle later
-    #    ticks drive babs against (`babs status|submit|merge <path>`). Its presence
-    #    answers both "scaffolded?" and "where?".
-    return {f"{short}_babs": str(project_root.relative_to(campaign))}
+    # Ledger: babs = the babs-project root, campaign-relative — the handle later ticks
+    # drive babs against (`babs status|submit|merge <path>`). Its presence answers both
+    # "scaffolded?" and "where?".
+    return {f"{short}_babs": str(ctx.project_root.relative_to(campaign))}
 
 
 # --- ACTIVE-cell transitions: (campaign, cfg, row, short, *, dry_run) -> updates ---
