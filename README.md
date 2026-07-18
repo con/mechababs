@@ -167,16 +167,16 @@ The eligible list is sorted and truncated to `--limit N` (a reproducible
 job *universe*. babs inner-joins it with the subjects actually present in the
 data and records that as its own `processing_inclusion.csv` inside the derivative;
 mechababs also pins the requested list on the *campaign* at
-`code/inclusions/<dataset>_<pipeline>.csv` (orchestration provenance lives where
-mechababs is pinned) as a diagnostic record of intent — its diff against babs's
-`processing_inclusion.csv` catches a selected subject the data doesn't have.
+`.mechababs/inclusions/<dataset>_<pipeline>.csv` (orchestration provenance lives
+where mechababs is pinned) as a diagnostic record of intent — its diff against
+babs's `processing_inclusion.csv` catches a selected subject the data doesn't have.
 
 For a smoke test, hand-write a one-row inclusion and drop it at the pin path;
 `iterate` uses a present pin as-is (no `select`):
 
 ```bash
-mkdir -p code/inclusions
-printf "sub_id\nsub-CSI1\n" > code/inclusions/dsXXXXXX_<short>.csv
+mkdir -p .mechababs/inclusions
+printf "sub_id\nsub-CSI1\n" > .mechababs/inclusions/dsXXXXXX_<short>.csv
 mechababs iterate --batch 1
 ```
 
