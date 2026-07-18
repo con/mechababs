@@ -12,6 +12,7 @@ assertions here double as the scaffold tier.
 """
 
 import csv
+import json
 import logging
 import os
 import subprocess
@@ -78,6 +79,12 @@ def test_full_run(campaign, cluster_config, rawdata, study):
     _venv_run(campaign, "mechababs", "configure",
               "--pipelines", "SimBIDS-0.0.3.yaml", "--cluster", cluster_config,
               "--limit", "1")
+    # configure made the campaign a BIDS study: dataset_description names mechababs.
+    camp_desc = json.loads((campaign / "dataset_description.json").read_text())
+    assert camp_desc["DatasetType"] == "study", "campaign not a BIDS study"
+    assert camp_desc["GeneratedBy"][0]["Name"] == "mechababs", \
+        "campaign dataset_description missing the mechababs GeneratedBy agent"
+
     _venv_run(campaign, "mechababs", "add-dataset", str(rawdata),
               "--study", str(study), "--processing-level", "subject")
 

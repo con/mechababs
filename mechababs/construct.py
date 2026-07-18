@@ -12,12 +12,14 @@ The ledger guard lives in ``cli`` (refuses if the ledger exists, so
 ``add-dataset`` rows are never clobbered).
 """
 
+import json
 import subprocess
 import sys
 from pathlib import Path
 
 import yaml
 
+from mechababs import __version__
 from mechababs import state
 
 # The vendored mechababs subtree; pipeline/cluster configs resolve under it.
@@ -135,6 +137,20 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
 
     for dir_, (source, ref) in resolve_containers(campaign, pipelines).items():
         vendor_container(campaign, dir_, source, ref)
+
+    # The campaign is itself a BIDS study (it holds the cloned studies + produced
+    # derivatives). Its dataset_description names mechababs as the GeneratedBy agent,
+    # commit-bearing so the exact orchestrator is recoverable. (Matches the
+    # OpenNeuroStudies study convention — BIDSVersion 1.9.0, DatasetType study.)
+    desc = campaign / "dataset_description.json"
+    desc.write_text(json.dumps({
+        "Name": campaign.name,
+        "BIDSVersion": "1.9.0",
+        "DatasetType": "study",
+        "GeneratedBy": [{"Name": "mechababs", "Version": __version__}],
+    }, indent=2) + "\n")
+    run(DATALAD, "save", "--dataset", campaign, "--message",
+        "Write campaign dataset_description.json (DatasetType study)", desc)
 
     config = campaign / "campaign.yaml"
     config.write_text(yaml.safe_dump(
