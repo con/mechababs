@@ -5,7 +5,7 @@ configure -> add-dataset -> iterate (scaffold via `babs init`) -> iterate (submi
 ledger + babs project at scaffold, then the merged column + a produced derivative.
 
 This is the piece that exercises the reconciler's ACTIVE-cell path
-(decide_active -> babs_status.read_status -> decide -> ITERATE_ACTIONS): the second
+(decide_action -> babs_status.read_status -> decide -> ITERATE_ACTIONS): the second
 tick decides "submit", the third decides "merge". Full-run tier = simbids only (light
 enough to actually submit+run under the slurm-docker-ci slurm); the scaffold
 assertions here double as the scaffold tier.
