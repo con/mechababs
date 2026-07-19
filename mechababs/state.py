@@ -10,14 +10,12 @@ schema is **read from the file's header**, not hardcoded — ``mechababs
 configure`` chooses the pipelines per campaign (writing the header via
 ``initial_header``), so the accessor discovers them from the columns present.
 
-The ledger is a re-derivable cache; mutators hold a campaign-level flock so there
-is a single writer (add-dataset and iterate).
+The ledger is a re-derivable cache; mutators hold the campaign-level flock
+(``utils.locked``) so there is a single writer.
 """
 
 import csv
-import fcntl
 import subprocess
-from contextlib import contextmanager
 from pathlib import Path
 
 STATE_FILENAME = "desc-mechababs_datasets.tsv"
@@ -84,16 +82,6 @@ def write_rows(campaign, cols, rows):
             w.writerow({c: row.get(c, "") for c in cols})
 
 
-@contextmanager
-def locked(campaign):
-    """Hold the campaign's single-writer flock around a read-modify-write."""
-    lock = Path(campaign) / LOCK_FILENAME
-    with open(lock, "w") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def save(campaign, message):

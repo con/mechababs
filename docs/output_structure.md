@@ -28,12 +28,20 @@ campaign/
   LICENSE
   .mechababs/campaign.yaml
   desc-mechababs_datasets.tsv  # the state ledger
-  .bidsignore                  # studies/
+  .bidsignore                  # studies/, derivative-attempts/
   code/
     babs/  mechababs/  containers/    # pinned submodules
   studies/                     # see below
     study-ds<XXXXXX>/
+  derivative-attempts/         # retired derivatives, kept for their evidence
+    ds<XXXXXX>-<Tool>-<Ver>+<stage>-attempt-<N>/
 ```
+
+`derivative-attempts/` holds derivatives that had to be redone — a resource change, a tool bug, a config fix.
+Deleting them would throw away the logs, git history, and `datalad run` records that say *why* the cell was redone; leaving them in the study would block the re-scaffold and publish a known-bad derivative.
+So `mechababs retire-derivative` moves the dataset here and resets its ledger cell in one transition.
+The `ds<XXXXXX>` prefix is load-bearing — a submodule's name *is* its path, so two datasets retiring the same pipeline would otherwise collide — and `attempt-<N>` covers the same cell being retired more than once.
+The move preserves the dataset's `datalad-id`: it is the same dataset relocated, not a copy, so provenance pointing at it still resolves.
 
 `studies/` is `.bidsignore`d because BIDS describes no study containing studies — nesting is *by kind* (`sourcedata/`, `derivatives/`).
 The pattern is nonetheless already in use upstream: [OpenNeuroStudies](https://github.com/OpenNeuroStudies/OpenNeuroStudies) is itself a study containing studies — `DatasetType: "study"` at its root, with its `study-ds<XXXXXX>/` members sitting directly beside it.

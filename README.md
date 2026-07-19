@@ -93,7 +93,7 @@ venv. Afterwards the pinned tools run *by construction*.
 `REF` must be a branch or tag name (not a bare commit sha) — `git clone --branch`
 is how the pin is set.
 
-### 2. `mechababs {configure,add-dataset,iterate,status}` — operate (run from the campaign venv)
+### 2. `mechababs {configure,add-dataset,iterate,status,retire-derivative}` — operate (run from the campaign venv)
 
 ```bash
 cd my-campaign
@@ -119,7 +119,23 @@ mechababs iterate [--batch N] [--dry-run]
 mechababs status [-o columns|tsv|vd]     # default: an aligned table
                  [--study ds004044] [--derivative MRIQC-24.0.2] [--failed]
                  [--no-refresh]          # skip the per-cell `babs status` refresh
+
+# retire a derivative that has to be redone: move it out of its study into
+# derivative-attempts/ and reset its ledger cell, so iterate re-scaffolds it
+mechababs retire-derivative studies/study-ds004044/derivatives/fMRIPrep-25.2.5+minimal
+                 [--dry-run]
 ```
+
+`retire-derivative` exists because a cell that must be redone (a resource change, a
+tool bug, a config fix) leaves a derivative that is no longer wanted in the study but
+is still worth keeping — its logs, git history, and `datalad run` records are the
+evidence for *why* it was redone. It moves the dataset to
+`derivative-attempts/<dataset_id>-<derivative>-attempt-<N>` (the dataset prefix
+avoids a path collision between two datasets retiring the same pipeline; `attempt-N`
+covers the same cell being retired twice) and **resets the ledger cell in the same
+transition** — so there is no window where the derivative is gone but the cell is
+still routed as in-progress, and no hand-edit to forget. The move preserves the
+dataset's `datalad-id`, so it is the same dataset relocated, not a copy.
 
 `status` aggregates each babs project's `code/job_status.csv` (which carries no
 dataset/pipeline column, and where every job is named `bid`) so a failure points

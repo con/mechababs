@@ -16,9 +16,19 @@ from mechababs import __version__
 from mechababs import construct
 from mechababs import guard
 from mechababs import iterate as iterate_mod
+from mechababs import retire as retire_mod
 from mechababs import select
 from mechababs import state
 from mechababs import status as status_mod
+from mechababs import utils
+
+
+def _ensure_campaign(args):
+    """Resolve --campaign-path and confirm it is a campaign (i.e. has a ledger)."""
+    campaign = args.campaign_path.resolve()
+    if not state.state_path(campaign).is_file():
+        sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    return campaign
 
 
 def cmd_configure(args):
@@ -93,9 +103,7 @@ def cmd_add_dataset(args):
     All pipeline columns start empty; no inclusion is generated (selection is
     pipeline-axis, deferred to deploy — see scaffold).
     """
-    campaign = args.campaign_path.resolve()
-    if not state.state_path(campaign).is_file():
-        sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    campaign = _ensure_campaign(args)
     guard.require_clean_pins(campaign)
 
     ds_id = iterate_mod.dataset_id(args.url)
@@ -133,7 +141,7 @@ def cmd_add_dataset(args):
             print(f"warning: could not derive processing_level for {ds_id} ({e}); "
                   f"left blank — set it in the ledger before iterate", file=sys.stderr)
 
-    with state.locked(campaign):
+    with utils.locked(campaign):
         cols = state.header(campaign)
         rows = state.read_rows(campaign)
         if any(r["dataset_id"] == ds_id for r in rows):
@@ -155,9 +163,7 @@ def cmd_add_dataset(args):
 
 def cmd_iterate(args):
     """One reconciler tick: scaffold each (dataset, pipeline) whose init is empty."""
-    campaign = args.campaign_path.resolve()
-    if not state.state_path(campaign).is_file():
-        sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    campaign = _ensure_campaign(args)
     guard.require_clean_pins(campaign)
     if not args.dry_run:
         iterate_mod.warn_if_no_tmux()
@@ -165,11 +171,15 @@ def cmd_iterate(args):
     return 0
 
 
+def cmd_retire_derivative(args):
+    """Move derivative(s) into derivative-attempts/ and reset their ledger cells."""
+    campaign = _ensure_campaign(args)
+    return retire_mod.run_retire(campaign, args.paths, dry_run=args.dry_run)
+
+
 def cmd_status(args):
     """Read-only: one row per job across every (dataset, pipeline) cell."""
-    campaign = args.campaign_path.resolve()
-    if not state.state_path(campaign).is_file():
-        sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    campaign = _ensure_campaign(args)
     return status_mod.run_status(
         campaign,
         study=args.study,
@@ -221,6 +231,16 @@ def main():
     pi.add_argument("--dry-run", action="store_true",
                     help="print the planned commands and change nothing")
     pi.set_defaults(func=cmd_iterate)
+
+    pr = sub.add_parser("retire-derivative",
+                        help="move a derivative into derivative-attempts/ and reset its ledger cell")
+    pr.add_argument("paths", nargs="+", metavar="PATH",
+                    help="derivative path(s): studies/study-<id>/derivatives/<name>")
+    pr.add_argument("--campaign-path", type=Path, default=Path("."),
+                    help="the campaign dataset (default: current directory)")
+    pr.add_argument("--dry-run", action="store_true",
+                    help="print the planned retirements and change nothing")
+    pr.set_defaults(func=cmd_retire_derivative)
 
     ps = sub.add_parser("status", help="campaign-wide job table (read-only)")
     ps.add_argument("--campaign-path", type=Path, default=Path("."),

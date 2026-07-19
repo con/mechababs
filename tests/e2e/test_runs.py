@@ -219,6 +219,49 @@ def test_full_run(campaign, cluster_config, rawdata, study):
         f"merge produced no {sub} derivative zip in the output RIA master:\n{tree}"
     )
 
+    # --- retire the derivative: out of the study, into derivative-attempts/ ---
+    # A cell that must be redone (a resource change, a tool bug) has to leave the
+    # study without losing its evidence — logs, history, run records. This asserts
+    # the move AND the ledger reset land in one transition, so the cell is never
+    # half-retired (gone from disk but still routed as in-progress). It runs last
+    # because it deliberately leaves this campaign derivative-less.
+    deriv_id = _git(
+        study_ds, "config", "-f", ".gitmodules",
+        "--get", f"submodule.derivatives/{STAGE1}.datalad-id",
+    ).strip()
+    _venv_run(
+        campaign, "mechababs", "retire-derivative",
+        f"studies/study-ds999999/derivatives/{STAGE1}",
+    )
+
+    parked_rel = f"derivative-attempts/ds999999-{STAGE1}-attempt-1"
+    assert (campaign / parked_rel).is_dir(), f"retired derivative not at {parked_rel}"
+    assert not (study_ds / "derivatives" / STAGE1).exists(), (
+        "retired derivative still present in the study"
+    )
+    assert f"derivatives/{STAGE1}" not in (study_ds / ".gitmodules").read_text(), (
+        "study still registers the retired derivative"
+    )
+    # It is the SAME dataset relocated, not a copy: the datalad-id survives, so any
+    # provenance pointing at it still resolves.
+    assert (
+        _git(campaign, "config", "-f", ".gitmodules",
+             "--get", f"submodule.{parked_rel}.datalad-id").strip() == deriv_id
+    ), "retired derivative lost its datalad-id in the move"
+
+    # the ledger cell is reset by the same transition -> iterate would re-scaffold it
+    row = _ledger_row(campaign)
+    assert not row[f"{STAGE1}_babs"] and not row[f"{STAGE1}_babs-merged"], (
+        f"retire did not reset the ledger cell (row={row})"
+    )
+
+    _assert_nest_clean([study_ds, campaign], "retire")
+    assert (
+        _git(campaign, "log", "--first-parent", "-1", "--format=%s")
+        .strip()
+        .startswith(f"retire ds999999/{STAGE1}")
+    ), "campaign mainline did not record the retire node"
+
 
 def test_chained_run(campaign, cluster_config, rawdata, study):
     """Two simbids stages where stage2 consumes stage1's output by name (issue #72).

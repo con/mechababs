@@ -149,8 +149,16 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
         "DatasetType": "study",
         "GeneratedBy": [{"Name": "mechababs", "Version": __version__}],
     }, indent=2) + "\n")
+    # BIDS nests by KIND (sourcedata/, derivatives/), so it can express neither a
+    # study holding studies nor a set of retired derivative attempts. Both are real
+    # campaign-level directories, so hide them from the validator. The study-of-
+    # studies case is a gap to raise with BIDS rather than something .bidsignore
+    # should have to answer — see docs/output_structure.md.
+    bidsignore = campaign / ".bidsignore"
+    bidsignore.write_text("studies/\nderivative-attempts/\n")
     run(DATALAD, "save", "--dataset", campaign, "--message",
-        "Write campaign dataset_description.json (DatasetType study)", desc)
+        "Write campaign dataset_description.json (DatasetType study) + .bidsignore",
+        desc, bidsignore)
 
     config = state.config_path(campaign)
     config.parent.mkdir(parents=True, exist_ok=True)

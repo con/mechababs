@@ -1,4 +1,9 @@
-"""scope.py — group a block of work into one labeled provenance node.
+"""utils.py — the campaign's datalad primitives: `locked` and `datalad_save_scope`.
+
+The two things every campaign mutator (`add-dataset`, `iterate`,
+`retire-derivative`) needs: a single-writer lock, and a way to collapse a block of
+work into one labeled provenance node. They are kept together because they are
+always used together — take the lock, then open a scope.
 
 `datalad_save_scope` is a clean-in / one-node-out context manager built entirely
 on `ds.save(since=<entry>)` (datalad#7821's run-merge engine, exposed via `since=`).
@@ -26,8 +31,29 @@ The clean-in guard makes "everything since base == this block's work" true, so t
 node is attributable; a dirty tree raises rather than absorbing unrelated changes.
 """
 
+import fcntl
 import sys
 from contextlib import contextmanager
+from pathlib import Path
+
+from mechababs.state import LOCK_FILENAME
+
+
+@contextmanager
+def locked(campaign):
+    """Hold the campaign's single-writer flock around a read-modify-write.
+
+    The campaign-level primitive that keeps `add-dataset`, `iterate`, and
+    `retire-derivative` from interleaving: each holds this for the whole
+    read-modify-write of the ledger and the nest it describes.
+    """
+    lock = Path(campaign) / LOCK_FILENAME
+    with open(lock, "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 @contextmanager

@@ -33,7 +33,7 @@ from mechababs import babs_status
 from mechababs import construct
 from mechababs import select
 from mechababs import state
-from mechababs.scope import datalad_save_scope
+from mechababs.utils import datalad_save_scope, locked
 
 # Repo root of the vendored mechababs — holds the top-level helper scripts iterate
 # still shells out to (merge_config); selection is now the in-package select module.
@@ -457,7 +457,7 @@ def run_iterate(campaign, *, batch, dry_run):
     if not dry_run and cfg.get("venv"):
         assert_venv_tools(campaign, cfg)
     pipelines = cfg["pipelines"]
-    with state.locked(campaign):
+    with locked(campaign):
         cols = state.header(campaign)
         rows = state.read_rows(campaign)
 
