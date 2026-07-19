@@ -65,7 +65,9 @@ Stages (each a separate BABS run, composed via the three-axis YAMLs):
    fmriprep; kept as a no-op hook for the planned confounds-at-resampling
    change (#17).
 5. **`fmriprep --level full`** — resampled BOLD in template spaces + CIFTI +
-   confounds; ~45× minimal.
+   confounds. More expensive than minimal — it resamples every volume into each
+   output space and projects to surfaces — but the ratio has never been
+   measured here, so don't quote one.
 
 **Fan-out, not chain.** Stages 3–5 each take anat-only's output as a
 `sourcedata/` input; they do *not* chain off each other (BABS is single-input
