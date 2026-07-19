@@ -1,5 +1,5 @@
 # Downstream half of the chained-inputs e2e (issue #72): a second simbids stage
-# that consumes SimBIDS-0.0.3's output. Copy of SimBIDS-0.0.3.yaml plus the
+# that consumes SimBIDS-0.0.3+anchor's output. Copy of SimBIDS-0.0.3+anchor.yaml plus the
 # chained input_datasets edge; paired with clusters/test-docker.yaml. NOT real data.
 
 mechababs:
@@ -33,17 +33,17 @@ cluster_resources:
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
 
-# Chained input: SimBIDS-0.0.3's output. Key == the producing pipeline's
+# Chained input: SimBIDS-0.0.3+anchor's output. Key == the producing pipeline's
 # short_name, so iterate name-matches it, gates on that stage being merged, and
 # injects its output-RIA URL as origin_url (omitted here — it doesn't exist until
 # the upstream runs). babs fetches + unzips it as job input-prep even though
 # simbids ignores the content.
 input_datasets:
-  SimBIDS-0.0.3:
+  SimBIDS-0.0.3+anchor:
     is_zipped: true
-    path_in_babs: sourcedata/SimBIDS-0.0.3
+    path_in_babs: sourcedata/SimBIDS-0.0.3+anchor
     required_files:
-      - "*SimBIDS-0.0.3*.zip"
+      - "*SimBIDS-0.0.3+anchor*.zip"
 
 all_results_in_one_zip: true
 zip_foldernames:
