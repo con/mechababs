@@ -93,7 +93,7 @@ venv. Afterwards the pinned tools run *by construction*.
 `REF` must be a branch or tag name (not a bare commit sha) — `git clone --branch`
 is how the pin is set.
 
-### 2. `mechababs {configure,add-dataset,iterate}` — operate (run from the campaign venv)
+### 2. `mechababs {configure,add-dataset,iterate,status}` — operate (run from the campaign venv)
 
 ```bash
 cd my-campaign
@@ -113,7 +113,19 @@ mechababs add-dataset https://github.com/OpenNeuroDatasets/ds005896
 
 # advance the campaign one reconciler tick (see below)
 mechababs iterate [--batch N] [--dry-run]
+
+# read-only: one row per job across every (dataset, pipeline) cell —
+# dataset · pipeline · sub/ses · job_id · state · time_used/limit · failed · log path
+mechababs status [-o columns|tsv|vd]     # default: an aligned table
+                 [--study ds004044] [--derivative MRIQC-24.0.2] [--failed]
+                 [--no-refresh]          # skip the per-cell `babs status` refresh
 ```
+
+`status` aggregates each babs project's `code/job_status.csv` (which carries no
+dataset/pipeline column, and where every job is named `bid`) so a failure points
+straight at its log. It refreshes each matched cell from `sacct` first — `--study`
+/`--derivative` narrow *before* the refresh, so scoping keeps it fast — and
+`--no-refresh` makes reading the possibly-stale cache an explicit choice.
 
 `configure` refuses to overwrite an existing ledger — resetting a campaign is
 "delete `desc-mechababs_datasets.tsv`, re-run `configure`" (containers already

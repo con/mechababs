@@ -18,6 +18,7 @@ from mechababs import guard
 from mechababs import iterate as iterate_mod
 from mechababs import select
 from mechababs import state
+from mechababs import status as status_mod
 
 
 def cmd_configure(args):
@@ -164,6 +165,21 @@ def cmd_iterate(args):
     return 0
 
 
+def cmd_status(args):
+    """Read-only: one row per job across every (dataset, pipeline) cell."""
+    campaign = args.campaign_path.resolve()
+    if not state.state_path(campaign).is_file():
+        sys.exit(f"not a campaign (no {state.STATE_FILENAME}): {campaign}")
+    return status_mod.run_status(
+        campaign,
+        study=args.study,
+        derivative=args.derivative,
+        only_failed=args.failed,
+        do_refresh=not args.no_refresh,
+        output=args.output,
+    )
+
+
 def main():
     p = argparse.ArgumentParser(
         description=__doc__.split("\n\n")[0],
@@ -205,6 +221,20 @@ def main():
     pi.add_argument("--dry-run", action="store_true",
                     help="print the planned commands and change nothing")
     pi.set_defaults(func=cmd_iterate)
+
+    ps = sub.add_parser("status", help="campaign-wide job table (read-only)")
+    ps.add_argument("--campaign-path", type=Path, default=Path("."),
+                    help="the campaign dataset (default: current directory)")
+    ps.add_argument("-o", "--output", choices=["columns", "tsv", "vd"], default="columns",
+                    help="aligned table (default), raw TSV to pipe anywhere, or open VisiData")
+    ps.add_argument("--study", default=None,
+                    help="only this study (ds004044 or study-ds004044)")
+    ps.add_argument("--derivative", default=None,
+                    help="only this derivative (e.g. MRIQC-24.0.2)")
+    ps.add_argument("--failed", action="store_true", help="only jobs that failed")
+    ps.add_argument("--no-refresh", action="store_true",
+                    help="skip the per-cell `babs status` refresh; read the (possibly stale) cache")
+    ps.set_defaults(func=cmd_status)
 
     args = p.parse_args()
     return args.func(args)
