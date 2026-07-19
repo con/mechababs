@@ -76,9 +76,16 @@ def _retire(campaign, study_rel, derivative, dest_rel):
     """Deregister from the study and move the dataset to the campaign."""
     study = Path(campaign) / study_rel
     sub_rel = f"derivatives/{derivative}"
-    # Deregister but KEEP the files (--cached), then drop the .gitmodules section.
+    # Deregister but KEEP the files (--cached), drop the .gitmodules section, and
+    # COMMIT it in the study *before* moving. The commit is load-bearing: datalad's
+    # save deregisters a "vanished" subdataset with its own `git rm`, which collides
+    # with a merely-staged removal ("pathspec did not match any files"). Committing
+    # first leaves the study self-consistent, so the enclosing scope only has to bump
+    # gitlinks — and the inner commit becomes the scope node's second parent.
     _git(study, "rm", "--cached", "-q", sub_rel)
     _git(study, "config", "-f", ".gitmodules", "--remove-section", f"submodule.{sub_rel}")
+    _git(study, "add", ".gitmodules")
+    _git(study, "commit", "-q", "-m", f"retire derivative: deregister {derivative}")
     # git leaves a stale submodule.* section in the study's LOCAL config; it is not
     # committed and does not travel, but it confuses later `git submodule` calls.
     _git(study, "config", "--remove-section", f"submodule.{sub_rel}", check=False)
