@@ -137,6 +137,15 @@ transition** — so there is no window where the derivative is gone but the cell
 still routed as in-progress, and no hand-edit to forget. The move preserves the
 dataset's `datalad-id`, so it is the same dataset relocated, not a copy.
 
+**A retired derivative is an archive, not a resumable babs project.** babs bakes
+absolute RIA paths in at init (the same reason babs projects can't be relocated), so
+after the move its `input`/`output` siblings still point at the old
+`studies/study-<id>/derivatives/<name>/.babs/…` path. No data is lost — the RIA
+stores live under `.babs/` and move with it — but those references dangle, so **babs
+commands won't operate on it, and neither will `datalad get`/`push` through those
+siblings**. Read its logs, history and content; retire a cell you mean to redo from
+scratch, not one you mean to continue.
+
 `status` aggregates each babs project's `code/job_status.csv` (which carries no
 dataset/pipeline column, and where every job is named `bid`) so a failure points
 straight at its log. It refreshes each matched cell from `sacct` first — `--study`

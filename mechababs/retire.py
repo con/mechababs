@@ -11,6 +11,16 @@ The move preserves the dataset: a derivative's ``.git`` is a real directory (not
 gitlink file), so it is self-contained on disk, and its ``datalad-id`` survives — the
 parked dataset is the *same* dataset relocated, not a copy.
 
+**A retired derivative is an archive, not a resumable babs project.** babs bakes
+ABSOLUTE RIA paths in at init (which is why babs projects cannot be relocated at
+all), so after the move the derivative's ``input``/``output`` siblings still point at
+its old ``studies/study-<id>/derivatives/<name>/.babs/…`` location, which no longer
+exists. Nothing is lost — the RIA stores live under ``.babs/`` and travel with it —
+but every recorded reference is dangling, so **babs commands will not work on it and
+neither will ``datalad get``/``push`` through those siblings**. Read its logs, its git
+history, and its content; do not expect to resume the run in place. Retire a cell you
+intend to redo from scratch, not one you mean to continue.
+
 Naming: ``derivative-attempts/<dataset_id>-<derivative>-attempt-<N>``.
 A submodule's name IS its path, so two datasets retiring the same pipeline would
 collide on one path without the ``<dataset_id>`` prefix; ``attempt-<N>`` (the first

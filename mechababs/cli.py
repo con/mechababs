@@ -232,8 +232,20 @@ def main():
                     help="print the planned commands and change nothing")
     pi.set_defaults(func=cmd_iterate)
 
-    pr = sub.add_parser("retire-derivative",
-                        help="move a derivative into derivative-attempts/ and reset its ledger cell")
+    pr = sub.add_parser(
+        "retire-derivative",
+        help="move a derivative into derivative-attempts/ and reset its ledger cell",
+        description=(
+            "Move a derivative out of its study into derivative-attempts/"
+            "<dataset_id>-<derivative>-attempt-<N> and reset its ledger cell, so the "
+            "next iterate re-scaffolds it. Keeps the logs, git history and run records "
+            "that say why the cell was redone. NOTE: the retired copy is an ARCHIVE, "
+            "not a resumable babs project — babs bakes absolute RIA paths at init, so "
+            "after the move its input/output siblings point at the old location and "
+            "babs commands (and datalad get/push via those siblings) will not work on "
+            "it. Retire a cell you intend to redo from scratch, not one to continue."
+        ),
+    )
     pr.add_argument("paths", nargs="+", metavar="PATH",
                     help="derivative path(s): studies/study-<id>/derivatives/<name>")
     pr.add_argument("--campaign-path", type=Path, default=Path("."),
