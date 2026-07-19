@@ -57,7 +57,7 @@ cluster_resources:
   hard_runtime_limit: "24:00:00"
   customized_text: |
     #SBATCH --cpus-per-task=4
-    #SBATCH --mem=16G
+    #SBATCH --mem=24G
     #SBATCH --nodes=1
     #SBATCH --ntasks=1
 
