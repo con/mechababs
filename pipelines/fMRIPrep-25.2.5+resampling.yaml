@@ -56,6 +56,10 @@ bids_app_args:
 
 singularity_args:
   - --containall
+  # --pwd pins CWD to the bound ds clone; without it --containall drops CWD to a
+  # tmpfs $HOME and the relative -w (.git/tmp/wkdir) resolves there, so nipype
+  # cannot read back its own node results. babs does not emit --pwd itself. See #55.
+  - --pwd "${PWD}"
   - -B $JOB_TMP:/tmp
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/templateflow:/templateflow
   - -B /dartfs/rc/lab/D/DBIC/DBIC/CON/asmacdo/mechababs/license.txt:/SGLR/FREESURFER_HOME/license.txt
@@ -88,4 +92,6 @@ cluster_resources:
 
 all_results_in_one_zip: true
 zip_foldernames:
-  fmriprep_resampling: "25-2-5"
+  # Key == this pipeline's short_name (filename stem); it names the output folder
+  # the app writes into and that babs zips.
+  fMRIPrep-25.2.5+resampling: "25-2-5"
