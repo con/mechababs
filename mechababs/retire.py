@@ -26,22 +26,16 @@ retirement is one labeled node in the campaign's provenance.
 """
 
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 from datalad.api import Dataset
+from datalad.runner.exception import CommandError
 
 from mechababs import state
 from mechababs.utils import datalad_save_scope, locked
 
 ATTEMPTS_DIR = "derivative-attempts"
-
-
-def _git(cwd, *args, check=True):
-    return subprocess.run(
-        ["git", "-C", str(cwd), *args], check=check, capture_output=True, text=True
-    )
 
 
 def parse_derivative_path(campaign, path):
@@ -73,25 +67,25 @@ def next_attempt_dest(campaign, dataset_id, derivative):
 
 
 def _retire(campaign, study_rel, derivative, dest_rel):
-    """Deregister from the study and move the dataset to the campaign."""
-    study = Path(campaign) / study_rel
+    """Move the dataset out of its study; the enclosing save deregisters it.
+
+    Deliberately does NOT `git rm` the submodule first. datalad's save has a
+    vanished-subdataset path that deregisters it (index *and* .gitmodules) once the
+    directory is gone; pre-empting that with our own removal strips the index entry,
+    so datalad's `git rm` then fails on a pathspec that no longer matches. Moving and
+    letting save do the bookkeeping is both simpler and the datalad-native path.
+    """
+    study = Dataset(Path(campaign) / study_rel)
     sub_rel = f"derivatives/{derivative}"
-    # Deregister but KEEP the files (--cached), drop the .gitmodules section, and
-    # COMMIT it in the study *before* moving. The commit is load-bearing: datalad's
-    # save deregisters a "vanished" subdataset with its own `git rm`, which collides
-    # with a merely-staged removal ("pathspec did not match any files"). Committing
-    # first leaves the study self-consistent, so the enclosing scope only has to bump
-    # gitlinks — and the inner commit becomes the scope node's second parent.
-    _git(study, "rm", "--cached", "-q", sub_rel)
-    _git(study, "config", "-f", ".gitmodules", "--remove-section", f"submodule.{sub_rel}")
-    _git(study, "add", ".gitmodules")
-    _git(study, "commit", "-q", "-m", f"retire derivative: deregister {derivative}")
-    # git leaves a stale submodule.* section in the study's LOCAL config; it is not
-    # committed and does not travel, but it confuses later `git submodule` calls.
-    _git(study, "config", "--remove-section", f"submodule.{sub_rel}", check=False)
     dest = Path(campaign) / dest_rel
     dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(study / sub_rel), str(dest))
+    shutil.move(str(Path(study.path) / sub_rel), str(dest))
+    # git leaves a stale submodule.* section in the study's LOCAL config; it is not
+    # committed and does not travel, but it confuses later `git submodule` calls.
+    try:
+        study.repo.call_git(["config", "--remove-section", f"submodule.{sub_rel}"])
+    except CommandError:
+        pass  # never had a local section
 
 
 def run_retire(campaign, paths, *, dry_run=False):
