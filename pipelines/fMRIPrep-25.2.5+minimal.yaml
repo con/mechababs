@@ -22,11 +22,18 @@ input_ria_path: ".babs/input_ria"
 output_ria_path: ".babs/output_ria"
 
 # fmriprep --level minimal, chained on anat-only output.
-# Produces only what's needed for downstream tools: BOLD reference,
-# HMC, SDC prep (if data has fieldmaps), coregistration to T1w,
-# confounds. Does NOT resample BOLD to standard spaces and does NOT
-# produce CIFTI. The output is the cheapest viable starting point
-# for someone who wants to do their own resampling.
+# Produces only what's needed for downstream tools: BOLD reference
+# (hmc + coreg boldrefs), brain masks, HMC and BOLD->T1w coregistration
+# transforms, SDC prep (if the data has fieldmaps). Does NOT resample
+# BOLD to standard spaces, does NOT produce CIFTI, and does NOT emit
+# confounds (those come out of --level full; verified by inspecting a
+# real minimal derivative's func/ -- no desc-confounds_timeseries.tsv).
+# The output is the cheapest viable starting point for someone who
+# wants to do their own resampling.
+#
+# --output-spaces and --cifti-output below are inert at this level
+# (verified: no space-* or .dtseries.nii in the output). They are kept
+# so every fmriprep stage shares one flag set.
 #
 # Pair-runs with fMRIPrep-25.2.5+full.yaml off the same anat
 # scaffold so we can compare the two outputs directly.

@@ -22,10 +22,11 @@ input_ria_path: ".babs/input_ria"
 output_ria_path: ".babs/output_ria"
 
 # fmriprep --level resampling, chained on anat-only output.
-# Sits between minimal and full: produces BOLD reference, HMC, SDC
-# prep, coregistration, confounds (like minimal) AND resamples BOLD
-# into the requested --output-spaces. Does NOT produce CIFTI / surface
-# projections (that's full).
+# Nominally sits between minimal and full. In fmriprep today it is
+# equivalent to minimal -- resampling does not yet emit confounds, which
+# still come only from --level full. The stage is kept as a no-op hook
+# for the planned confounds-at-resampling change (#17), so we can upgrade
+# in place when it lands.
 #
 # Pair-runs with the minimal and full YAMLs off the same anat
 # scaffold so we can diff the three outputs directly.
