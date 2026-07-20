@@ -190,9 +190,9 @@ the research object more **S**elf-contained, **T**racked, **A**ctionable,
 
 ## Babs source
 
-We target **vanilla babs `main`** (`PennLINC/babs`, or a PR branch under
-test) — mechababs is an e2e harness for vanilla babs and its PRs, never a
-fork. (How a campaign vendors + pins the chosen ref: README, "The campaign".)
+mechababs is an e2e harness for running babs across clusters and many datasets.
+It targets **vanilla babs `main`** by default (`PennLINC/babs`, or a PR branch under test), and can point at a fork when one is needed — but a fork is a liability we'd rather not carry, so prefer pushing what we need upstream.
+(How a campaign vendors + pins the chosen ref: README, "The campaign".)
 
 ## Reference repos
 
