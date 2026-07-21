@@ -111,7 +111,8 @@ if [ -n "${MECHABABS_E2E_KEEP:-}" ]; then
     echo "    podman rm $CONTAINER" >&2
 fi
 
-# Run the e2e scenario: pytest inside the container. Extra args ($*) pass through.
+# Run the e2e scenario: pytest inside the container. Extra args ("$@") pass through,
+# word boundaries preserved (so e.g. -k "a or b" survives as one pytest arg).
 podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     --platform linux/amd64 \
     -h slurmctl \
@@ -126,13 +127,13 @@ podman run "${RM_FLAG[@]}" "${NAME_FLAG[@]}" -i \
     -e "MECHABABS_E2E_WORKDIR=$MECHABABS_E2E_WORKDIR" \
     -e MECHABABS_E2E_SYSTEM_SITE_PACKAGES=1 \
     docker.io/pennlinc/slurm-docker-ci:0.14 \
-    bash -c "
+    bash -c '
         set -e
         # Container-only prep: the repo is host-owned but git runs as
         # container-root, and the image lacks uv (bootstrap.sh needs it).
-        git config --global --add safe.directory '*'
+        git config --global --add safe.directory "*"
         command -v uv >/dev/null 2>&1 || pip install --quiet uv
         # pytest reads the repo from a :ro mount, so redirect the bytecode cache off
-        # it and skip the on-disk cache (can't write to /mechababs).
-        PYTHONPYCACHEPREFIX=/tmp/pyc pytest -p no:cacheprovider -x -q /mechababs/tests/e2e/ $*
-    "
+        # it and skip the on-disk cache (cannot write to /mechababs).
+        PYTHONPYCACHEPREFIX=/tmp/pyc pytest -p no:cacheprovider -x -q /mechababs/tests/e2e/ "$@"
+    ' _ "$@"

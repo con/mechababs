@@ -1,4 +1,4 @@
 # Extra runtime tools a campaign needs beyond the babs + mechababs packages.
 # Installed by bootstrap.sh into the campaign venv. Pin as needed.
 con-duct
-visidata  # interactive TSV viewer for DATASETS_STATE.tsv
+visidata  # interactive TSV viewer for the state-file ledger

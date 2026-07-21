@@ -2,6 +2,7 @@ reference/
 design/*.png
 .venv/
 *.egg-info/
+mechababs/_version.py
 __pycache__/
 processing/
 local-notes/

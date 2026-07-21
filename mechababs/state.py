@@ -1,7 +1,7 @@
-"""state.py — the campaign's DATASETS_STATE.tsv ledger accessor.
+"""state.py — the campaign's desc-mechababs_datasets.tsv ledger accessor.
 
-A wide TSV: dataset/identity columns (``url``, ``processing_level``,
-``n_subjects``, ``n_sessions``) then a column-group per pipeline
+A wide TSV: dataset/identity columns (``dataset_id``, ``study_url``,
+``processing_level``, ``n_subjects``, ``n_sessions``) then a column-group per pipeline
 (``<p>_babs``/``_babs-merged``). There is no status enum — a pipeline's state is
 derived from which columns are populated (``babs`` -> the babs-project path, set
 once scaffolded; ``babs-merged`` -> finished). The per-pipeline
@@ -10,25 +10,34 @@ schema is **read from the file's header**, not hardcoded — ``mechababs
 configure`` chooses the pipelines per campaign (writing the header via
 ``initial_header``), so the accessor discovers them from the columns present.
 
-The ledger is a re-derivable cache; mutators hold a campaign-level flock so there
-is a single writer (add-dataset and iterate).
+The ledger is a re-derivable cache; mutators hold the campaign-level flock
+(``utils.locked``) so there is a single writer.
 """
 
 import csv
-import fcntl
 import subprocess
-from contextlib import contextmanager
 from pathlib import Path
 
-STATE_FILENAME = "DATASETS_STATE.tsv"
+STATE_FILENAME = "desc-mechababs_datasets.tsv"
 LOCK_FILENAME = "." + STATE_FILENAME + ".lock"
 
-IDENTITY_COLUMNS = ["url", "processing_level", "n_subjects", "n_sessions"]
+# The campaign's mechababs-owned dir: config + orchestration provenance
+# (inclusions, babs-init configs). Hidden (dot-dir) so it stays out of the BIDS
+# tree the campaign otherwise is.
+MECHABABS_DIR = ".mechababs"
+CONFIG_FILENAME = "campaign.yaml"
+
+IDENTITY_COLUMNS = ["dataset_id", "study_url", "processing_level", "n_subjects", "n_sessions"]
 PIPELINE_COLUMNS = ["babs", "babs-merged"]
 
 
 def state_path(campaign):
     return Path(campaign) / STATE_FILENAME
+
+
+def config_path(campaign):
+    """The campaign config written by ``configure`` (``.mechababs/campaign.yaml``)."""
+    return Path(campaign) / MECHABABS_DIR / CONFIG_FILENAME
 
 
 def initial_header(short_names):
@@ -73,16 +82,6 @@ def write_rows(campaign, cols, rows):
             w.writerow({c: row.get(c, "") for c in cols})
 
 
-@contextmanager
-def locked(campaign):
-    """Hold the campaign's single-writer flock around a read-modify-write."""
-    lock = Path(campaign) / LOCK_FILENAME
-    with open(lock, "w") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def save(campaign, message):

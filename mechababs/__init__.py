@@ -6,4 +6,7 @@ environment half of the campaign bootstrap lives in the root ``bootstrap.sh``;
 the remaining top-level scripts migrate in here over time.
 """
 
-__version__ = "0.0.1"
+try:
+    from ._version import __version__
+except ImportError:
+    __version__ = "0+unknown"

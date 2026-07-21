@@ -65,7 +65,9 @@ Stages (each a separate BABS run, composed via the three-axis YAMLs):
    fmriprep; kept as a no-op hook for the planned confounds-at-resampling
    change (#17).
 5. **`fmriprep --level full`** — resampled BOLD in template spaces + CIFTI +
-   confounds; ~45× minimal.
+   confounds. More expensive than minimal — it resamples every volume into each
+   output space and projects to surfaces — but the ratio has never been
+   measured here, so don't quote one.
 
 **Fan-out, not chain.** Stages 3–5 each take anat-only's output as a
 `sourcedata/` input; they do *not* chain off each other (BABS is single-input
@@ -87,7 +89,7 @@ Any deviations should be open issues or else the document itself needs to change
 ## Conventions
 
 The README covers three-axis composition, one-tool-two-modes / dev-exercises-prod,
-and the canonical inclusion-file flow. These are the conventions it doesn't:
+and the selection & inclusion flow. These are the conventions it doesn't:
 
 - **Wrap runs in duct.** Every run should carry con/duct usage/resource
   logs alongside its outputs — con/duct is a first-class campaign tool
@@ -188,9 +190,9 @@ the research object more **S**elf-contained, **T**racked, **A**ctionable,
 
 ## Babs source
 
-We target **vanilla babs `main`** (`PennLINC/babs`, or a PR branch under
-test) — mechababs is an e2e harness for vanilla babs and its PRs, never a
-fork. (How a campaign vendors + pins the chosen ref: README, "The campaign".)
+mechababs is an e2e harness for running babs across clusters and many datasets.
+It targets **vanilla babs `main`** by default (`PennLINC/babs`, or a PR branch under test), and can point at a fork when one is needed — but a fork is a liability we'd rather not carry, so prefer pushing what we need upstream.
+(How a campaign vendors + pins the chosen ref: README, "The campaign".)
 
 ## Reference repos
 
@@ -204,7 +206,7 @@ Cloned into `reference/` (gitignored). Before using any reference repo,
 | `OpenNeuroDerivatives/` | https://github.com/OpenNeuroDerivatives/OpenNeuroDerivatives | Upstream mirrors for derivative datasets |
 | `fairly-big-processing-workflow/` | https://github.com/psychoinformatics-de/fairly-big-processing-workflow | The FAIRly Big pattern that BABS implements |
 | `containers/` | https://github.com/ReproNim/containers | ReproNim container dataset — archives built SIFs |
-| `babs_demo/` | (local, Dorota's walkthrough) | Reference scripts for babs workflow with .env-based cluster config |
+| `babs_demo/` | https://github.com/djarecka/babs_demo | Dorota's babs walkthrough (.env-based cluster config). The `*_bids_layout` scripts are the **canonical demonstration of what babs produces**: a derivative dataset inside a study you make yourself. Read these before reasoning about output structure or `analysis_path` |
 | `babs-containers-run-test/` | (local, Austin's test scripts) | Reference scripts for testing babs init with containers-run branch |
 | `bootstrap_fMRIprep/` | Felix's cerebra.fz-juelich.de gitea | Felix's canonical fmriprep wrapper — reference for opinions repo |
 | `ds001761-fmriprep/`, `ds005374-fmriprep/` | OpenNeuroDerivatives mirrors | Joe's published fmriprep runs (2022 + 2025) — reference for output shape |
