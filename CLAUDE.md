@@ -217,4 +217,4 @@ For the pipeline: the **`## Pipeline`** section above (shape), the
 `pipelines/*.yaml` (flags, ground truth), and the
 `OpenNeuroDerivatives/fmriprepDerivatives` opinions repo (rationale).
 
-For current work + open issues: the GitHub tracker (`asmacdo/mechababs`).
+For current work + open issues: the GitHub tracker.
