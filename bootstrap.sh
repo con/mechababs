@@ -5,7 +5,7 @@
 set -euo pipefail
 
 BABS_DEFAULT="https://github.com/PennLINC/babs.git@main"
-MECHABABS_DEFAULT="https://github.com/asmacdo/mechababs.git@main"
+MECHABABS_DEFAULT="https://github.com/con/mechababs.git@main"
 
 usage() {
     cat <<'EOF'
@@ -18,7 +18,7 @@ Build a mechababs campaign's environment:
   - make the campaign a datalad dataset, register subdatasets
 
   --babs URL@REF          babs pin (default: PennLINC/babs main)
-  --mechababs URL@REF     mechababs pin (default: asmacdo/mechababs main)
+  --mechababs URL@REF     mechababs pin (default: con/mechababs main)
   --system-site-packages  build the venv with access to the ambient Python's
                           installed packages, reusing a pre-built heavy stack
                           instead of rebuilding it (the e2e fixture uses this on

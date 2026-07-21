@@ -76,10 +76,10 @@ the campaign. The split is bootstrap-vs-operate:
 need `git` + `uv` on PATH; no repo checkout required. Pipe it straight into bash:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/asmacdo/mechababs/main/bootstrap.sh \
+curl -sSL https://raw.githubusercontent.com/con/mechababs/main/bootstrap.sh \
   | bash -s -- my-campaign \
       [--babs URL@REF]        # default: https://github.com/PennLINC/babs.git@main
-      [--mechababs URL@REF]   # default: https://github.com/asmacdo/mechababs.git@main
+      [--mechababs URL@REF]   # default: https://github.com/con/mechababs.git@main
 ```
 
 Clones the two code pins into `code/`, builds `.venv` with `uv`, makes the
@@ -282,7 +282,7 @@ To add a pipeline: copy an existing `pipelines/*.yaml`, set a unique
 - [CLAUDE.md](CLAUDE.md) — project conventions, the pipeline, terminology,
   milestones, and the working agreement.
 - [design/](design/) — architecture proposals and diagrams.
-- Open work + milestones live in the GitHub tracker (`asmacdo/mechababs`).
+- Open work + milestones live in the GitHub tracker.
 
 ## Upstream
 
