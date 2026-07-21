@@ -2,7 +2,7 @@
 
 **The goal.** This is the **target** shape for a mechababs campaign, the studies it adds to, and the derivatives it produces.
 It is not what we produce today, in several ways.
-Gaps between what we produce today and this target — and the work to close them — are tracked in [#4](https://github.com/asmacdo/mechababs/issues/4).
+Where today's output deviates from this target, there is an open issue for the gap — or this document is wrong and should change.
 
 ## Everything is a dataset
 
