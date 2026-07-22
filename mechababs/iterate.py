@@ -75,8 +75,13 @@ def warn_if_no_tmux():
     """Prompt before a long login-node run that a disconnect would kill (cf lib.sh).
 
     Only meaningful interactively; a non-tty caller (CI / containers / pipes) can't
-    answer, so skip the prompt there rather than block on EOF.
+    answer, so skip the prompt there rather than block on EOF. MECHABABS_SKIP_TMUX_CHECK
+    bypasses it deterministically for automation (the e2e harness sets it): the prompt
+    reads inherited stdin, so when a driver subprocess-es iterate a stray keystroke
+    buffered during a long tick can be consumed as the answer and abort the run.
     """
+    if os.environ.get("MECHABABS_SKIP_TMUX_CHECK"):
+        return
     if os.environ.get("TMUX") or os.environ.get("STY"):
         return
     if not sys.stdin.isatty():

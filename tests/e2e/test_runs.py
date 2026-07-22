@@ -39,7 +39,14 @@ def _venv_run(campaign, tool, *args):
     shows on failure otherwise).
     """
     venv_bin = campaign / ".venv" / "bin"
-    env = {**os.environ, "PATH": f"{venv_bin}:{os.environ['PATH']}"}
+    # Bypass iterate's interactive tmux guard: the harness drives iterate through an
+    # inherited stdin, where a stray keystroke buffered during a long tick would be
+    # read as the guard's answer and abort the run.
+    env = {
+        **os.environ,
+        "PATH": f"{venv_bin}:{os.environ['PATH']}",
+        "MECHABABS_SKIP_TMUX_CHECK": "1",
+    }
     log.info("%s %s", tool, " ".join(str(a) for a in args))
     return subprocess.run(
         [str(venv_bin / tool), *args],
