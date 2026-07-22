@@ -204,7 +204,7 @@ def test_full_run(campaign, cluster_config, rawdata, study):
 
     # `babs merge` deposits the merged results in the OUTPUT RIA (not the analysis
     # working tree). The RIA store holds one bare dataset repo at
-    # .babs/output_ria/<uuid[:3]>/<uuid[3:]>; its master tree lists the produced zip.
+    # .babs/output_ria/<uuid[:3]>/<uuid[3:]>; its default-branch tree lists the zip.
     # Checking it there proves the derivative was produced and merged, not just that
     # the ledger flag flipped.
     # (the RIA also keeps an `alias/data` symlink to the dataset — skip it.)
@@ -217,13 +217,15 @@ def test_full_run(campaign, cluster_config, rawdata, study):
         f"expected one output-RIA dataset repo, found {ria_repos}"
     )
     tree = subprocess.run(
-        ["git", f"--git-dir={ria_repos[0]}", "ls-tree", "-r", "--name-only", "master"],
+        # HEAD, not "master": the RIA repo's default branch follows git's
+        # init.defaultBranch (modern git -> "main"), so name it branch-agnostically.
+        ["git", f"--git-dir={ria_repos[0]}", "ls-tree", "-r", "--name-only", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
     ).stdout
     assert f"{sub}_" in tree and ".zip" in tree, (
-        f"merge produced no {sub} derivative zip in the output RIA master:\n{tree}"
+        f"merge produced no {sub} derivative zip in the output RIA:\n{tree}"
     )
 
     # --- retire the derivative: out of the study, into derivative-attempts/ ---
