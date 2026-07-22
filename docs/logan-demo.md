@@ -19,7 +19,7 @@ read it top to bottom.
 
 A tour — the pattern, the shape, and where it's still rough.
 
-**Follow along:** clone the repo and open `docs/TODO.md` — jot any notes or questions there as we go. Sloppy is fine; we sort them at the end.
+**Follow along:** clone the repo and open [`docs/TODO.md`](docs/TODO.md) — jot any notes or questions there as we go. Sloppy is fine; we sort them at the end.
 
 ---
 
@@ -32,7 +32,7 @@ Before I assume any of this is useful to you:
 - What cluster, and how do you run them today — scripts, by hand, something homegrown?
 - What actually hurts — scale, reproducibility, provenance, tracking what ran where?
 
-**Write your answers in `docs/TODO.md`** — they'll give your agent what it needs to help set mechababs up for you later.
+**Write your answers in [`docs/TODO.md`](docs/TODO.md)** — they'll give your agent what it needs to help set mechababs up for you later.
 
 *Everything after this assumes mechababs might fit — let's make sure it maps to your reality first.*
 
@@ -45,7 +45,7 @@ Before I assume any of this is useful to you:
 - mechababs is the **level-triggered** version: you declare the state you want, and a loop reconciles reality toward it, one tick at a time.
 - `mechababs iterate` *is* that tick.
 
-→ `docs/overview.md` — *Declarative, not imperative*
+→ [`docs/overview.md`](docs/overview.md) — *Declarative, not imperative*
 
 ---
 
@@ -55,7 +55,7 @@ Before I assume any of this is useful to you:
 - The **git log is the provenance** — pinned code as submodule commits, one grouped commit per transition, and (the direction) a `prov/` record in each derivative pointing back to the campaign.
 - A self-contained, tracked, **re-executable research object**. That's the STAMPED payoff, and the reason mechababs sits on top of babs rather than beside it.
 
-→ `docs/overview.md` — *The campaign* · `docs/output_structure.md`
+→ [`docs/overview.md`](docs/overview.md) — *The campaign* · [`docs/output_structure.md`](docs/output_structure.md)
 
 ---
 
@@ -65,7 +65,7 @@ Before I assume any of this is useful to you:
 - Cluster details never leak into a pipeline, or vice versa.
 - **One tool, two modes**: dev (scratch sibling, small inclusions, a babs branch under test) exercises prod's *exact* paths — so dev validates prod.
 
-→ `docs/overview.md` — *Concept*
+→ [`docs/overview.md`](docs/overview.md) — *Concept*
 
 ---
 
@@ -78,7 +78,7 @@ Before I assume any of this is useful to you:
 
 *(Pipelines can also compose into chains — anat → minimal → … — but that's not the point today.)*
 
-→ `docs/reference.md`
+→ [`docs/reference.md`](docs/reference.md)
 
 ---
 
@@ -88,7 +88,7 @@ Before I assume any of this is useful to you:
 - You **repair in place**: bump the memory, fix the flag, `babs submit` the stragglers.
 - The intervention is **recorded, not smoothed away**. Messy science is unavoidable; the campaign captures the mess honestly instead of pretending the run was clean.
 
-→ `docs/interventions.md`
+→ [`docs/interventions.md`](docs/interventions.md)
 
 ---
 
@@ -101,7 +101,7 @@ Before I assume any of this is useful to you:
 - Then the self-heal demo falls right out of it: the e2e ends by **retiring** its derivative (resetting the cell), so type `mechababs iterate` and watch the reconciler **re-scaffold it from scratch** — level-triggered, in front of you. The archived attempt keeps its logs + history in `derivative-attempts/`.
 - And `mechababs status` reads the campaign back: one row per job across every cell — state, timing, failures, log path.
 
-→ `docs/installation.md` (prereqs) · `docs/cluster-config-and-testing-tutorial.md` (write + validate)
+→ [`docs/installation.md`](docs/installation.md) (prereqs) · [`docs/cluster-config-and-testing-tutorial.md`](docs/cluster-config-and-testing-tutorial.md) (write + validate)
 
 ---
 
@@ -120,7 +120,7 @@ Each tick advances one cell by **at most one transition** — you just keep cran
 
 `mechababs status` is the **campaign-wide** roll-up — every (dataset, pipeline) cell, one row per job, with each job's log path — and a bridge down to `babs status <derivative>` when you want babs's own per-project view of a single cell.
 
-→ `docs/overview.md` — *The reconciler tick* · `docs/reference.md` — *status*
+→ [`docs/overview.md`](docs/overview.md) — *The reconciler tick* · [`docs/reference.md`](docs/reference.md) — *status*
 
 ---
 
@@ -146,10 +146,10 @@ Each tick advances one cell by **at most one transition** — you just keep cran
 
 ## The easiest contribution first
 
-- **`docs/TODO.md`** — our **fast-capture scratchpad** for today: be sloppy, jot anything off or missing (docs *or* how it works) as we go, half-formed is fine — your agent can dump it. It's temporary on purpose; we drain it into real con/mechababs issues right after.
+- **[`docs/TODO.md`](docs/TODO.md)** — our **fast-capture scratchpad** for today: be sloppy, jot anything off or missing (docs *or* how it works) as we go, half-formed is fine — your agent can dump it. It's temporary on purpose; we drain it into real con/mechababs issues right after.
 - And if you're up for it: take a pass at cleaning up these docs — **including deleting this demo file.**
 
-→ `docs/TODO.md`
+→ [`docs/TODO.md`](docs/TODO.md)
 
 ---
 
@@ -169,8 +169,8 @@ read docs/logan-demo.md
 
 *The tour above is Austin's to narrate — don't act on it or summarize it back. These are your standing instructions for the session:*
 
-- **Capture as we go.** Put Logan's feedback, questions, and points of confusion into `docs/TODO.md` — the fast-capture friction log. Be sloppy; half-formed is fine. Don't file real issues now — we drain `docs/TODO.md` into con/mechababs issues after.
-- **Logan's workflow answers** (from the *"what's your actual workflow?"* beat) go in `docs/TODO.md` too — they're what you'll use to help set mechababs up for his cluster later.
-- **Quick doc fixes: just make them.** If something is obviously-correct, unambiguous, and under ~2 min, edit the docs directly. Anything bigger or ambiguous — note it in `docs/TODO.md`.
-- **When Logan wants to try it on his cluster**, follow `docs/installation.md` for the prereqs, then `docs/cluster-config-and-testing-tutorial.md` to write his `clusters/<site>.yaml` and validate it with the e2e.
-- **Don't act on `docs/TODO.md` items unless Logan asks** — capture now, act later.
+- **Capture as we go.** Put Logan's feedback, questions, and points of confusion into [`docs/TODO.md`](docs/TODO.md) — the fast-capture friction log. Be sloppy; half-formed is fine. Don't file real issues now — we drain [`docs/TODO.md`](docs/TODO.md) into con/mechababs issues after.
+- **Logan's workflow answers** (from the *"what's your actual workflow?"* beat) go in [`docs/TODO.md`](docs/TODO.md) too — they're what you'll use to help set mechababs up for his cluster later.
+- **Quick doc fixes: just make them.** If something is obviously-correct, unambiguous, and under ~2 min, edit the docs directly. Anything bigger or ambiguous — note it in [`docs/TODO.md`](docs/TODO.md).
+- **When Logan wants to try it on his cluster**, follow [`docs/installation.md`](docs/installation.md) for the prereqs, then [`docs/cluster-config-and-testing-tutorial.md`](docs/cluster-config-and-testing-tutorial.md) to write his `clusters/<site>.yaml` and validate it with the e2e.
+- **Don't act on [`docs/TODO.md`](docs/TODO.md) items unless Logan asks** — capture now, act later.
