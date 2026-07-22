@@ -82,36 +82,12 @@ Working in a checkout of your fork:
 Run this on a **login node** — the cluster is the substrate, so there is no
 container here.
 
-> The env-var setup below is **interim**. Because you bootstrap a campaign before
-> running real data anyway, the intended end state is to validate from *inside* a
-> campaign — `mechababs test-cluster --cluster your-site.yaml` — which already
-> carries the pinned babs, the isolated venv, and the vendored test suite, so most
-> of these variables disappear. See [TODO.md](TODO.md). For now:
+Get the prerequisites in place first — see [installation.md](installation.md): the PATH tools, a scratch workspace and `MECHABABS_E2E_WORKDIR`, the container shim, and the driver venv.
 
-**One-time prerequisites:**
-
-```bash
-# a Python env with the test deps (from your fork checkout)
-pip install -e '.[test]'          # pytest + mechababs + datalad
-
-# git, uv, and apptainer/singularity must be on PATH (uv builds the campaign venv;
-# apptainer runs the container). Load your site's modules as needed.
-
-# scratch workdir — the campaign venv + RIA stores live here (NOT home or /tmp)
-export MECHABABS_E2E_WORKDIR=/your/scratch/mechababs-e2e
-
-# build the container shim ONCE, as a sibling of the campaigns-to-be
-# (drops when PennLINC/babs#383 lands)
-REPRONIM=$MECHABABS_E2E_WORKDIR/repronim-containers-shim \
-    tmp-repronim-container-shim.sh bids-simbids
-
-# until `babs status --json` (PennLINC/babs#387) is in babs main, pin a babs branch
-# that has it (a public https URL — the campaign clones anonymously)
-export BABS_SPEC=https://github.com/<owner>/babs.git@<branch>
-
-# leave MECHABABS_E2E_SYSTEM_SITE_PACKAGES UNSET — a real cluster builds bootstrap's
-# isolated venv (the local container sets it only for its EOL-CentOS7 toolchain)
-```
+> **ASPIRATIONAL (not yet built):** longer term this setup shrinks — because you
+> bootstrap a campaign before running real data anyway, the intended end state is to
+> validate from *inside* a campaign, e.g. `mechababs test-cluster --cluster
+> your-site.yaml`. That subcommand does not exist yet. See [TODO.md](TODO.md).
 
 **Run it** (under `tmux`/`screen` — a login-node disconnect kills the run):
 
@@ -120,6 +96,8 @@ export BABS_SPEC=https://github.com/<owner>/babs.git@<branch>
 # or drive pytest directly:
 pytest -s tests/e2e/ --cluster-config your-site.yaml
 ```
+
+By default babs is pinned to `PennLINC/babs@main`; set `BABS_SPEC=<url@ref>` (a public https URL the campaign clones anonymously) only if your run needs an unmerged babs branch.
 
 `run_on_cluster.sh` is a thin wrapper: it guards the environment contract above
 (workdir set, shim built, site-packages unset, tmux) and hands off to pytest.
