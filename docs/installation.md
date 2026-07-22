@@ -60,6 +60,14 @@ uv pip install -e '.[test]'
 
 Run under `tmux`/`screen` — a login-node disconnect kills the run.
 
+**Two venvs, don't cross them.** This driver venv only runs pytest — it has no `babs` or `con-duct`.
+Each campaign gets its **own** venv that `bootstrap.sh` builds (pinned babs + mechababs + con-duct), and that is what actually operates the campaign — `mechababs` refuses to run outside its campaign venv (a guard against a stray ambient install).
+So to poke a campaign after the run (`mechababs status`, another `iterate`), activate *its* venv, not this one:
+
+```bash
+source <campaign>/.venv/bin/activate
+```
+
 ## Then
 
 Follow [cluster-config-and-testing-tutorial.md](cluster-config-and-testing-tutorial.md) to write `clusters/<site>.yaml` and validate it.
