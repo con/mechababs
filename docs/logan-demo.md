@@ -95,6 +95,7 @@ Before I assume any of this is useful to you:
 - But the *environment* around it isn't tiny yet — there's a real prerequisites list (git-annex, uv, a scratch workspace, a container shim, a driver venv). That's the honest part.
 - Validate by running the **real e2e suite on your cluster** — stronger than `babs check-setup`: real submit → wait → merge → assert a derivative landed.
 - We just did this on Unity: it **passed**, and it surfaced exactly the rough edges — a login-node guard and the missing prereqs. Newly paved. Let's find yours together.
+- After a green run, `mechababs status` reads the campaign back: one row per job across every cell — state, timing, failures, log path. (The e2e retires its derivative at the very end, so peek before that to catch a populated table.)
 
 → `docs/installation.md` (prereqs) · `docs/cluster-config-and-testing-tutorial.md` (write + validate)
 
