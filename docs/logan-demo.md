@@ -20,6 +20,19 @@ A tour — the pattern, the shape, and where it's still rough.
 
 ---
 
+## First — what's your actual workflow?
+
+Before I assume any of this is useful to you:
+
+- What data are you processing — your lab's own studies, shared/public datasets, both?
+- Which BIDS apps? (fMRIPrep, MRIQC, QSIPrep, XCP-D, …)
+- What cluster, and how do you run them today — scripts, by hand, something homegrown?
+- What actually hurts — scale, reproducibility, provenance, tracking what ran where?
+
+*Everything after this assumes mechababs might fit — let's make sure it maps to your reality first.*
+
+---
+
 ## You've built this before
 
 - The **job-launcher job**: a job watches a repo for a spec and deploys the next job. Kubernetes culture, by hand.
