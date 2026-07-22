@@ -115,7 +115,9 @@ Once your dataset is configured, the whole campaign is one command, run until it
 
 Each tick advances one cell by **at most one transition** — you just keep cranking `iterate` (and peeking with `status`) until it says it's done.
 
-→ `docs/overview.md` — *The reconciler tick*
+`mechababs status` is the **campaign-wide** roll-up — every (dataset, pipeline) cell, one row per job, with each job's log path — and a bridge down to `babs status <derivative>` when you want babs's own per-project view of a single cell.
+
+→ `docs/overview.md` — *The reconciler tick* · `docs/reference.md` — *status*
 
 ---
 
