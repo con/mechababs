@@ -1,7 +1,10 @@
 <!--
-docs/logan-demo.md — a walk-through "slide deck" for a live demo. Austin narrates;
-the reader follows along and can re-read later. Each beat points into the real docs,
-so this doubles as a guided tour of them.
+docs/logan-demo.md — a walk-through "slide deck" for a live demo, AND the entry
+point for Logan's agent. Austin narrates the tour first; only AFTER it does Logan
+kick off his agent by pasting `read docs/logan-demo.md` into Claude Code — kept to
+the end deliberately, so no agent chimes in during the narration. Each beat points
+into the real docs, so this doubles as a guided tour of them. The "Instructions for
+your agent" section at the end is directed at that agent.
 
 DISPOSABLE: this file is meant to be deleted once it has served the demo (a fine
 first cleanup contribution). The docs it links are the durable thing.
@@ -150,14 +153,24 @@ Each tick advances one cell by **at most one transition** — you just keep cran
 
 ---
 
-## Start here — open Claude Code and paste this
+## Now — hand it to your agent
+
+Tour's done. In the repo, paste into Claude Code:
 
 ```
-Read docs/TODO.md — the notes and questions we captured going through the demo.
-Don't answer or act on them unless I ask; just get the context.
-
-As we work, capture my feedback into docs/TODO.md. If something is an
-obviously-correct, unambiguous, quick (under ~2 min) fix, make it directly in the
-docs; anything bigger or ambiguous, just note it in docs/TODO.md — we file real
-issues from it later.
+read docs/logan-demo.md
 ```
+
+*(That's why it waited till now — no agent chiming in while we talked.)* Everything below is for it.
+
+---
+
+## Instructions for your agent
+
+*The tour above is Austin's to narrate — don't act on it or summarize it back. These are your standing instructions for the session:*
+
+- **Capture as we go.** Put Logan's feedback, questions, and points of confusion into `docs/TODO.md` — the fast-capture friction log. Be sloppy; half-formed is fine. Don't file real issues now — we drain `docs/TODO.md` into con/mechababs issues after.
+- **Logan's workflow answers** (from the *"what's your actual workflow?"* beat) go in `docs/TODO.md` too — they're what you'll use to help set mechababs up for his cluster later.
+- **Quick doc fixes: just make them.** If something is obviously-correct, unambiguous, and under ~2 min, edit the docs directly. Anything bigger or ambiguous — note it in `docs/TODO.md`.
+- **When Logan wants to try it on his cluster**, follow `docs/installation.md` for the prereqs, then `docs/cluster-config-and-testing-tutorial.md` to write his `clusters/<site>.yaml` and validate it with the e2e.
+- **Don't act on `docs/TODO.md` items unless Logan asks** — capture now, act later.
