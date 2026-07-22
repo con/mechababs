@@ -61,6 +61,19 @@ are the *same* tool — every difference is config and content, never a dev-only
 branch, field, or code path. Dev exercises prod's exact paths, so dev validates
 prod.
 
+**The campaign is a provenance object.** Because everything — inputs, outputs,
+pinned code, config, and the ledger — lives under one datalad boundary, the
+campaign is positioned to record not just *what* was produced but *how* it was
+orchestrated. Today the pinned submodule commits say exactly which `babs` /
+`mechababs` ran, and each tick's changes are saved as a grouped, per-transition
+commit. The direction (partly built, partly in progress) is for each derivative to
+carry a `prov/` record (BEP028-shaped) linking back to the campaign, and for the
+orchestration commands to be captured verbatim via `datalad run`. That is the
+STAMPED payoff mechababs is built toward — a self-contained, tracked,
+re-executable research object — and the reason it sits on top of babs rather than
+beside it. See [STAMPED](https://github.com/stamped-principles/) for the principles
+and [output_structure.md](output_structure.md) for the target shape.
+
 ## The reconciler tick (`iterate`)
 
 `iterate` is one **tick** of a reconciler. It reads the desired state (the ledger
@@ -89,3 +102,33 @@ never overwrites; the `<short>_babs*` columns are *derived* and reconciled each 
 RIA-store paths into the project at init that can't be relocated. Cheap steps
 (`add-dataset`) can run anywhere; the git-tracked ledger syncs by push/pull while
 the heavy RIA stores stay cluster-side.
+
+## Declarative, not imperative — edge- vs level-triggered
+
+You don't tell mechababs *do these steps*. You declare intent — which datasets,
+which pipelines, on which cluster — through the CLI (`configure`, `add-dataset`),
+and `iterate` reconciles reality toward it, one tick at a time. There are two ways
+to drive a system toward a goal. *Edge-triggered*: an event fires and an action
+runs in response — a job finishes and kicks off the next one — so a missed event
+means permanent drift. *Level-triggered*: a loop repeatedly reconciles reality
+toward the declared goal, re-reading ground truth each pass. `iterate` is
+**level-triggered** — every tick re-reads ground truth (the babs projects, the
+output RIA) and re-derives what each cell needs, regardless of what happened
+before. Level-triggered reconciliation is what lets a long, messy, interrupted
+campaign converge instead of accumulating drift — the same reason it won out in
+cluster orchestration generally.
+
+The interface is the CLI — you don't hand-edit the ledger; mechababs maintains it,
+and keeps it deliberately thin. It records the *durable* facts about each cell —
+that a babs project exists, and whether it has been merged — and defers the
+volatile, moment-to-moment job status to babs, querying it live whenever a cell is
+still active. So there is no stale status mirror to drift out of sync: each tick
+re-reads the durable markers plus a live babs query and acts on that.
+
+**Self-healing has a deliberate limit.** The *bookkeeping* self-heals; a *failure*
+does not. When a job fails for a reason a human has to decide about — an OOM, a bad
+flag, a dataset quirk — `iterate` flags the cell and **stops** rather than silently
+retrying past it. Recovery is a human act, and the campaign's job is to make it
+provenance-safe: the intervention is recorded, not smoothed away (see
+[interventions.md](interventions.md)). Messy science is unavoidable; mechababs
+captures the mess honestly instead of pretending the run was clean.
