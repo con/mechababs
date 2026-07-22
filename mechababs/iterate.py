@@ -106,16 +106,16 @@ def assert_venv_tools(campaign, cfg):
     """Guard: babs/mechababs/duct on PATH must resolve inside the campaign venv.
 
     A stray active venv silently substitutes a different, unrecorded babs while
-    outputs stay attributed to the pinned commit (the attempt-3 wrong-babs trap);
-    per-campaign vendoring only means anything if the *pinned* tools run.
+    outputs stay attributed to the pinned commit; per-campaign vendoring only
+    means anything if the *pinned* tools run.
     """
     venv = (campaign / cfg["venv"]).resolve()
     for tool in ("babs", "mechababs", "duct"):
         found = shutil.which(tool)
         if not (found and Path(found).resolve().is_relative_to(venv)):
             sys.exit(f"{tool} resolves to {found or 'nothing'}, not under the campaign venv "
-                     f"{venv} — activate the campaign venv (a stray venv would run an "
-                     f"unpinned {tool}: the attempt-3 wrong-babs trap)")
+                     f"{venv} — activate the campaign venv (a stray venv on PATH would run an "
+                     f"unpinned {tool}, silently breaking the campaign's provenance pin)")
 
 
 def dataset_id(url):
