@@ -29,6 +29,8 @@ Before I assume any of this is useful to you:
 - What cluster, and how do you run them today — scripts, by hand, something homegrown?
 - What actually hurts — scale, reproducibility, provenance, tracking what ran where?
 
+**Write your answers in `docs/TODO.md`** — they'll give your agent what it needs to help set mechababs up for you later.
+
 *Everything after this assumes mechababs might fit — let's make sure it maps to your reality first.*
 
 ---
