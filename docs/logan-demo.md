@@ -92,10 +92,11 @@ Before I assume any of this is useful to you:
 ## Bring it to *your* cluster (let's try it)
 
 - A cluster profile is **tiny**: how to enter the environment, and where per-job scratch lives.
-- Validate it by running the **real e2e suite on your cluster** — a stronger check than `babs check-setup`: real submit → wait → merge → assert a derivative landed.
-- Honest: this login-node path is **newly paved**. Expect rough edges — that's the useful part. Let's find them together.
+- But the *environment* around it isn't tiny yet — there's a real prerequisites list (git-annex, uv, a scratch workspace, a container shim, a driver venv). That's the honest part.
+- Validate by running the **real e2e suite on your cluster** — stronger than `babs check-setup`: real submit → wait → merge → assert a derivative landed.
+- We just did this on Unity: it **passed**, and it surfaced exactly the rough edges — a login-node guard and the missing prereqs. Newly paved. Let's find yours together.
 
-→ `docs/cluster-config-and-testing-tutorial.md`
+→ `docs/installation.md` (prereqs) · `docs/cluster-config-and-testing-tutorial.md` (write + validate)
 
 ---
 
@@ -103,6 +104,7 @@ Before I assume any of this is useful to you:
 
 - **Config leaks**: some site paths (templateflow, FS license) are still hardcoded in the *pipeline* YAMLs, not the cluster profile.
 - **Configs live in-repo** — so for now you add yours in a fork.
+- **The container shim**: a temporary ReproNim-coupled workaround; drops when babs resolves images from any datalad-containers dataset (babs#383).
 - **Transport off-cluster** is still emerging.
 - These aren't hidden — they're the openings.
 
