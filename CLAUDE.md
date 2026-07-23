@@ -1,9 +1,15 @@
 # mechababs — contributor conventions
 
-The project overview, the campaign model, and the per-dataset workflow live in
-the README, included here:
+The project overview and the campaign model live in `docs/overview.md`; the CLI,
+selection, and per-dataset workflow reference lives in `docs/reference.md`;
+recovery/change workflows live in `docs/interventions.md`. They are included here
+(the README itself is now just a landing page):
 
-@README.md
+@docs/overview.md
+
+@docs/reference.md
+
+@docs/interventions.md
 
 The rest of this file holds project conventions, terminology, and pointers a
 contributor (or fresh Claude session) needs that don't fit in the README.

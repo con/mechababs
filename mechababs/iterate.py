@@ -75,8 +75,13 @@ def warn_if_no_tmux():
     """Prompt before a long login-node run that a disconnect would kill (cf lib.sh).
 
     Only meaningful interactively; a non-tty caller (CI / containers / pipes) can't
-    answer, so skip the prompt there rather than block on EOF.
+    answer, so skip the prompt there rather than block on EOF. MECHABABS_SKIP_TMUX_CHECK
+    bypasses it deterministically for automation (the e2e harness sets it): the prompt
+    reads inherited stdin, so when a driver subprocess-es iterate a stray keystroke
+    buffered during a long tick can be consumed as the answer and abort the run.
     """
+    if os.environ.get("MECHABABS_SKIP_TMUX_CHECK"):
+        return
     if os.environ.get("TMUX") or os.environ.get("STY"):
         return
     if not sys.stdin.isatty():
@@ -101,16 +106,16 @@ def assert_venv_tools(campaign, cfg):
     """Guard: babs/mechababs/duct on PATH must resolve inside the campaign venv.
 
     A stray active venv silently substitutes a different, unrecorded babs while
-    outputs stay attributed to the pinned commit (the attempt-3 wrong-babs trap);
-    per-campaign vendoring only means anything if the *pinned* tools run.
+    outputs stay attributed to the pinned commit; per-campaign vendoring only
+    means anything if the *pinned* tools run.
     """
     venv = (campaign / cfg["venv"]).resolve()
     for tool in ("babs", "mechababs", "duct"):
         found = shutil.which(tool)
         if not (found and Path(found).resolve().is_relative_to(venv)):
             sys.exit(f"{tool} resolves to {found or 'nothing'}, not under the campaign venv "
-                     f"{venv} — activate the campaign venv (a stray venv would run an "
-                     f"unpinned {tool}: the attempt-3 wrong-babs trap)")
+                     f"{venv} — activate the campaign venv (a stray venv on PATH would run an "
+                     f"unpinned {tool}, silently breaking the campaign's provenance pin)")
 
 
 def dataset_id(url):

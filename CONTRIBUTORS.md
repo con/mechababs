@@ -7,23 +7,20 @@ The e2e harness drives the **real** campaign CLI end to end:
 It asserts on the resulting ledger, babs project, and produced derivative.
 The BIDS-app used is [simbids](https://github.com/PennLINC/simbids) as a fast stand-in BIDS app so a full submit→merge runs in minutes instead of hours.
 
-## in-container & on-cluster tests
+## Two modes: local container vs real cluster
 
-The same test body runs in two modes:
- - against a local container running slurm (for development and CI)
- - against a real cluster as a user-facing feature to test their container config (and exercise our portability)
+The same test body runs two ways:
 
-## e2e testing as config tool
+- **against a local container running slurm** — for development and CI. That's the
+  rest of this doc.
+- **against a real cluster** — a user-facing feature to validate an HPC's config
+  (and exercise our portability). That path is a tutorial in its own right:
+  [docs/cluster-config-and-testing-tutorial.md](docs/cluster-config-and-testing-tutorial.md).
 
-To use e2e testing on your cluster, you will need to create the same cluster config that you will later use to produce real derivatives with mechababs.
+## Running the tests (local container)
 
-To start: see the mechababs/clusters/ for existing examples.
-
-## Running the tests
-
-The suite lives in `tests/e2e/`.
-
-Set `MECHABABS_E2E_WORKDIR`: scratch dir where the campaign
+The suite lives in `tests/e2e/`. Set `MECHABABS_E2E_WORKDIR` to a scratch dir where
+the campaign and the container shim live as siblings.
 
 TEMPORARY PREREQUISITE: BUILD REPRONIM_CONTAINERS_SHIM
 You should only need to build this shim once.
@@ -59,7 +56,7 @@ can mount the SIF).
    ```
 
    This is the temporary manual container shim (drops when `PennLINC/babs#383` lands);
-   see the README's "Manual shims" section.
+   see the reference doc's "Manual shims" section.
 
 3. Run the suite (any extra args pass straight through to pytest):
 
@@ -76,42 +73,9 @@ reclaims everything on exit and nothing lands on the host.
 To inspect a run afterwards, set `MECHABABS_E2E_KEEP=1` — it keeps the container so
 you can `podman cp` the campaign out (the script prints the exact commands).
 
-**babs under test.** The full-run tier needs a babs that has `babs status --json`
-(`PennLINC/babs#387`).
-Once that's merged to babs `main`, the default bootstrap ref suffices and you need
-nothing extra.
-Before then, point bootstrap at a branch that has it:
+**babs under test.** The suite runs on babs `main` by default. To test against an
+unmerged babs fix, pin a babs ref:
 
 ```bash
 export BABS_SPEC=https://github.com/<owner>/babs.git@<branch>
 ```
-
-### On a real cluster (login node, real slurm)
-
-The same test body, against a real cluster's config — this is the whole point of the
-cluster axis.
-The cluster **is** the substrate, so you do **not** use the container here: run pytest
-directly on a login node.
-
-1. Point `MECHABABS_E2E_WORKDIR` at cluster scratch space (fast filesystem, enough
-   quota for a campaign venv + RIA stores), and build the shim there once with the
-   same `tmp-repronim-container-shim.sh` command as above.
-
-2. Leave `MECHABABS_E2E_SYSTEM_SITE_PACKAGES` **unset** so `bootstrap.sh` builds
-   prod's isolated venv (the local container sets it because its EOL-CentOS7 toolchain
-   can't build the newest wheels — `#65` / `PennLINC/babs#388`; a modern cluster
-   doesn't need the crutch).
-
-3. Run pytest against the cluster's config. If the config isn't a shipped name under
-   `mechababs/clusters/`, pass it by path:
-
-   ```bash
-   pytest -s tests/e2e/ --cluster-config /path/to/your-site.yaml
-   ```
-
-4. Run under `tmux`/`screen` — `iterate` warns because a login-node disconnect would
-   kill the run.
-
-`bootstrap.sh` vendors this checkout as the mechababs under test, so whatever branch
-you run pytest from is what gets exercised.
-As on the local rung, set `BABS_SPEC` until `babs status --json` is in babs `main`.
