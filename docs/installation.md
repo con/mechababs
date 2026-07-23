@@ -6,7 +6,7 @@ Site-specific steps use UMass Unity as the worked example.
 
 ## On PATH (login *and* compute nodes)
 
-- `git`
+- `git` — **≥ 2.25** (babs jobs use `git sparse-checkout`)
 - `uv` — builds the campaign venv. Missing? `curl -LsSf https://astral.sh/uv/install.sh | sh` (lands in `~/.local/bin`).
 - `apptainer` or `singularity`
 - `git-annex` — the one most often missing. Install once into scratch:
@@ -18,7 +18,7 @@ Verify before continuing:
 for t in git uv apptainer git-annex datalad; do command -v $t || echo "MISSING: $t"; done
 ```
 
-Jobs need git-annex on PATH too; the cluster profile's `script_preamble` handles that (see `clusters/unity.yaml`).
+Jobs need a modern `git` (≥ 2.25, for `sparse-checkout`) and git-annex on PATH too — a login-node git *module* doesn't reach the compute nodes, so the cluster profile's `script_preamble` must put both on the job PATH (see `clusters/unity.yaml`).
 
 ## Scratch, not home
 

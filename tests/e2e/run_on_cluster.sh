@@ -22,7 +22,8 @@
 #   - the container shim built there ONCE:
 #       REPRONIM=$MECHABABS_E2E_WORKDIR/repronim-containers-shim \
 #           tmp-repronim-container-shim.sh bids-simbids
-#   - BABS_SPEC set until `babs status --json` (PennLINC/babs#387) is in babs main
+#   - BABS_SPEC (optional): pin a babs ref to test against an unmerged babs fix.
+#     Default is babs main.
 #
 # Usage (extra args pass straight through to pytest):
 #   ./tests/e2e/run_on_cluster.sh --cluster-config your-site.yaml

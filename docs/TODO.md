@@ -25,9 +25,12 @@ issues, not an archive.
 
 # mechababs — TODO / feedback inbox
 
+>>>CLAUDE we are gonna delete these in the same commit that we fix them. We will file issues and batch the issuefiling ones in 1 commit
+>>>CLAUDE u any good with git hunks? id rather not commit all my messages here
 - **Auto-generate `docs/reference.md`.** The CLI reference is hand-maintained,
   copied out of the README; it should be generated from the argparse definitions
   (and the pipeline/cluster YAML schema) so it can't drift from the code.
+  >>>CLAUDE TODO: file issue before merge.
 
 - **`datalad` is listed as a manual "On PATH" prereq but it's really a mechababs
   dependency** (installation.md). Bootstrap uses the venv's datalad (`VENV/bin/datalad`,
@@ -37,11 +40,23 @@ issues, not an archive.
   exists and so needs datalad ambient. Maybe: drop datalad from the PATH list and note it's
   only needed ambient for the pre-bootstrap shim (or reorder so the shim can use a venv's
   datalad). — Logan
+  >>>CLAUDE oh thats annoying! wasted work, and it was probably really tricky on old hpc lets fix this in this
+  >>>PR.
+  >>>CLAUDE also, is this by design though? like installing mechababs and installing the campaign
+  >>>are different. Would this be solved by using bootstrap on a campaign then running tests with
+  >>>from the campaign venv? Except no it wouldnt, because you need datalad to bootstrap! ugh! maybe
+  >>>we have to drop our cool thing (or just fallback. maybe if datalad isnt installed we fallback
+  >>>to git, but wait until mechababs is installed (with datalad) to properly submodule code/mechababs?
 
 - **Sherlock: the group `datalad` module needs `python/3.12.1` loaded for its libpython.**
   Fresh login shell: `datalad`/`datalad-installer` die with `libpython3.12.so.1.0: cannot open
   shared object file` until `ml load python/3.12.1`. (russpold `datalad-uv-module`.) Login-node
   friction hit during setup; not a mechababs bug, but a Sherlock-profile setup note. — Logan
+  >>>CLAUDE surprising that we need python 3.12, latest datalad has tests running 3.10. My guess,
+  >>>Centos 7 python might be like 3.6 so claude just reached for the newest available on cluster.
+  >>>We need to ask logan what sherlock python min version is, bc i think we should not make it 3.12
+  >>>without making sure it cant datalad's 3.10. Another possible culprit, the conda environment
+  >>>bonanaz. 
 
 - **BLOCKER — bootstrap's isolated campaign venv can't build on a CentOS 7 (glibc 2.17)
   login node like Sherlock.** `run_on_cluster.sh` / `conftest.py` assume "a real cluster
@@ -58,6 +73,13 @@ issues, not an archive.
   node. Needs a decision — parity vs. effort. Also: the failed run compiled heavy packages
   ON THE LOGIN NODE (SRC forbids this) — the setup should build on a compute node
   (sh_dev/salloc) regardless. — Logan
+  >>>CLAUDE his agent solved this pretty much the same way as babs upstream. 
+  >>>Their test environment does something very similar. PLs have a look at what they do and 
+  >>>so i was pretty confident his claude would succeed. (A good thing too because this is a very
+  >>>slow install on hpc! Sidenote, whys babs need numpy/pandas at all? Maybe if theres stuff like
+  >>>that we can shell out to a container or something-- hate to have "get started take 20 minutes
+  >>>to install deps, if it even works!"
+  >>>Is there anything else we can do to ease this pain? HPCs be old just the way it is.
 
 - **UX/doc gap: running `mechababs iterate`/`status` by hand needs git-annex on PATH,
   but "activate the campaign venv" doesn't provide it.** The campaign repo has git-annex
@@ -72,6 +94,7 @@ issues, not an archive.
   babs/duct but evidently not git-annex), and/or the docs should show putting git-annex on
   PATH. Sherlock workaround: `export PATH=$SCRATCH/mechababs-work/campaign-base/bin:$PATH`
   before activating. — Logan
+  >>>CLAUDE you can install git-annex with conda? this also sucks, lets shop options
 
 - **e2e test bug (general, upstreamable): `test_full_run` hardcoded the output-RIA
   branch as `master`.** `test_runs.py` listed the merged derivative with `git ls-tree
@@ -79,15 +102,7 @@ issues, not an archive.
   git (and this box) default to `main` — so the assertion failed with git exit 128 even
   though scaffold→submit→job→merge all succeeded and the derivative landed. Fixed to query
   `HEAD` (branch-agnostic). NOT Sherlock-specific — send this one upstream. — Logan
-
-- **babs jobs need git >= 2.25 (`git sparse-checkout`) on the compute node; CentOS 7
-  system git is 1.8.** The babs participant job runs `git sparse-checkout init --cone`;
-  on a compute node with only CentOS 7's system git (1.8.3.1) it dies with "sparse-checkout
-  is not a git command" and the job fails. The cluster profile must put a modern git on the
-  job PATH — the login-node `git/2.45.1` module doesn't reach the job. On Sherlock we route
-  both git and git-annex through the conda-forge base env (git 2.55) the venv is built on.
-  Worth a general note in installation.md / the tutorial: "compute nodes need a modern git on
-  PATH," since old-OS clusters won't by default. — Logan
+  >>>CLAUDE HUZZAH WE KEEP THIS!
 
 - **babs bug (upstreamable): chained-input zip search breaks on a `+` in the derivative
   name.** `test_chained_run` failed at the chain stage: the babs job's
@@ -101,6 +116,8 @@ issues, not an archive.
   the literal name (or regex-escape `${name}`/`${subid}`). Note this is triggered by
   mechababs's `+` naming meeting babs's unescaped grep — file upstream in PennLINC/babs,
   track with a `babs-upstream` mechababs issue. — Logan
+  >>>CLAUDE TODO make really sure this isnt fixed by 394. I have a suspision it is.
+  >>>CLAUDE CONFIRMED it IS #394: that PR rewrites determine_zipfilename.sh.jinja2's `grep -E` -> `grep -F` and its comment names the '+' case exactly. NOT a new bug. TODO(batch): remove this finding; explain "dup of #394" in a PR comment after push.
 
 - **uv's standalone Python doesn't trust Sherlock's system CA bundle.** Any network op
   through the uv-managed CPython (datalad-installer fetching git-annex, `uv pip`/`uvx`
@@ -108,12 +125,14 @@ issues, not an archive.
   certificate` until you `export SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt`
   (+ `SSL_CERT_DIR=/etc/pki/tls/certs`). Setup friction worth a line in installation.md for
   any RHEL/CentOS site. — Logan
+  >>>CLAUDE not sure if we can actually help here, i dont mind a docs fix but this seems too specific.
 
 - **conda-base setup makes the standalone git-annex build partly redundant.** installation.md
   has you build git-annex into `tools/usr/bin` via `datalad-installer`, but the CentOS 7
   conda-forge base env (the glibc workaround) already ships git-annex + a modern git +
   datalad. On such a setup the standalone build is only used driver-side; the two setup paths
   overlap. Worth reconciling in the docs so a CentOS-7 user isn't told to do both. — Logan
+  >>>CLAUDE there certainly is a theme here, maybe we discuss all these together 
 
 - **No cluster-axis lever for SLURM partition (concrete Sherlock hit; this is #3 /
   config-composition-axes).** Sherlock (Stanford SRC) mandates `-p` on every job, but
@@ -124,12 +143,7 @@ issues, not an archive.
   setting `#SBATCH --partition=russpold,normal` on both SimBIDS pipelines (lab private
   partition first for fast dispatch, public `normal` fallback; marked "do not send
   upstream"). Real fix = move partition to the cluster axis. — Logan
-
-- **Stale "set BABS_SPEC until babs#387 lands" note.** `run_on_cluster.sh` (prereqs
-  comment) and `CONTRIBUTORS.md` say to point `BABS_SPEC` at a branch with `babs status
-  --json` until PennLINC/babs#387 is in main. That issue is now **closed** and babs `main`
-  already exposes `--json` (`babs/cli.py`), so the default `PennLINC/babs@main` bootstrap
-  ref suffices — drop the "BABS_SPEC required" framing from both. — Logan
+  >>>CLAUDE agreed, this needs to be added to #3 if thats where we are collecting cluster config leaks (and if so maybe that deserves a retitle with "leaks" in it
 
 - **Campaign-native cluster validation — drop the e2e env-var setup.** Validating a
   cluster today means `pip install -e '.[test]'`, `export MECHABABS_E2E_WORKDIR=...`,
@@ -140,3 +154,10 @@ issues, not an archive.
   the isolated venv (no pip install / no site-packages flag), the vendored test
   suite (`code/mechababs/tests/e2e`), and a natural workdir (no
   `MECHABABS_E2E_WORKDIR`). Only the one-time container shim would remain.
+  >>>CLAUDE Agree, lets file this as an issue. maybe this is the one to offer to logan as a
+  >>>first issue. \
+  
+
+  >>>CLAUDE not mentioned but obviously annoying: cluster and pipelines shouldnt live in mechababs.
+  >>>TODO File issue. Move all cluster configs and pipelines into examples, and accept paths instead of names.
+  >>>Another one to offer to logan.

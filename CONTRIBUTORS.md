@@ -73,11 +73,8 @@ reclaims everything on exit and nothing lands on the host.
 To inspect a run afterwards, set `MECHABABS_E2E_KEEP=1` — it keeps the container so
 you can `podman cp` the campaign out (the script prints the exact commands).
 
-**babs under test.** The full-run tier needs a babs that has `babs status --json`
-(`PennLINC/babs#387`).
-Once that's merged to babs `main`, the default bootstrap ref suffices and you need
-nothing extra.
-Before then, point bootstrap at a branch that has it:
+**babs under test.** The suite runs on babs `main` by default. To test against an
+unmerged babs fix, pin a babs ref:
 
 ```bash
 export BABS_SPEC=https://github.com/<owner>/babs.git@<branch>
