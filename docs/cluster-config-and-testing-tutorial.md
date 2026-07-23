@@ -7,9 +7,6 @@ path (bootstrap → configure → add-dataset → iterate: scaffold → submit �
 merge) and asserts a real derivative landed, so it catches HPC-specific breakage a
 scaffold-only deploy would miss.
 
-> This login-node validation path is newly paved. Expect rough edges — that is
-> useful signal. Jot what you hit in [TODO.md](TODO.md); we file issues from it.
-
 ## What a cluster profile is
 
 A `clusters/*.yaml` is small. It answers two questions: **how to enter the
@@ -87,7 +84,7 @@ Get the prerequisites in place first — see [installation.md](installation.md):
 > **ASPIRATIONAL (not yet built):** longer term this setup shrinks — because you
 > bootstrap a campaign before running real data anyway, the intended end state is to
 > validate from *inside* a campaign, e.g. `mechababs test-cluster --cluster
-> your-site.yaml`. That subcommand does not exist yet. See [TODO.md](TODO.md).
+> your-site.yaml`. That subcommand does not exist yet — see [#98](https://github.com/con/mechababs/issues/98).
 
 **Run it** (under `tmux`/`screen` — a login-node disconnect kills the run):
 
