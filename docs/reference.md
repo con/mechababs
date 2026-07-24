@@ -167,7 +167,8 @@ there resolves in place). The files under `examples/` are starters to copy from.
   [cluster config & testing tutorial](cluster-config-and-testing-tutorial.md) for
   the full walk-through of adding your own cluster.
 
-To add a pipeline: copy an existing `examples/pipelines/*.yaml`, set a unique
-`short_name`, change container + flags. To add a cluster: copy
+To add a pipeline: copy an existing `examples/pipelines/*.yaml` to a
+uniquely-named file (its stem is the pipeline's identity), change container + flags.
+To add a cluster: copy
 `examples/clusters/dartmouth.yaml`, adjust the `script_preamble` + scratch roots,
 and validate it by running the e2e suite on your cluster (see the tutorial).
