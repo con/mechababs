@@ -38,8 +38,9 @@ def cmd_configure(args):
     preconditions this checks: the path is a datalad dataset with code/mechababs
     + code/babs registered, and THIS process runs from the campaign's own .venv —
     which is how we know the pinned code (not some ambient install) is executing.
-    This is the guard that kills the wrong-babs bug. Then construct.build vendors
-    the pipelines' containers and writes the config + the ledger.
+    This is the guard that kills the wrong-babs bug. Then construct.build copies
+    the named configs into the campaign, vendors the pipelines' containers, and
+    writes the config + the ledger.
     """
     campaign = args.campaign_path.resolve()
 

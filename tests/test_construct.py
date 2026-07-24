@@ -55,8 +55,17 @@ def test_resolve_pipelines_returns_campaign_paths(tmp_path):
     )
 
 
-def test_resolve_pipelines_rejects_duplicate_stem(tmp_path):
-    (tmp_path / "pipelines").mkdir()
-    (tmp_path / "pipelines" / "P.yaml").write_text("x: 1\n")
+def test_resolve_pipelines_rejects_duplicate_stem_before_staging(tmp_path):
+    # two different files sharing a basename: rejected on the name, and — because
+    # validation precedes staging — neither is copied into the campaign.
+    campaign = tmp_path / "campaign"
+    campaign.mkdir()
+    a = tmp_path / "a" / "P.yaml"
+    a.parent.mkdir()
+    a.write_text("x: 1\n")
+    b = tmp_path / "b" / "P.yaml"
+    b.parent.mkdir()
+    b.write_text("x: 2\n")
     with pytest.raises(SystemExit):
-        construct.resolve_pipelines(tmp_path, ["P.yaml", "P.yaml"])
+        construct.resolve_pipelines(campaign, [str(a), str(b)])
+    assert not (campaign / "pipelines" / "P.yaml").exists()

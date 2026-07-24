@@ -2,9 +2,13 @@
 
 Runs from inside the campaign venv (invoked by ``cli.cmd_configure`` after
 ``bootstrap.sh`` built the environment: the datalad dataset, the vendored
-babs/mechababs code pins, and the venv). It reads the vendored pipeline +
-cluster configs, vendors each pipeline's container into ``code/<dir>``, and
-writes the mechababs config + the mechababs state-file ledger.
+babs/mechababs code pins, and the venv). It copies the requested pipeline +
+cluster configs into the campaign's own ``pipelines/`` and ``clusters/`` (a config
+given by path is copied in; a name already there resolves in place), vendors each
+pipeline's container into ``code/<dir>``, and writes the mechababs config + the
+mechababs state-file ledger. Configs live in the campaign so the one that produced
+a run is committed alongside it; a starter set to copy from lives in
+``code/mechababs/examples/``.
 
 Re-runnable: container vendoring skips a ``code/<dir>`` already present, so a
 reset (delete the ledger, re-run ``configure``) reuses the vendored containers.
@@ -22,11 +26,6 @@ import yaml
 
 from mechababs import __version__
 from mechababs import state
-
-# Pipeline/cluster configs resolve by name under the campaign's own clusters/ and
-# pipelines/, not the vendored tool, so the config that produced a run is committed
-# in the campaign and reproduces from it alone. `configure` copies a config given by
-# path into the campaign; a starter set to copy from lives in code/mechababs/examples/.
 
 # Invoke the campaign venv's datalad explicitly (not bare PATH) so construction
 # uses the pinned tool whether or not the venv is activated.
@@ -88,15 +87,18 @@ def resolve_pipelines(campaign, pipeline_files):
     (see ``stage_config``). ``rels`` are the campaign-relative paths, in order, and
     store the path (not the stem) so identity stays decoupled from location;
     ``copied`` is the subset freshly written (which ``build`` commits). Rejects a
-    duplicate stem (two files that would merge column groups).
+    duplicate stem (two files that would merge column groups) before staging
+    anything, so a rejected request never half-copies configs into the campaign.
     """
-    rels, copied, seen = [], [], set()
+    seen = set()
     for arg in pipeline_files:
-        rel, was_copied = stage_config(campaign, "pipelines", arg)
-        short = pipeline_short(rel)
+        short = pipeline_short(arg)
         if short in seen:
             sys.exit(f"duplicate pipeline {short!r} — pipeline names must be unique")
         seen.add(short)
+    rels, copied = [], []
+    for arg in pipeline_files:
+        rel, was_copied = stage_config(campaign, "pipelines", arg)
         rels.append(rel)
         if was_copied:
             copied.append(rel)
@@ -148,12 +150,12 @@ def vendor_container(campaign, dir_, source, ref):
 
 
 def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
-    """Construct the campaign: vendor containers, write the config + ledger.
+    """Construct the campaign: stage the configs, vendor containers, write config + ledger.
 
     ``campaign`` is a Path to the (already bootstrapped) campaign dataset;
     ``venv_rel`` is the venv's campaign-relative path (recorded for the job
     preamble); ``limit`` is the campaign-wide cap on each dataset's inclusion
-    (None → all). Returns the list of campaign-relative pipeline paths.
+    (None → all). Returns the pipeline short-names (filename stems).
     """
     pipelines, copied = resolve_pipelines(campaign, pipeline_files)
     shorts = [pipeline_short(rel) for rel in pipelines]
