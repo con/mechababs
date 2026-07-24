@@ -203,9 +203,9 @@ def main():
     pc.add_argument("--campaign-path", type=Path, default=Path("."),
                     help="the campaign dataset (default: current directory)")
     pc.add_argument("--pipelines", required=True,
-                    help="comma-separated pipeline config files under mechababs/pipelines/ (ordered)")
+                    help="comma-separated pipeline config names under the campaign's pipelines/ (ordered)")
     pc.add_argument("--cluster", required=True,
-                    help="cluster config file under mechababs/clusters/")
+                    help="cluster config name under the campaign's clusters/")
     pc.add_argument("--limit", type=int, default=None,
                     help="cap each dataset's inclusion to the first N eligible subjects "
                          "(default: all)")

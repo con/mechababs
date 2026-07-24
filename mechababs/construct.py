@@ -22,9 +22,10 @@ import yaml
 from mechababs import __version__
 from mechababs import state
 
-# The vendored mechababs subtree; pipeline/cluster configs resolve under it.
-# TODO: someday accept config files outside mechababs.
-MECHABABS = "code/mechababs"
+# Pipeline/cluster configs resolve by name under the campaign's own clusters/ and
+# pipelines/, not the vendored tool, so the config that produced a run is committed
+# in the campaign and reproduces from it alone. Starter configs to copy from live
+# in code/mechababs/examples/.
 
 # Invoke the campaign venv's datalad explicitly (not bare PATH) so construction
 # uses the pinned tool whether or not the venv is activated.
@@ -59,14 +60,13 @@ def pipeline_short(rel):
 def resolve_pipelines(campaign, pipeline_files):
     """Campaign-relative paths to the requested pipeline configs, validated.
 
-    Stores paths (not stems) so the identity stays decoupled from the location —
-    moving pipelines out of the vendored ``mechababs/pipelines/`` later is a
-    base-dir change here, not a format change. Rejects a duplicate stem (two files
-    that would merge column groups).
+    Resolves each name under the campaign's own ``pipelines/`` dir, and stores the
+    path (not the stem) so identity stays decoupled from location. Rejects a
+    duplicate stem (two files that would merge column groups).
     """
     rels, seen = [], set()
     for fname in pipeline_files:
-        rel = f"{MECHABABS}/pipelines/{fname}"
+        rel = f"pipelines/{fname}"
         if not (campaign / rel).is_file():
             sys.exit(f"pipeline config not found: {rel}")
         short = pipeline_short(rel)
@@ -131,7 +131,7 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
     """
     pipelines = resolve_pipelines(campaign, pipeline_files)
     shorts = [pipeline_short(rel) for rel in pipelines]
-    cluster_rel = f"{MECHABABS}/clusters/{cluster}"
+    cluster_rel = f"clusters/{cluster}"
     if not (campaign / cluster_rel).is_file():
         sys.exit(f"cluster config not found: {cluster_rel}")
 
