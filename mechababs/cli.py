@@ -203,9 +203,11 @@ def main():
     pc.add_argument("--campaign-path", type=Path, default=Path("."),
                     help="the campaign dataset (default: current directory)")
     pc.add_argument("--pipelines", required=True,
-                    help="comma-separated pipeline config names under the campaign's pipelines/ (ordered)")
+                    help="comma-separated pipeline configs (ordered): a path to copy into the "
+                         "campaign's pipelines/, or the name of one already there")
     pc.add_argument("--cluster", required=True,
-                    help="cluster config name under the campaign's clusters/")
+                    help="cluster config: a path to copy into the campaign's clusters/, or the "
+                         "name of one already there")
     pc.add_argument("--limit", type=int, default=None,
                     help="cap each dataset's inclusion to the first N eligible subjects "
                          "(default: all)")

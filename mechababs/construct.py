@@ -13,6 +13,7 @@ The ledger guard lives in ``cli`` (refuses if the ledger exists, so
 """
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -24,8 +25,8 @@ from mechababs import state
 
 # Pipeline/cluster configs resolve by name under the campaign's own clusters/ and
 # pipelines/, not the vendored tool, so the config that produced a run is committed
-# in the campaign and reproduces from it alone. Starter configs to copy from live
-# in code/mechababs/examples/.
+# in the campaign and reproduces from it alone. `configure` copies a config given by
+# path into the campaign; a starter set to copy from lives in code/mechababs/examples/.
 
 # Invoke the campaign venv's datalad explicitly (not bare PATH) so construction
 # uses the pinned tool whether or not the venv is activated.
@@ -57,24 +58,49 @@ def pipeline_short(rel):
     return Path(rel).stem
 
 
-def resolve_pipelines(campaign, pipeline_files):
-    """Campaign-relative paths to the requested pipeline configs, validated.
+def stage_config(campaign, kind, arg):
+    """Bring one config into the campaign's ``kind`` dir; return ``(rel, copied)``.
 
-    Resolves each name under the campaign's own ``pipelines/`` dir, and stores the
-    path (not the stem) so identity stays decoupled from location. Rejects a
+    ``arg`` is either a path to a config file — copied into ``<kind>/`` so the
+    campaign owns the config that produced a run (and reproduces from the campaign
+    alone, not from the file's original location) — or the bare name of one already
+    there, which resolves in place. ``rel`` is the campaign-relative path; ``copied``
+    says whether a file was written, so the caller commits it. A copy of a file
+    already in place is skipped. This is a pure filesystem op: committing a copied
+    config is the caller's job (``build``).
+    """
+    dest_rel = f"{kind}/{Path(arg).name}"
+    dest = campaign / dest_rel
+    source = Path(arg)
+    if source.is_file() and not (dest.is_file() and source.samefile(dest)):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(source, dest)
+        return dest_rel, True
+    if not dest.is_file():
+        sys.exit(f"{kind[:-1]} config not found: {arg}")
+    return dest_rel, False
+
+
+def resolve_pipelines(campaign, pipeline_files):
+    """Stage the requested pipeline configs into the campaign; return ``(rels, copied)``.
+
+    Each entry is a path to copy in or the name of one already under ``pipelines/``
+    (see ``stage_config``). ``rels`` are the campaign-relative paths, in order, and
+    store the path (not the stem) so identity stays decoupled from location;
+    ``copied`` is the subset freshly written (which ``build`` commits). Rejects a
     duplicate stem (two files that would merge column groups).
     """
-    rels, seen = [], set()
-    for fname in pipeline_files:
-        rel = f"pipelines/{fname}"
-        if not (campaign / rel).is_file():
-            sys.exit(f"pipeline config not found: {rel}")
+    rels, copied, seen = [], [], set()
+    for arg in pipeline_files:
+        rel, was_copied = stage_config(campaign, "pipelines", arg)
         short = pipeline_short(rel)
         if short in seen:
             sys.exit(f"duplicate pipeline {short!r} — pipeline names must be unique")
         seen.add(short)
         rels.append(rel)
-    return rels
+        if was_copied:
+            copied.append(rel)
+    return rels, copied
 
 
 def resolve_containers(campaign, pipeline_rels):
@@ -129,11 +155,18 @@ def build(campaign, pipeline_files, cluster, venv_rel, limit=None):
     preamble); ``limit`` is the campaign-wide cap on each dataset's inclusion
     (None → all). Returns the list of campaign-relative pipeline paths.
     """
-    pipelines = resolve_pipelines(campaign, pipeline_files)
+    pipelines, copied = resolve_pipelines(campaign, pipeline_files)
     shorts = [pipeline_short(rel) for rel in pipelines]
-    cluster_rel = f"clusters/{cluster}"
-    if not (campaign / cluster_rel).is_file():
-        sys.exit(f"cluster config not found: {cluster_rel}")
+    cluster_rel, cluster_copied = stage_config(campaign, "clusters", cluster)
+    if cluster_copied:
+        copied.append(cluster_rel)
+
+    # Commit any config copied in by path, so the campaign owns the exact config
+    # that produced the run (and reproduces from it alone).
+    if copied:
+        run(DATALAD, "save", "--dataset", campaign, "--message",
+            f"Copy in campaign configs ({', '.join(Path(c).name for c in copied)})",
+            *[campaign / c for c in copied])
 
     for dir_, (source, ref) in resolve_containers(campaign, pipelines).items():
         vendor_container(campaign, dir_, source, ref)

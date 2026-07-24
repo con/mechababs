@@ -111,15 +111,19 @@ run mkdir -p clusters pipelines
 cat > clusters/README.md <<'EOF'
 # Campaign cluster configs
 
-Cluster profiles for this campaign live here. `mechababs configure --cluster <name>`
-resolves `<name>` under this dir. Copy a starter from `code/mechababs/examples/clusters/`
-and edit it for your site.
+Cluster profiles for this campaign live here, so the config that produced a run is
+committed in the campaign. `mechababs configure --cluster <path>` copies the config
+in and resolves it by name; a `<name>` already here resolves in place. Starter
+profiles to copy from (or point `--cluster` straight at) live in
+`code/mechababs/examples/clusters/`.
 EOF
 cat > pipelines/README.md <<'EOF'
 # Campaign pipeline configs
 
-Pipeline configs for this campaign live here. `mechababs configure --pipelines <name>,...`
-resolves each `<name>` under this dir. Copy starters from `code/mechababs/examples/pipelines/`.
+Pipeline configs for this campaign live here, so the config that produced a run is
+committed in the campaign. `mechababs configure --pipelines <path>,...` copies each
+config in and resolves it by name; a `<name>` already here resolves in place.
+Starters live in `code/mechababs/examples/pipelines/`.
 EOF
 run "$VENV_DATALAD" save -d "$CAMPAIGN" -m "Add campaign clusters/ + pipelines/ config dirs" clusters pipelines
 
