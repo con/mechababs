@@ -12,10 +12,25 @@ script_preamble: |
   # on the compute nodes too — so add the workspace standalone build (installed
   # once via `datalad-installer git-annex` into tools/usr/bin) to PATH. See #33.
   export PATH="/scratch4/workspace/${USER}-mechababs/tools/usr/bin:$PATH"
-  # campaign venv (abspath substituted at compose time by merge_config)
+  # campaign venv; mechababs substitutes the placeholder with the real path when it composes the babs config
   source "{{MECHABABS_VENV}}/bin/activate"
   export JOB_TMP="/scratch4/workspace/${USER}-mechababs/sjob-tmp/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
   mkdir -p "${JOB_TMP}"
   trap 'rm -rf "${JOB_TMP}"' EXIT
 
 job_compute_space: "/scratch4/workspace/${USER}-mechababs"
+
+# Optional: version caps for the campaign environment (see the fuller note in
+# examples/clusters/dartmouth.yaml). Unity's glibc is current, so nothing is capped
+# here; the block below is the glibc-2.17 starter set, live in
+# examples/clusters/sherlock.yaml.
+#
+# env_constraints:
+#   - greenlet<=3.2.5
+#   - h5py<=3.14.0
+#   - pandas<=2.3.2
+#   - scipy<=1.15.3
+#   - scikit-learn<=1.7.2
+#   - scikit-image<=0.25.2
+#   - pillow<=12.2.0
+#   - contourpy<=1.3.2

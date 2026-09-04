@@ -1,509 +1,471 @@
-"""iterate.py — the campaign reconciler tick.
+"""iterate.py — the reconciler.
 
-One `iterate` advances each (dataset, pipeline) cell by AT MOST ONE transition,
-routing on which ledger columns are filled:
-  - `_babs` empty            -> SCAFFOLD: generate the inclusion into the campaign
-                                pin (or reuse it; a chained cell skips it), compose
-                                the babs config, `babs init` (NO submit), record
-                                `_babs` (the project-root path).
-  - `_babs` set, not merged  -> ACTIVE: read `babs status --json`, take the next
-                                step (deploy more / skip / merge / flag-failed).
-  - `_babs-merged` set       -> done, skipped (no babs query).
+Every verb in a cell's life exists on its own (scaffold, submit, merge), and each one
+refuses a cell that is not in the state it advances from. ``iterate`` is what decides
+*which* verb a cell is owed, and dispatches it: one ``iterate`` reads the statefile
+shard and visits every cell once, advancing each by **at most one transition**. One
+cell advancing is a **tick**; a cell that is passed over is not one, and does not
+count against ``--batch``.
 
-The ACTIVE step is decided from `babs status --json` counts (the babs_status
-decide seam) and dispatched through ITERATE_ACTIONS. mechababs shells out to babs /
-merge_config.py and imports the select and babs_status modules. `--dry-run` runs
-read-only steps (e.g. `babs status`) for real and prints the mutating commands
-without running them.
+**Level-triggered, not edge-triggered.** An ``iterate`` never remembers what the last
+one did. It re-reads ground truth — the shard's columns, plus a live ``babs status``
+for any cell that is running — and re-derives what each cell needs from that alone.
+So a crashed ``iterate``, a hand-edited shard, or a cell repaired by hand between
+runs all converge on the next one instead of accumulating drift. This is also why there is no
+status enum: state is *read off* ``babs``/``merged``, and anything volatile is asked
+of babs at the moment it is needed.
+
+The routing, which is the whole of the reconciler's opinion:
+
+===================  ==========================================================
+ ``merged`` set       done — skipped without asking babs anything
+ ``babs`` set         active — ``babs status`` counts decide submit/skip/merge/fail
+ neither, gated       waiting on an unmerged producer — **noted, and moved past**
+ neither, clear       not started — scaffold
+===================  ==========================================================
+
+**Gating is noting, not blocking.** A dependent cell whose producer has not merged is
+not a halt: ``iterate`` says so and goes on to the next cell. The next one re-checks.
+
+**A failure is flagged, never merged, and never persisted.** When the live counts say
+jobs failed, the cell is marked loudly and left alone — merging a partial set would
+quietly produce a derivative that looks complete. The flag is this ``iterate``'s reading, not
+a column, so a repair-and-resubmit (docs/interventions.md) takes effect with nothing
+to clear.
+
+**iterate is a plain coordinator.** It is not itself wrapped in a ``datalad run`` — it
+dispatches one run per advancing cell, so runs never nest at the same level — and it
+writes no statefile columns: the verbs do that, inside their own runs. The single
+writer is enforced by the campaign flock, taken in exactly one place: around the whole
+``iterate``, at the level the campaign is operated from.
 """
 
-import os
-import shutil
-import subprocess
 import sys
-from dataclasses import dataclass
-from functools import partial
 from pathlib import Path
+from typing import NamedTuple
 
-import yaml
+from mechababs import babs_status, dispatch
+from mechababs import campaign as campaign_mod
+from mechababs import scaffold as scaffold_mod
+from mechababs import study as study_mod
+from mechababs import utils
+from mechababs.utils import require_clean_shallow
 
-from datalad.api import Dataset
+# Every line iterate writes about its own reasoning carries this, so mechababs'
+# decisions stand out from the datalad, babs and git output they interleave with.
+# The `+ <command>` echoes from the verbs are left unprefixed on purpose: those are
+# commands, not commentary.
+PREFIX = "mechababs>"
 
-from mechababs import babs_status
-from mechababs import construct
-from mechababs import select
-from mechababs import state
-from mechababs.utils import datalad_save_scope, locked
+# The four cell states, read off the shard's columns. There is no status enum in the
+# statefile; these are names for what the columns already say.
+DONE = "done"
+ACTIVE = "active"
+WAITING = "waiting"
+SCAFFOLD = "scaffold"
 
-# Repo root of the vendored mechababs — holds the top-level helper scripts iterate
-# still shells out to (merge_config); selection is now the in-package select module.
-MECHABABS_ROOT = Path(__file__).resolve().parent.parent
-MERGE_CONFIG_SCRIPT = MECHABABS_ROOT / "merge_config.py"
+# What a cell was just *done to*, as distinct from what state it is in: the
+# transition that happened, in the past tense a save message wants.
+SCAFFOLDED = "scaffolded"
+SUBMITTED = "submitted"
+MERGED = "merged"
 
-
-def run(cmd, *, dry_run, cwd=None, env=None):
-    """Run a command (list of args), or just print it under dry_run.
-
-    `env`, if given, is merged over the current environment for the child."""
-    shown = " ".join(str(c) for c in cmd) + (f"   (cwd={cwd})" if cwd else "")
-    if dry_run:
-        print(f"DRY-RUN  {shown}", file=sys.stderr)
-        return
-    print(f"+ {shown}", file=sys.stderr)
-    subprocess.run([str(c) for c in cmd], cwd=cwd, check=True,
-                   env={**os.environ, **env} if env else None)
-
-
-def datalad_duct(cmd, *, dataset, message, log_prefix, dry_run):
-    """Run a mutating shell-out under duct (resource logging) inside a `datalad run`,
-    so the duct logs land tracked in the campaign.
-
-    No inputs/outputs are declared (datalad run saves whatever changed, mirroring
-    datalad_save_scope's since-save). The duct output prefix is passed via the
-    DUCT_OUTPUT_PREFIX env var, NOT duct's -p flag: datalad run runs its own
-    {placeholder} substitution over the command and would choke on duct's
-    {datetime}/{pid} format fields (same lesson as the babs add-duct branch's
-    764d5ae). Read-only babs shell-outs (`babs status`) are NOT wrapped — only the
-    mutating steps (init now; submit/merge later)."""
-    duct_cmd = ["duct", *[str(c) for c in cmd]]
-    run(["datalad", "run", "-d", str(dataset), "-m", message, *duct_cmd],
-        dry_run=dry_run, cwd=dataset, env={"DUCT_OUTPUT_PREFIX": log_prefix})
+# The transitions that move git state in the study — a scaffold registers the
+# derivative and a merge advances its HEAD — and so move the member's gitlink, which
+# only the super can record. Submit is not one: it hands jobs to the scheduler and
+# writes nothing the study tracks (``dispatch.plain``), so there is nothing to commit
+# at either level.
+RECORDED = (SCAFFOLDED, MERGED)
 
 
-# TODO move to util
-def warn_if_no_tmux():
-    """Prompt before a long login-node run that a disconnect would kill (cf lib.sh).
+class Advance(NamedTuple):
+    """One cell moved: what was done to it, which cell, and whose lifecycle it bears on.
 
-    Only meaningful interactively; a non-tty caller (CI / containers / pipes) can't
-    answer, so skip the prompt there rather than block on EOF. MECHABABS_SKIP_TMUX_CHECK
-    bypasses it deterministically for automation (the e2e harness sets it): the prompt
-    reads inherited stdin, so when a driver subprocess-es iterate a stray keystroke
-    buffered during a long tick can be consumed as the answer and abort the run.
+    ``source_dataset`` is carried separately from ``cell`` — which is a display string —
+    because it is the catalog key the lifecycle recompute needs, and re-parsing it back
+    out of the label would be inventing a format to then depend on.
     """
-    if os.environ.get("MECHABABS_SKIP_TMUX_CHECK"):
-        return
-    if os.environ.get("TMUX") or os.environ.get("STY"):
-        return
-    if not sys.stdin.isatty():
-        print("Note: not inside tmux/screen (non-interactive — continuing).", file=sys.stderr)
-        return
-    ans = input("Not inside tmux/screen — a disconnect will kill this run. Continue anyway? [y/N] ")
-    if not ans.lower().startswith("y"):
-        sys.exit("Aborting.")
+
+    transition: str
+    cell: str
+    source_dataset: str
 
 
-# TODO move to util
-def read_config(campaign):
-    """The mechababs config -> {cluster, pipelines: [file, ...]} (campaign-relative paths).
-
-    A pipeline's short_name is its filename stem (construct.pipeline_short) — the
-    ledger column prefix and the derivative dir name — so the list of paths is the
-    only pipeline state; the identifier is derived, never declared."""
-    return yaml.safe_load(state.config_path(campaign).read_text())
+def note(text):
+    """One prefixed line on stderr — iterate's own voice."""
+    print(f"{PREFIX} {text}", file=sys.stderr)
 
 
-def assert_venv_tools(campaign, cfg):
-    """Guard: babs/mechababs/duct on PATH must resolve inside the campaign venv.
+def cell_label(row):
+    """How a cell is named in output: its source dataset and its app's stem."""
+    return f"{row['source_dataset']} / {scaffold_mod.app_stem(row['app_config'])}"
 
-    A stray active venv silently substitutes a different, unrecorded babs while
-    outputs stay attributed to the pinned commit; per-campaign vendoring only
-    means anything if the *pinned* tools run.
+
+def producer_row(rows, row):
+    """The row of this cell's ``depends_on`` producer, or ``None`` if there is none.
+
+    The gate is a **shard-local row lookup** — the same source dataset's
+    upstream-``app_config`` row — which is what keeps an edge from ever crossing
+    studies: the reconciler only looks inside the shard it is reconciling.
     """
-    venv = (campaign / cfg["venv"]).resolve()
-    for tool in ("babs", "mechababs", "duct"):
-        found = shutil.which(tool)
-        if not (found and Path(found).resolve().is_relative_to(venv)):
-            sys.exit(f"{tool} resolves to {found or 'nothing'}, not under the campaign venv "
-                     f"{venv} — activate the campaign venv (a stray venv on PATH would run an "
-                     f"unpinned {tool}, silently breaking the campaign's provenance pin)")
+    upstream = row.get("depends_on") or ""
+    key = (row["source_dataset"], upstream)
+    for candidate in rows:
+        if campaign_mod.cell_key(candidate) == key:
+            return candidate
+    return None
 
 
-def dataset_id(url):
-    """ds000001 from .../ds000001.git or .../ds000001."""
-    name = Path(url).name
-    return name[:-4] if name.endswith(".git") else name
+def route(rows, row):
+    """This cell's state, from the shard alone: ``(state, detail)``.
 
+    Pure — no babs, no filesystem — because it is the one reading of the columns that
+    both ``iterate`` and ``status`` use, and two readings of the same columns would
+    eventually disagree. ``detail`` is the derivative path for an active cell and the
+    producer's stem for a waiting one; empty otherwise.
 
-def container_dir(source):
-    """The code/<dir> a container source is vendored into: its basename."""
-    name = Path(source).name
-    return name[:-4] if name.endswith(".git") else name
-
-
-def resolve_container_ds(campaign, container):
-    """The --container-ds for babs init: the container vendored at code/<dir>,
-    where <dir> is the source's basename. `mechababs configure` vendors every
-    container there regardless of source (a URL, or a local dataset like a
-    hand-built shim), so iterate needn't know how it was built.
+    The live job counts are deliberately NOT consulted here. Routing to ``active``
+    says a cell has a babs project and is not merged; deciding what to do about it
+    needs babs, and that is the caller's step (``babs_status.decide``).
     """
-    return campaign / "code" / container_dir(container["source"])
+    if row.get("merged"):
+        return DONE, ""
+    if row.get("babs"):
+        return ACTIVE, row["babs"]
+
+    upstream = row.get("depends_on") or ""
+    if not upstream:
+        return SCAFFOLD, ""
+    stem = scaffold_mod.app_stem(upstream)
+    producer = producer_row(rows, row)
+    if producer is None:
+        # add-dataset refuses to write a cell whose producer has no row, so this is a
+        # hand-edited shard. One broken cell must not take the iterate down: say what is
+        # wrong and let the others advance.
+        return WAITING, f"{stem} (no cell for it in this shard)"
+    if not producer.get("merged"):
+        return WAITING, stem
+    return SCAFFOLD, ""
 
 
-def study_sourcedata_url(study, ds_id):
-    """The raw dataset's URL, read from the cloned study's `.gitmodules`
-    `sourcedata/<id>` entry — the study's own record of its input, so babs
-    registers the input by that URL rather than a campaign-local path.
+def source_lifecycle(rows, source_dataset):
+    """One catalog row's lifecycle, derived from the shard it describes.
 
-    The `.gitmodules` section name depends on who built the study: OpenNeuroStudies
-    (plain git) names it by dataset id (`[submodule "<id>"]`), while a datalad-built
-    study names it by path (`[submodule "sourcedata/<id>"]`). Both put the same file
-    at `sourcedata/<id>`; try the id key first, then the path key.
+    Goes through ``route`` rather than reading ``babs``/``merged`` again, for the same
+    reason ``status`` does: a second reading of the same columns is a second thing to
+    keep in agreement, and this one would be committed.
+
+    Derived, never accumulated: a stored view of the shard, not a tally the
+    transitions keep, and not a repair pass hunting for drift behind the tool.
     """
-    gitmodules = study / ".gitmodules"
-    for name in (ds_id, f"sourcedata/{ds_id}"):
-        out = subprocess.run(
-            ["git", "config", "--file", str(gitmodules), "--get", f"submodule.{name}.url"],
-            capture_output=True, text=True,
-        )
-        if out.returncode == 0 and out.stdout.strip():
-            return out.stdout.strip()
-    sys.exit(f"no sourcedata/{ds_id} submodule url in {gitmodules}")
+    states = [
+        route(rows, row)[0]
+        for row in rows
+        if campaign_mod.cell_key(row)[0] == source_dataset
+    ]
+    if states and all(state == DONE for state in states):
+        return campaign_mod.LIFECYCLE_MERGED
+    if any(state in (DONE, ACTIVE) for state in states):
+        return campaign_mod.LIFECYCLE_ACTIVE
+    return campaign_mod.LIFECYCLE_REGISTERED
 
 
-def babs_project(campaign, row, short):
-    """The babs-project root for a cell — the campaign-relative path in `_babs`,
-    which `babs status|submit|merge` take positionally."""
-    return campaign / row[f"{short}_babs"]
+def update_lifecycle(superstudy, label, name, member, advance):
+    """Recompute the catalog lifecycle for the source dataset this transition touched.
+
+    Returns ``{source_dataset: (before, after)}`` for the row if it changed, and writes
+    it. Only the touched row is recomputed: a lifecycle changes as a consequence of a
+    transition, so a row whose cells did not move cannot have moved either — and
+    walking the rest would be a drift scan, which is not what this is.
+    """
+    rows = campaign_mod.read_state(member, label)
+    members = campaign_mod.read_members(superstudy, label)
+    changed = {}
+    for row in members:
+        if (
+            row.get("study") != name
+            or row.get("source_dataset") != advance.source_dataset
+        ):
+            continue
+        before = row.get("lifecycle", "")
+        after = source_lifecycle(rows, row["source_dataset"])
+        if after != before:
+            row["lifecycle"] = after
+            changed[row["source_dataset"]] = (before, after)
+    if changed:
+        campaign_mod.write_members(superstudy, label, members)
+    return changed
 
 
-def selected_pipelines(campaign, cfg):
-    """{short_name: loaded pipeline cfg} for every pipeline in this campaign."""
-    return {construct.pipeline_short(pf): yaml.safe_load((campaign / pf).read_text())
-            for pf in cfg["pipelines"]}
+def member_message(name, label, advance, changed):
+    """The super's save message for one cell-transition in one member.
 
-
-def chain_edges(pipeline_cfg, selected):
-    """The in-campaign upstream stages this pipeline consumes: its `input_datasets`
-    keys that name another selected pipeline's short_name.
-
-    A key that matches a selected short_name IS a chained edge — its origin_url is
-    intentionally absent from the YAML (the upstream RIA doesn't exist until it has
-    run + merged), so the name match is the only signal knowable at author time. A
-    key matching no selected pipeline is an external input (raw BIDS, or a
-    precomputed derivative from outside the campaign) that carries its own
-    origin_url."""
-    return [k for k in (pipeline_cfg.get("input_datasets") or {}) if k in selected]
-
-
-def output_ria_url(project_root, producer_cfg):
-    """The clone source a downstream stage registers as its input's origin_url: the
-    producing babs project's output RIA, addressed through the `data` alias babs
-    writes there at init.
-
-    The alias is layout-agnostic (no dataset-id lookup, no assumption about the
-    analysis/RIA nesting); the RIA's location is per-pipeline babs config
-    (`output_ria_path`, babs default `output_ria`). Validated to clone + retrieve
-    annex content on a real produced derivative. The abspath is fine here: it's a
-    per-run RIA source consumed at compose time and baked into the derivative's own
-    babs config by babs — never recorded in the git-tracked ledger."""
-    ria_rel = producer_cfg.get("output_ria_path", "output_ria")
-    return f"ria+file://{Path(project_root).resolve()}/{ria_rel}#~data"
-
-
-@dataclass
-class _ScaffoldCtx:
-    """The paths + config one scaffold needs, gathered once and threaded to its steps."""
-    campaign: Path
-    cfg: dict
-    short: str
-    ds_id: str
-    processing_level: str
-    study: Path
-    origin_url: str
-    pipeline_path: Path
-    cluster_path: Path
-    pipeline_cfg: dict
-    container: dict
-    campaign_venv: str
-    project_root: Path
-
-
-def _scaffold_context(campaign, cfg, row, short, pipeline_file):
-    """Gather the scaffold's inputs, validating the prerequisites (processing_level,
-    venv). The derivative is produced in its final home inside the cloned study; the
-    babs-project root IS the derivative dataset, named by the pipeline's short_name."""
-    ds_id = row["dataset_id"]
-    processing_level = row.get("processing_level")
-    if not processing_level:
-        sys.exit(f"processing_level not set for {ds_id} — set it in the ledger "
-                 f"(add-dataset derives it; a blank means the metadata fetch failed)")
-    venv_rel = cfg.get("venv")
-    if not venv_rel:
-        sys.exit(f"{state.CONFIG_FILENAME} has no 'venv' — run `mechababs configure` first")
-    study = campaign / "studies" / f"study-{ds_id}"
-    pipeline_path = campaign / pipeline_file
-    pipeline_cfg = yaml.safe_load(pipeline_path.read_text())
-    return _ScaffoldCtx(
-        campaign=campaign, cfg=cfg, short=short, ds_id=ds_id,
-        processing_level=processing_level, study=study,
-        origin_url=study_sourcedata_url(study, ds_id),
-        pipeline_path=pipeline_path, cluster_path=campaign / cfg["cluster"],
-        pipeline_cfg=pipeline_cfg, container=pipeline_cfg["mechababs"]["container"],
-        campaign_venv=str(campaign / venv_rel),
-        project_root=study / "derivatives" / short,
+    A lifecycle change is the subject when there is one — it is the rarest and most
+    consequential thing a cell-transition does to a member, and the line a reader with
+    git but not the cluster is scanning for; the transition that caused it is then the
+    body. Otherwise the subject is the transition itself, naming the cell. Never a
+    bare count, which leaves the super's own history unreadable.
+    """
+    if not changed:
+        return f"mechababs iterate: {name} {advance.transition} {advance.cell} (campaign {label!r})"
+    moves = ", ".join(
+        f"{source} is now {after}" for source, (_, after) in sorted(changed.items())
+    )
+    body = [f"{advance.transition}  {advance.cell}"]
+    body += [
+        f"lifecycle: {source}  {before or '-'} -> {after}"
+        for source, (before, after) in sorted(changed.items())
+    ]
+    return f"mechababs iterate: {name} {moves} (campaign {label!r})\n\n" + "\n".join(
+        body
     )
 
 
-def _resolve_chained_inputs(ctx, row):
-    """Gate the cell on every upstream stage it consumes having merged, and resolve
-    each upstream's output-RIA URL to inject as that input's origin_url (the YAML
-    leaves it blank — the RIA doesn't exist until the upstream runs). Returns
-    (edges, input_origins) — `edges` may be empty (unchained) — or None if an
-    upstream isn't merged yet, so the reconciler skips this cell (a later tick
-    retries). No filesystem mutation happens before this gate."""
-    selected = selected_pipelines(ctx.campaign, ctx.cfg)
-    edges = chain_edges(ctx.pipeline_cfg, selected)
-    unmet = [u for u in edges if not row.get(f"{u}_babs-merged")]
-    if unmet:
-        print(f"  {ctx.ds_id}/{ctx.short}: waiting on upstream {', '.join(unmet)} "
-              f"(not merged) — skipping this tick", file=sys.stderr)
-        return None
-    input_origins = {u: output_ria_url(ctx.campaign / row[f"{u}_babs"], selected[u])
-                     for u in edges}
-    return edges, input_origins
+def describe_counts(status):
+    """The live babs counts, in one readable clause."""
+    return (
+        f"{status['total']} job(s): {status['submitted']} submitted, "
+        f"{status['done']} done, {status['failed']} failed"
+    )
 
 
-def _resolve_inclusion(ctx, edges, *, dry_run):
-    """The per-(dataset,pipeline) inclusion pin under .mechababs/inclusions/ (or None
-    for a chained cell). The pin is the interface — iterate advances whichever cell is
-    next, so a runtime inclusion could land on the wrong cell:
-      chained -> None; babs derives the job set by intersecting the inputs (raw ∩ each
-                 upstream output), dropping any subject an upstream didn't produce. It
-                 intersects on subject presence, not datatype, so a downstream may
-                 still get one its own rule would exclude (e.g. BOLD-less for minimal);
-                 those jobs fail fast. TODO: run our own selection to trim them.
-      pinned  -> reuse it (prior tick, or hand-curated).
-      else    -> select generates it from the study TSV + the pipeline's selection
-                 rule ({} = all subjects), capped by limit.
-    The pin records what we requested; babs writes its own processing_inclusion.csv,
-    whose diff flags a requested subject the data lacks."""
-    if edges:
-        print("  chained cell — no inclusion; babs intersects its inputs", file=sys.stderr)
-        return None
-    pin = ctx.campaign / state.MECHABABS_DIR / "inclusions" / f"{ctx.ds_id}_{ctx.short}.csv"
-    if pin.exists():
-        print(f"  using pinned inclusion {pin}", file=sys.stderr)
-        return pin
-    mechababs_cfg = ctx.pipeline_cfg["mechababs"]
-    if "selection" not in mechababs_cfg:
-        sys.exit(f"pipeline {ctx.short} has no `mechababs.selection` and no pinned "
-                 f"inclusion at {pin} — one is needed to define the job universe "
-                 f"(use `selection: {{}}` for pass-through)")
-    rule = mechababs_cfg["selection"] or {}
-    # processing_level (from the ledger) formats the inclusion to match the level babs
-    # runs at, so the two never disagree.
-    limit = ctx.cfg.get("limit")
-    if dry_run:
-        print(f"DRY-RUN  select.generate_inclusion for {ctx.ds_id}/{ctx.short} "
-              f"(rule={rule}, processing_level={ctx.processing_level}, "
-              f"limit={limit}) -> {pin}", file=sys.stderr)
-    else:
-        pin.parent.mkdir(parents=True, exist_ok=True)
-        tsv_text, _ = select.read_study_metadata(ctx.study)
-        select.generate_inclusion(tsv_text, rule, pin,
-                                  processing_level=ctx.processing_level, limit=limit)
-    return pin
+def advance_cell(study, label, rows, row, *, dry_run=False):
+    """Advance one cell by at most one transition. The transition's name, or ``None``.
 
-
-def _compose_babs_config(ctx, input_origins, *, dry_run):
-    """Compose the babs container-config (pipeline x cluster x dataset-url), resolving
-    the venv placeholder with the campaign venv and injecting each chained input's
-    resolved upstream output-RIA URL. Written to a tracked campaign path
-    (.mechababs/babs-init-config/), not a tempdir, so the babs-init datalad-run command
-    references it relatively. (babs consumes it and stores its own altered copy at
-    .babs/, so the config is recorded a few times over — the redundancy was always
-    there, now it's visible/tracked.) Returns the config path."""
-    babs_config = ctx.campaign / state.MECHABABS_DIR / "babs-init-config" / f"{ctx.ds_id}_{ctx.short}.yaml"
-    merge_cmd = ["python3", str(MERGE_CONFIG_SCRIPT),
-                 "--pipeline", str(ctx.pipeline_path), "--cluster", str(ctx.cluster_path),
-                 "--dataset-url", ctx.origin_url, "--campaign-venv", ctx.campaign_venv]
-    for key, url in input_origins.items():
-        merge_cmd += ["--input-origin", f"{key}={url}"]
-    if dry_run:
-        run(merge_cmd + [">", str(babs_config)], dry_run=True)
-    else:
-        babs_config.parent.mkdir(parents=True, exist_ok=True)
-        with open(babs_config, "w") as f:
-            subprocess.run(merge_cmd, check=True, stdout=f)
-    return babs_config
-
-
-def _babs_init(ctx, inclusion, babs_config, *, dry_run):
-    """Commit the mechababs inputs, then `babs init` under duct (scaffold only, NO
-    submit). babs init runs under `datalad run` (via datalad_duct), which needs a clean
-    tree to detect the command's changes — so commit the inclusion pin + composed
-    config first. Paths are campaign-RELATIVE so the recorded command is portable (the
-    run's cwd is the campaign); --list-sub-file (when given) defines the job universe,
-    which babs records as the derivative's code/processing_inclusion.csv — a chained
-    cell omits it, letting babs intersect the inputs instead."""
-    inputs = [str(babs_config)] + ([str(inclusion)] if inclusion is not None else [])
-    run(["datalad", "save", "-d", ctx.campaign,
-         "-m", f"scaffold inputs {ctx.ds_id}/{ctx.short}", *inputs], dry_run=dry_run)
-
-    babs_init = ["babs", "init", str(ctx.project_root.relative_to(ctx.campaign)),
-                 "--container-ds",
-                 str(resolve_container_ds(ctx.campaign, ctx.container).relative_to(ctx.campaign)),
-                 "--container-name", ctx.container["name"],
-                 "--container-config", str(babs_config.relative_to(ctx.campaign)),
-                 "--processing-level", ctx.processing_level, "--queue", "slurm"]
-    if inclusion is not None:
-        babs_init += ["--list-sub-file", str(inclusion.relative_to(ctx.campaign))]
-    datalad_duct(babs_init, dataset=ctx.campaign,
-                 message=f"scaffold {ctx.ds_id}/{ctx.short}: babs init",
-                 log_prefix=f".duct-logs/{ctx.ds_id}/{ctx.short}/babs-init_{{datetime}}-{{pid}}_",
-                 dry_run=dry_run)
-
-
-def scaffold(campaign, cfg, row, short, pipeline_file, *, dry_run):
-    """Advance one (dataset, pipeline) from 'not started' to 'initialized'.
-
-    Returns the ledger update ({<short>_babs: project-root path}); the caller applies
-    it only on a real (non-dry) run. Returns None if a chained upstream isn't merged
-    yet (the cell can't scaffold this tick). Both mechababs-owned inputs — the
-    inclusion pin and the composed babs config — live under `.mechababs/`
-    (`inclusions/`, `babs-init-config/`) so the babs-init `datalad run` record
-    references portable relative paths.
+    Returns ``None`` for every state that costs nothing — done, waiting, jobs still in
+    flight, jobs failed — which is also what keeps those cells from consuming
+    ``--batch``. The name rather than a bool, because the super's save message has
+    to say what happened (``member_message``).
     """
-    ctx = _scaffold_context(campaign, cfg, row, short, pipeline_file)
-    gate = _resolve_chained_inputs(ctx, row)
-    if gate is None:
+    state, detail = route(rows, row)
+    where = cell_label(row)
+    source_dataset, app_config = campaign_mod.cell_key(row)
+
+    if state == DONE:
+        note(f"{where}: merged — nothing to do")
         return None
-    edges, input_origins = gate
 
-    print(f"\n=== scaffold {ctx.ds_id} / {short} -> {ctx.project_root.name} ===",
-          file=sys.stderr)
-    if not dry_run:
-        ctx.project_root.parent.mkdir(parents=True, exist_ok=True)
+    if state == WAITING:
+        note(f"{where}: waiting on {detail} — passed over")
+        return None
 
-    inclusion = _resolve_inclusion(ctx, edges, dry_run=dry_run)
-    babs_config = _compose_babs_config(ctx, input_origins, dry_run=dry_run)
-    _babs_init(ctx, inclusion, babs_config, dry_run=dry_run)
+    if state == SCAFFOLD:
+        note(f"{where}: not started -> scaffold")
+        dispatch.scaffold(study, label, source_dataset, app_config, dry_run=dry_run)
+        return SCAFFOLDED
 
-    # Ledger: babs = the babs-project root, campaign-relative — the handle later ticks
-    # drive babs against (`babs status|submit|merge <path>`). Its presence answers both
-    # "scaffolded?" and "where?".
-    return {f"{short}_babs": str(ctx.project_root.relative_to(campaign))}
-
-
-# --- ACTIVE-cell transitions: (campaign, cfg, row, short, *, dry_run) -> updates ---
-
-def submit(campaign, cfg, row, short, *, dry_run):
-    """SUBMIT: deploy more jobs. Writes no column — submit-state is babs's."""
-    run(["babs", "submit", babs_project(campaign, row, short)], dry_run=dry_run)
-    return {}
-
-
-def merge(campaign, cfg, row, short, *, dry_run):
-    """MERGE: all jobs done -> babs merge -> pull results into the campaign -> finished.
-
-    `babs merge` leaves the merged results in the output RIA (content stays there
-    by design); `datalad update` fast-forwards the babs project's working tree to
-    the merged branch so the campaign actually holds the produced derivative while
-    the RIA store is still live.
-    """
-    proj = babs_project(campaign, row, short)
-    run(["babs", "merge", proj], dry_run=dry_run)
-    run(["datalad", "update", "--how", "merge", "-s", "output", "-d", proj], dry_run=dry_run)
-    return {f"{short}_babs-merged": "true"}
-
-
-def skip(campaign, cfg, row, short, *, dry_run):
-    """SKIP: jobs still in flight -> nothing to do this tick."""
-    return None
-
-
-def fail(campaign, cfg, row, short, *, dry_run):
-    """FAIL: some jobs failed -> flag and leave unmerged (re-surfaces each tick;
-    retry/policy deferred, #66)."""
-    proj = babs_project(campaign, row, short)
-    print(f"  {row['dataset_id']}/{short}: jobs FAILED — not merging; needs "
-          f"attention (`babs status {proj}`)", file=sys.stderr)
-    return None
-
-
-# decide()'s return values mapped to handlers; each has the uniform
-# (campaign, cfg, row, short, *, dry_run) signature and returns the ledger update
-# to apply (or None/{} for no-op), so run_iterate dispatches ITERATE_ACTIONS[action].
-ITERATE_ACTIONS = {
-    "submit": submit,
-    "skip": skip,
-    "merge": merge,
-    "fail": fail,
-}
-
-
-def decide_action(campaign, row, short):
-    """Decide a cell's next transition from its ledger columns (read-only — the caller
-    names the campaign commit after the returned action, then dispatches it):
-      empty `_babs`  -> 'scaffold' (never started);
-      else           -> read `babs status --json` and decide submit/skip/merge/fail
-                        via babs_status.decide."""
-    if not row.get(f"{short}_babs"):
-        return "scaffold"
-    ds = row["dataset_id"]
-    proj = babs_project(campaign, row, short)
-    print(f"\n=== status {ds}/{short} ({proj.name}) ===", file=sys.stderr)
-
-    status = babs_status.read_status(proj)
+    # ACTIVE: the one state whose next step is not knowable from the shard. Ask babs,
+    # every iterate, rather than mirroring a job status into a column that could drift.
+    status = babs_status.read_status(Path(study) / detail)
     action = babs_status.decide(status)
-    print(f"  {ds}/{short}: {status} -> {action}", file=sys.stderr)
-    return action
+    note(f"{where}: {describe_counts(status)} -> {action}")
+
+    if action == "skip":
+        return None
+    if action == "fail":
+        # Loud, and stopping at this cell only: the campaign keeps reconciling, and a
+        # human decides what happened here. Nothing is written — the next iterate
+        # re-derives this from the same live counts.
+        note(
+            f"!! {where}: {status['failed']} job(s) FAILED — NOT merging. "
+            f"Look at it with:  babs status {detail}"
+        )
+        return None
+    if action == "submit":
+        dispatch.submit(study, label, source_dataset, app_config, dry_run=dry_run)
+        return SUBMITTED
+
+    dispatch.merge(study, label, source_dataset, app_config, dry_run=dry_run)
+    return MERGED
 
 
-def run_iterate(campaign, *, batch, dry_run):
-    """One tick: advance each (dataset, pipeline) cell by at most one transition.
+def work_list(rows, app=None):
+    """The cells this iterate will consider, in shard order, as ``(source, app)`` keys.
 
-    Routes on the cell's ledger columns: empty `_babs` -> scaffold; `_babs` set and
-    not `_babs-merged` -> the active handler; merged -> skip. The lock
-    is held across the whole batch (single writer), and each advanced cell is saved
-    as it lands so a long or interrupted tick still records progress.
+    Row order is the ordering mechanism — there is no priority scheme — so this
+    preserves it. ``app`` narrows to one app config's cells by its stem; naming
+    a stem the campaign does not have is a typo far more often than it is an empty
+    campaign, so it is refused rather than reported as "nothing to do".
     """
-    cfg = read_config(campaign)
-    if not dry_run and cfg.get("venv"):
-        assert_venv_tools(campaign, cfg)
-    pipelines = cfg["pipelines"]
-    with locked(campaign):
-        cols = state.header(campaign)
-        rows = state.read_rows(campaign)
+    keys = [campaign_mod.cell_key(row) for row in rows]
+    if app is None:
+        return keys
+    matched = [
+        key for key, row in zip(keys, rows) if scaffold_mod.app_stem(key[1]) == app
+    ]
+    if not matched:
+        stems = sorted({scaffold_mod.app_stem(key[1]) for key in keys})
+        sys.exit(
+            f"no cells for --app {app!r} in this campaign.\n"
+            f"This campaign's apps are: {', '.join(stems) or '(none)'}"
+        )
+    return matched
 
-        # Work = every not-yet-merged cell; the loop derives its action from the
-        # same columns (empty `_babs` -> scaffold, else the babs-status decision).
-        work = []
-        for row in rows:
-            for pf in pipelines:
-                short = construct.pipeline_short(pf)
-                if not row.get(f"{short}_babs-merged"):
-                    work.append((row, short, pf))
-        if batch is not None:
-            work = work[:batch]
-        if not work:
-            print("iterate: nothing to do (every pipeline is merged).", file=sys.stderr)
-            return
 
-        campaign_ds = Dataset(campaign)
-        for row, short, pf in work:
-            ds_id = row["dataset_id"]
-            action = decide_action(campaign, row, short)
-            if action == "scaffold":
-                transition = partial(scaffold, campaign, cfg, row, short, pf,
-                                     dry_run=dry_run)
-            else:
-                transition = partial(ITERATE_ACTIONS[action], campaign, cfg, row, short,
-                                     dry_run=dry_run)
-            # Every transition is one recursive node on the campaign: the scope opens
-            # clean, spans the transition's work + the ledger row, and its
-            # save(since=, recursive=True) bumps the gitlink up each level of the nest
-            # (derivative -> study -> campaign). scaffold and merge mutate the nest;
-            # submit/skip mutate nothing trackable, so their scope saves nothing (a
-            # no-op). The clean-in guard enforces the between-transitions clean-tree.
-            with datalad_save_scope(campaign_ds, f"{action} {ds_id}/{short}",
-                                    recursive=True, dry_run=dry_run):
-                updates = transition()
-                if updates and not dry_run:
-                    row.update(updates)
-                    state.write_rows(campaign, cols, rows)
+def record(superstudy, label, name, member, advance, *, dry_run=False):
+    """Register one advance at the super: one commit, for one cell.
+
+    A study-only campaign needs none of this — the transition's own ``datalad run``
+    commits in the study, which IS the operating level. With a super above it, that
+    same run leaves the member's gitlink advanced and only the super can register it:
+    the gitlink, plus the catalog row when the member's lifecycle changed. Only the
+    transitions in ``RECORDED`` get here; the others move nothing in git.
+
+    It runs before the next cell is attempted, for two reasons. A failure mid-member
+    then leaves the super exactly as far as the last success, rather than holding a
+    stale gitlink it would later blame on an intervention nobody made. And it keeps
+    the grain the same at every level: the member's own history is already one
+    ``datalad run`` per advancing cell, and a super commit spanning two derivatives
+    would mix subdatasets whose provenance has nothing to do with each other.
+    """
+    if dry_run:
+        # Nothing moved, so the shard still reads as it did and the lifecycle cannot
+        # be computed from it. Say what would be recorded and leave it there.
+        note(f"DRY-RUN: {name} would record {advance.transition} {advance.cell}")
+        return
+    changed = update_lifecycle(superstudy, label, name, member, advance)
+    paths = [member]
+    if changed:
+        paths.append(campaign_mod.members_path(superstudy, label))
+    utils.save_paths(superstudy, paths, member_message(name, label, advance, changed))
+
+
+def member_studies(superstudy, label, target=None):
+    """The member studies to advance, in catalog order, de-duplicated.
+
+    Catalog order is the ordering interface at the super, the way row order is
+    within a shard: several source datasets in one member give several catalog
+    rows, and the member is advanced once. ``target`` narrows to one member and is
+    matched against the catalog rather than the filesystem, so naming a directory
+    that exists but was never selected into this campaign is an error rather than
+    a silent no-op.
+    """
+    rows = campaign_mod.read_members(superstudy, label)
+    names = list(dict.fromkeys(r["study"] for r in rows if r.get("study")))
+    if target is None:
+        return names
+    wanted = Path(target).name
+    if wanted not in names:
+        sys.exit(
+            f"{target} is not a member of campaign {label!r}.\n"
+            f"Members: {', '.join(names) if names else '(none selected yet)'}"
+        )
+    return [wanted]
+
+
+def run_iterate(root=".", *, batch=None, app=None, study=None, dry_run=False):
+    """Resolve where we are standing, then advance cells, one cell-transition at a time.
+
+    ``require_selected_campaign`` gates advancing on standing at the configured level;
+    the inner verbs carry no such check, so a ``datalad rerun`` of one keeps working
+    wherever it lands.
+
+    The loop is the same at both levels: for each study to advance, clean in, then
+    walk its cells in shard order and advance each by at most one transition. At a
+    study there is one study to advance, and the transition's own ``datalad run`` is
+    its record. At a superstudy the studies are the **installed** members in catalog
+    order, and every cell-transition is recorded at the super before the next cell is
+    attempted (see ``record``). A member the user has pushed and uninstalled is
+    skipped with a note rather than reinstalled, including when ``study`` names it
+    directly — reclaiming space is a decision an ``iterate`` must not quietly reverse.
+
+    Where you stand gives the *level*; ``study`` narrows *within* it. ``batch`` is
+    the budget for the whole ``iterate``, spent in catalog order and then shard order,
+    so ``--batch 5`` advances the five most important cells in the superstudy,
+    wherever they live: catalog order is a priority interface, not only an ordering.
+
+    Returns the ``Advance`` records, in the order they happened.
+    """
+    selected = campaign_mod.require_selected_campaign(root)
+    root, label = selected.root, selected.label
+
+    # The single writer, in exactly one place, at the level the campaign is OPERATED
+    # from. One lock covers the whole iterate: a per-member lock would hold nothing
+    # over the super's own writes (the gitlink and the catalog row), which are what a
+    # second iterate would collide with. Not inside the verbs: an flock is per
+    # open-file-description, so a lock taken in a dispatched verb would deadlock
+    # against this one.
+    with utils.flocked(campaign_mod.flock_path(selected.operated_at)):
+        at_super = campaign_mod.is_superstudy_campaign(root, label)
+        if at_super:
+            members = member_studies(root, label, study)
+            note(f"superstudy iterate over {len(members)} member(s) in {root}")
+            # The super's OWN tree only. Each member is checked separately, right
+            # before it is advanced, so one member's drift stops that member rather
+            # than the whole fan-out.
+            require_clean_shallow(root, what="a superstudy iterate", ignore=members)
+            studies = [Path(root) / name for name in members]
+        else:
+            if study:
+                sys.exit(
+                    f"campaign {label!r} here is configured at a study, so there are "
+                    f"no members to select between.\n--study narrows a superstudy iterate."
+                )
+            studies = [Path(root)]
+
+        budget = batch
+        advanced = []
+        for i, study_path in enumerate(studies):
+            # The budget is checked before a study is even looked at: an iterate with
+            # nothing left to spend must not touch the filesystem to discover that.
+            if budget is not None and budget <= 0:
+                note(
+                    f"--batch {batch} reached — {len(studies) - i} member(s) left for "
+                    f"the next iterate"
+                )
+                break
+            if at_super:
+                # Never reinstalled to advance it: reinstall it later and its shard
+                # drives it, state derived from ground truth as always.
+                if not study_mod.is_study_root(study_path):
+                    note(f"{study_path.name}: not installed — left alone")
+                    continue
+                # The one thing only the super can see: whether its gitlink still
+                # matches the member's HEAD. Scoped to this member, so it is flat
+                # where a whole-super status would be linear in members.
+                utils.require_clean_gitlink(root, study_path.name)
+            campaign_mod.require_statefile(study_path, label)
+            # Once per study, before any of its cells: `datalad run --explicit`
+            # captures only what a verb declares, so a run recorded on top of
+            # uncommitted work would not describe the tree it ran in.
+            require_clean_shallow(study_path, what="an iterate")
+
+            cells = work_list(campaign_mod.read_state(study_path, label), app)
+            scope = f" ({app})" if app else ""
+            note(f"iterate over {len(cells)} cell(s) in {study_path}{scope}")
+            for j, key in enumerate(cells):
+                if budget is not None and budget <= 0:
+                    note(
+                        f"--batch {batch} reached — {len(cells) - j} cell(s) left for "
+                        f"the next iterate"
+                    )
+                    break
+                # Re-read: the verbs write the shard themselves, so a copy taken
+                # before the loop is stale the moment a cell advances.
+                rows = campaign_mod.read_state(study_path, label)
+                row = campaign_mod.find_cell(rows, *key)
+                transition = advance_cell(study_path, label, rows, row, dry_run=dry_run)
+                if not transition:
+                    continue
+                advance = Advance(transition, cell_label(row), key[0])
+                advanced.append(advance)
+                if budget is not None:
+                    budget -= 1
+                if at_super and transition in RECORDED:
+                    record(
+                        root,
+                        label,
+                        study_path.name,
+                        study_path,
+                        advance,
+                        dry_run=dry_run,
+                    )
 
         if dry_run:
-            print(f"\nDRY-RUN: would advance {len(work)} cell(s).", file=sys.stderr)
+            note(
+                f"DRY-RUN: {len(advanced)} cell(s) would advance. Nothing changed, so "
+                f"no cell's state moved — a real iterate may advance more."
+            )
         else:
-            print(f"\niterate: processed {len(work)} cell(s).", file=sys.stderr)
+            note(f"iterate done: {len(advanced)} cell(s) advanced.")
+        return advanced

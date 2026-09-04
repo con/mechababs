@@ -9,6 +9,11 @@ description = "Automation glue for running BIDS apps across many datasets on HPC
 requires-python = ">=3.10"
 dependencies = [
     "pyyaml",
+    # >=1.6 is a floor, not a preference: mechababs' change-making transitions are
+    # `datalad run`-captured, and the wrapped command commits its own work (babs
+    # init and friends). Released datalad 1.4 silently drops the run record in that
+    # case; 1.6 added the cmd_made_commits / dirty-committed machinery that keeps it
+    # (and lets `datalad.run.dirty-committed=error` stay armed).
     "datalad>=1.6",
     "datalad-container",
 ]
@@ -18,12 +23,21 @@ test = ["pytest"]
 
 [project.scripts]
 mechababs = "mechababs.cli:main"
+# The action verbs `iterate` dispatches under `datalad run`. A console script, not
+# a `python -m` invocation, because it is what a study's history records: the
+# command has to name a tool, not an interpreter and a module path.
+mechababs-inner = "mechababs.inner:main"
 
 [tool.pytest.ini_options]
 # A bare `pytest` means the unit suite. Without this it also walks mechababs/,
 # where the packaged e2e conftest registers --cluster-config a second time and
 # collection fails outright.
 testpaths = ["tests"]
+# The unit suite must run with no cluster, no container, and no network. The one
+# test that really resolves a campaign environment needs `uv` and the network, so
+# it is marked and deselected by default; run it with `pytest -m uv_build`.
+markers = ["uv_build: really runs `uv lock` + `uv sync` (needs uv and the network)"]
+addopts = "-m 'not uv_build'"
 # Live phase markers during the long steps (venv build, babs init, later job
 # deploys) so a run isn't a silent wait. Add `-s` on top to stream the raw
 # subprocess output (the pip build, babs submit, ...) when you need to dig in.
@@ -32,7 +46,6 @@ log_cli_level = "INFO"
 log_cli_format = "%(asctime)s  %(message)s"
 log_cli_date_format = "%H:%M:%S"
 
-# Only the mechababs package is installed; the root bootstrap.sh is run directly.
 # `mechababs.testing` carries the e2e scenario, so `test-cluster` can run it from a
 # campaign wherever mechababs is installed — see mechababs/testing/__init__.py.
 [tool.setuptools]
@@ -54,3 +67,24 @@ packages = ["mechababs", "mechababs.testing"]
 
 [tool.setuptools_scm]
 version_file = "mechababs/_version.py"
+
+# Both halves of ruff's behavior are pinned, for the same reason: whatever CI
+# enforces has to be reproducible on a laptop.
+#
+# `required-version` pins the tool. Ruff's formatter output shifts between
+# releases, so a contributor on a different version reformats lines nobody
+# touched; this makes that fail loudly instead. Bump it here and in
+# .github/workflows/ruff.yml together, in a commit that carries the reformat the
+# bump implies.
+#
+# `select` pins what "lint" MEANS. Ruff's default rule set is not stable across
+# releases -- 0.16 widened it from 59 rules to 413 -- so leaving the selection
+# implicit hands a future release the power to change what CI demands. This is
+# ruff's classic default set (pyflakes plus the pycodestyle errors that catch
+# real bugs). Widening it is a deliberate act: expect a batch of findings, and
+# disposition them in their own commit.
+[tool.ruff]
+required-version = "==0.16.4"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

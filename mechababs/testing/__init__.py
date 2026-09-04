@@ -1,17 +1,15 @@
 """testing — the e2e scenario, shipped with the package.
 
-The e2e suite drives a whole campaign (configure -> add-dataset -> iterate:
-scaffold -> submit -> merge) and asserts a real derivative landed, which makes it
-the executable specification of "this cluster config works". ``mechababs
-test-cluster`` runs it from a campaign, so the suite has to be reachable wherever
-mechababs is *installed*, not only in a source checkout.
+The e2e suite drives the whole spine (``campaign init`` -> ``add-dataset`` ->
+``iterate``: scaffold -> submit -> merge) against a fixture study and asserts a
+real derivative landed, which makes it the executable specification of "this
+cluster config works". ``mechababs test-cluster`` runs it, so the suite has to be
+reachable wherever mechababs is *installed*, not only in a source checkout.
 
 That is why it lives inside the package. It ships in the distribution and is
-located through ``importlib``, never by a path into a vendored clone
-(``code/mechababs/tests/e2e``). So it resolves the same way under today's layout
-(bootstrap clones the repo into the campaign and installs it editable) and under
-a referenced-and-locked one (installed from a pinned ref, nothing cloned) — the
-direction sketched in the study-first redesign.
+located through ``importlib``, never by a path into a checkout — so it resolves
+whether mechababs was installed from a pinned git ref, from a release, or
+editable from a working tree.
 
 ``tests/`` keeps the unit suite: it tests the code and never leaves the repo, so
 it has no reason to travel.
@@ -26,7 +24,12 @@ E2E_DIRNAME = "e2e"
 # actually the suite (a partial install would otherwise fail later, inside pytest).
 # Every module that ships is listed: a test file present in the distribution but
 # absent from here would be silently skipped by a truncated install.
-SUITE_MODULES = ("conftest.py", "test_runs.py", "test_study_fixture.py")
+SUITE_MODULES = (
+    "conftest.py",
+    "test_spine.py",
+    "test_study_fixture.py",
+    "test_superstudy.py",
+)
 
 
 def suite_path():

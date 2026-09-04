@@ -1,13 +1,11 @@
 reference/
-design/*.png
 .venv/
 *.egg-info/
 mechababs/_version.py
 __pycache__/
 .pytest_cache/
-processing/
+.ruff_cache/
 local-notes/
-repronim-containers/
 # setuptools' build tree, left behind by `uv build` when checking what ships.
 build/
 build.stale_*/
